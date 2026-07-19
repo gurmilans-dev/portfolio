@@ -1,0 +1,128 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#f3efe5" />
+    <script>(()=>{try{const s=localStorage.getItem("portfolio-theme");document.documentElement.dataset.theme=s||(matchMedia("(prefers-color-scheme: dark)").matches?"dark":"light")}catch{document.documentElement.dataset.theme="light"}})();</script>
+    <title>Opssemble case study - {{profile.name}}</title>
+    <meta name="description" content="Opssemble is an active-development full-stack product for event readiness and exception-first coordination." />
+    <meta name="robots" content="index, follow" />
+    <link rel="canonical" href="{{profile.domain}}/opssemble.html" />
+    <meta property="og:type" content="article" /><meta property="og:url" content="{{profile.domain}}/opssemble.html" /><meta property="og:title" content="Opssemble case study - {{profile.name}}" /><meta property="og:description" content="Event readiness and exception-first coordination, built end to end as a university final project." /><meta property="og:image" content="{{profile.domain}}/assets/social-preview.png" />
+    <meta name="twitter:card" content="summary_large_image" /><meta name="twitter:title" content="Opssemble case study - {{profile.name}}" /><meta name="twitter:description" content="Event readiness and exception-first coordination, built end to end as a university final project." /><meta name="twitter:image" content="{{profile.domain}}/assets/social-preview.png" />
+    <script type="application/ld+json">{"@context":"https://schema.org","@type":"SoftwareApplication","name":"Opssemble","applicationCategory":"BusinessApplication","operatingSystem":"Web","description":"Event readiness and exception-first coordination for live operations teams: events split into areas, tasks and exceptions with severity, readiness scoring, member roles, and QR-scoped area access."}</script>
+    <link rel="preload" href="assets/fonts/archivo-var.woff2" as="font" type="font/woff2" crossorigin />
+    <link rel="icon" href="assets/favicon.svg" type="image/svg+xml" /><link rel="stylesheet" href="assets/styles.css" /><script src="assets/script.js" defer></script><script src="assets/scene.js" defer></script>
+  </head>
+  <body class="page-opssemble">
+    <a class="skip-link" href="#main-content">Skip to content</a>
+    <div class="scroll-progress" aria-hidden="true" data-scroll-progress><span data-scroll-progress-bar></span></div>
+    <header class="site-header" data-header><div class="shell header-inner"><a class="wordmark" href="index.html" aria-label="{{profile.name}}, home"><span>GS</span><span class="wordmark-name">{{profile.name}}</span></a><button class="menu-toggle" type="button" aria-expanded="false" aria-controls="site-navigation" data-menu-toggle><span class="sr-only">Toggle navigation</span><span></span><span></span></button><nav id="site-navigation" class="site-nav" aria-label="Primary navigation" data-nav><a href="index.html#work" aria-current="page">Work</a><a href="index.html#experience">Experience</a><a href="index.html#capabilities">Capabilities</a><button class="theme-toggle" type="button" aria-pressed="false" aria-label="Switch to dark mode" data-theme-toggle><span class="theme-toggle-track" aria-hidden="true"></span><span data-theme-label>Dark</span></button><a class="nav-contact" href="index.html#contact">Contact</a><a class="nav-cv link-with-icon" href="{{profile.resume}}" target="_blank" rel="noopener noreferrer">{{icons.resume}}<span>Résumé</span>{{icons.external}}</a></nav></div></header>
+    <main id="main-content">
+      <section id="top" class="case-hero shell" aria-labelledby="case-title">
+        <nav class="breadcrumbs" aria-label="Breadcrumb"><a href="index.html">Home</a><span>/</span><a href="index.html#work">Work</a><span>/</span><span aria-current="page">Opssemble</span></nav>
+        <div class="case-eyebrow"><span class="case-index">02 / Opssemble</span><span>Active development · core workflow implemented</span></div>
+        <h1 id="case-title">What isn’t ready, and what just went wrong.</h1>
+        <p class="case-lead">Opssemble is a university final project for coordinating event areas, tasks, exceptions, and readiness. The core workflow is implemented while interface evidence, tests, and public documentation are still being prepared.</p>
+        <dl class="case-facts" data-reveal-group><div><dt>Context</dt><dd>University final project</dd></div><div><dt>Role</dt><dd>End-to-end developer</dd></div><div><dt>Authorization</dt><dd>Server-side event roles</dd></div><div><dt>Status</dt><dd><span class="badge badge-academic">{{projects.opssemble.status}}</span></dd></div></dl>
+        {{#if projects.opssemble.repository}}<a class="text-action" href="{{projects.opssemble.repository}}" target="_blank" rel="noopener noreferrer">View repository ↗</a>{{/if}}{{#if projects.opssemble.demo}}<a class="text-action" href="{{projects.opssemble.demo}}" target="_blank" rel="noopener noreferrer">Watch demo ↗</a>{{/if}}
+      </section>
+
+      <div class="shell case-layout">
+        <aside class="case-aside"><details class="case-toc" open data-toc><summary>On this page</summary><nav aria-label="On this page"><a href="#overview">Overview</a><a href="#architecture">Architecture</a><a href="#system-sequence">Core workflow</a><a href="#security">Access &amp; security</a><a href="#ai">AI assistance</a><a href="#outcome">Current boundaries</a></nav></details></aside>
+        <article class="case-content">
+          <section id="overview" class="case-section" aria-labelledby="overview-title">
+            <p class="case-section-no">01 / Product</p>
+            <h2 id="overview-title">Tasks, exceptions, and readiness in one product.</h2>
+            <p>Areas hold tasks, problems become tracked exceptions with severity, and readiness is computed from what's still open.</p>
+            <div class="operational-scope" data-reveal-group aria-label="Implemented product coverage"><p class="artifact-label">implemented coverage</p><ul><li><strong>Structure</strong><span>Events, typed areas, tasks with status and priority</span></li><li><strong>Exceptions</strong><span>Severity, status, resolution note and resolver</span></li><li><strong>Readiness</strong><span>Per-area and event-wide scores with blockers</span></li><li><strong>Records</strong><span>Reports, CSV &amp; print export, activity log, dashboard</span></li></ul></div>
+            {{#if projects.opssemble.primaryImage}}<figure class="annotated-media evidence-media" data-reveal-group><img src="{{projects.opssemble.primaryImage}}" width="1440" height="900" loading="lazy" alt="Opssemble dashboard showing active events, needs-attention items, and open exceptions" /><figcaption>Dashboard evidence from the running application.</figcaption></figure>{{/if}}
+            <aside class="public-evidence-note"><p class="annotation-label">evidence status</p><p>Screenshots and a public repo aren't published yet — the diagrams summarize the implemented module structure and data rules, not interface mock-ups.</p></aside>
+          </section>
+
+          <section id="architecture" class="case-section" aria-labelledby="architecture-title">
+            <p class="case-section-no">02 / Architecture</p>
+            <h2 id="architecture-title">Feature modules across the interface and API.</h2>
+            <p>Both the API and the interface are organized around the same product areas, and every backend feature follows the same layered shape.</p>
+            <div class="architecture connector-flow" data-reveal-group data-connector-reveal role="img" aria-label="The product interface calls the application API, which validates, checks event roles, and reads or writes the relational database."><div><span>01</span><strong>Product interface</strong><small>Feature modules</small></div><i aria-hidden="true">→</i><div><span>02</span><strong>Application API</strong><small>Validation + event-role checks</small></div><i aria-hidden="true">→</i><div><span>03</span><strong>Relational database</strong><small>Migrations · seeds</small></div></div>
+            <div class="ops-module-map" data-reveal-group aria-label="Implemented API modules">
+              <p class="artifact-label">implemented product modules</p>
+              <div class="ops-module-grid"><span>auth</span><span>events</span><span>areas</span><span>tasks</span><span>exceptions</span><span>readiness</span><span>event members</span><span>qr</span><span>reports</span><span>activity</span><span>templates</span><span>dashboard</span><span>settings</span><span>admin</span><span>ai</span><span>mail</span><span>users</span></div>
+              <p class="ops-plugin-rail"><span>Cross-cutting plugins</span>db · auth · rate limit · uploads · error handler</p>
+            </div>
+          </section>
+
+          <section id="system-sequence" class="case-section case-immersive case-immersive-opssemble" data-case-immersive data-case-variant="opssemble" aria-labelledby="system-sequence-title">
+            <p class="case-section-no">03 / Core workflow</p>
+            <h2 id="system-sequence-title">From event structure to scoped access.</h2>
+            <p>The application connects event records, server-side roles, calculated readiness, and revocable area access.</p>
+            <div class="case-immersive-frame">
+              <div class="case-immersive-visual ops-operations-visual" aria-hidden="true">
+                <p class="visual-kicker">Event coordination operating model</p>
+                <div class="ops-structure">
+                  <p class="ops-event-bar"><span>Event</span><strong>Areas · tasks · exceptions</strong></p>
+                  <div class="ops-area-grid"><span>Stage</span><span>Entrance</span><span>Catering</span><span>Security</span></div>
+                </div>
+                <div class="ops-system-field">
+                  <div class="ops-boundary-frame">
+                    <span class="ops-boundary-label">Server-side role boundary</span>
+                    <div class="ops-gate-row"><span>Owner</span><span>Coordinator</span><span>Operator</span><span>Viewer</span></div>
+                    <div class="ops-readiness-core"><span>Readiness engine</span><strong>Score 0–100, per area and event-wide</strong></div>
+                    <div class="ops-rules-grid"><span>Critical open exception → blocked</span><span>Blocked task → blocked</span><span>High-priority open task → in progress</span><span>All done, no critical blockers → ready</span></div>
+                  </div>
+                </div>
+                <div class="ops-exception-rail"><span>low</span><span>medium</span><span>high</span><span class="ops-critical">critical</span><span class="ops-notify">email to relevant members</span></div>
+                <div class="ops-qr-strip"><span>Area QR token</span><em>mint</em><em>store SHA-256 hash</em><em>scan + login</em><em>scoped context</em><em>revoke</em></div>
+                <div class="ops-records-loop"><span>Records out</span><span>Reports</span><span>CSV export</span><span>Activity log</span><span>Dashboard</span></div>
+              </div>
+              <div class="case-immersive-copy">
+                <article class="immersive-step"><p class="step-label">Structure and exceptions</p><h3>Areas contain the work and the problems.</h3><p>Tasks carry status, priority, and due dates. Exceptions record severity, resolution status, and the resolver.</p></article>
+                <article class="immersive-step"><p class="step-label">Authorization</p><h3>Every write is checked by the API.</h3><p>Members hold one of four event roles — owner, coordinator, operator, viewer — and server-side checks decide what each role can change.</p></article>
+                <article class="immersive-step"><p class="step-label">Readiness</p><h3>The score is derived from open work.</h3><p>A critical open exception or blocked task blocks an area; ready requires completed tasks with no critical blockers.</p></article>
+                <article class="immersive-step"><p class="step-label">Area access and records</p><h3>QR access stays scoped and revocable.</h3><p>Only the SHA-256 hash of each area token is stored. Reports, CSV exports, activity records, and the dashboard use the same application data.</p></article>
+              </div>
+            </div>
+          </section>
+
+          <section id="security" class="case-section" aria-labelledby="security-title">
+            <p class="case-section-no">04 / Access &amp; security</p>
+            <h2 id="security-title">Account and event access are enforced by the API.</h2>
+            <p>These are implemented controls, not a general security guarantee.</p>
+            <dl class="constraint-ledger" data-reveal-group><div><dt>Sessions</dt><dd>JWT sessions carried in HttpOnly cookies; passwords hashed with bcrypt.</dd></div><div><dt>Sign-in</dt><dd>Email and password with emailed verification codes, Google OAuth 2.0, password reset, and an optional recovery email.</dd></div><div><dt>Enumeration &amp; abuse</dt><dd>Generic login errors, failed-attempt delays, and lockouts.</dd></div><div><dt>Tokens</dt><dd>Verification, reset, and QR area tokens are stored only as SHA-256 hashes.</dd></div></dl>
+            <article class="decision-record" aria-labelledby="opssemble-decision-title" data-reveal-group>
+              <p class="decision-id">decision 01</p>
+              <h3 id="opssemble-decision-title">Authorize every write against the caller’s event role</h3>
+              <dl><div><dt>Constraint</dt><dd>Four roles act on the same event from different devices.</dd></div><div><dt>Decision</dt><dd>Role checks live in the API beside input validation.</dd></div><div><dt>Result</dt><dd>The interface reflects permissions that the server already enforces.</dd></div><div><dt>Trade-off</dt><dd>Every new write endpoint requires an authorization rule and test.</dd></div></dl>
+            </article>
+            <div class="technical-artifact permission-artifact connector-flow" data-reveal-group data-connector-reveal aria-label="Area QR token lifecycle">
+              <p class="artifact-label">technical artefact · area token lifecycle (revocable at any time)</p>
+              <ol><li><span>Mint</span><strong>Owner or coordinator issues an area token</strong></li><li><span>Store</span><strong>Only the SHA-256 hash persists</strong></li><li><span>Scan</span><strong>Login-gated area context page</strong></li><li><span>Act</span><strong>Actions scoped by the caller’s event role</strong></li></ol>
+            </div>
+            <div class="operational-scope" data-reveal-group aria-label="Backend hardening"><p class="artifact-label">backend hardening, from code</p><ul><li><strong>Query safety</strong><span>Parameterized SQL across repositories</span></li><li><strong>HTTP headers</strong><span>Helmet security headers and a CORS policy</span></li><li><strong>Uploads</strong><span>File validation by magic-byte signature</span></li><li><strong>Rate &amp; email</strong><span>Request rate limiting; transactional email via Nodemailer</span></li></ul></div>
+          </section>
+
+          <section id="ai" class="case-section" aria-labelledby="ai-title">
+            <p class="case-section-no">05 / AI assistance</p>
+            <h2 id="ai-title">Optional assistance, no write authority.</h2>
+            <p>The application works without AI. When configured, an optional assistant service can draft, scaffold, explain, and summarize event content; results do not bypass normal write endpoints.</p>
+            <div class="operational-scope" data-reveal-group aria-label="Assistant capabilities"><p class="artifact-label">assistant capabilities</p><ul><li><strong>Drafting</strong><span>Task and exception drafts from a short prompt</span></li><li><strong>Event scaffolding</strong><span>Suggested areas and tasks for a new event</span></li><li><strong>Gap &amp; readiness</strong><span>Gap checks, readiness explanations, and blocker summaries</span></li><li><strong>Q&amp;A &amp; retrospective</strong><span>Event question answering and retrospective drafting</span></li></ul></div>
+            <div class="ops-ai-panel" data-reveal-group>
+              <p class="artifact-label">guardrails, from configuration and code</p>
+              <ul class="ops-ai-guardrails"><li><strong>Per-user rate limiting</strong><span>Requests per rolling window</span></li><li><strong>Context caps</strong><span>Bounded input size per request</span></li><li><strong>Output caps</strong><span>Bounded response size and timeouts</span></li><li><strong>No write authority</strong><span>Event data changes only through the same authorized endpoints as manual edits</span></li></ul>
+            </div>
+          </section>
+
+          <section id="outcome" class="case-section" aria-labelledby="outcome-title">
+            <p class="case-section-no">06 / Current boundaries</p>
+            <h2 id="outcome-title">Core workflow implemented; public evidence still in progress.</h2>
+            <dl class="constraint-ledger" data-reveal-group><div><dt>Scope</dt><dd>An active-development university project, not a commercial production SaaS.</dd></div><div><dt>Metrics</dt><dd>No load, uptime, or usage figures are published.</dd></div><div><dt>Evidence</dt><dd>Public screenshots, repository documentation, and test reporting are still required.</dd></div><div><dt>Assistant</dt><dd>Runs only when the optional assistant is configured.</dd></div></dl>
+            <div class="outcome-summary" data-reveal-group><div><p class="artifact-label">what it demonstrates</p><p>Product interface work, a layered API, relational data, authentication, roles, QR-scoped access, and controlled AI assistance.</p></div><div><p class="artifact-label">next evidence</p><p>Sanitized screenshots, focused tests, setup documentation, and a public repository are the next publication steps.</p></div></div>
+          </section>
+        </article>
+      </div>
+      <nav class="case-pagination shell" aria-label="Project navigation"><a href="gurmat-saanj.html"><span>Previous project</span><strong>← Gurmat Saanj</strong></a><a href="erp-case-study.html"><span>Next project</span><strong>Confidential Business Platform →</strong></a></nav>
+    </main>
+    <footer id="contact" class="site-footer case-footer"><div class="shell case-footer-cta"><p>Full-stack web development — product interfaces, backend services, and data-driven software.</p><div class="text-links contact-link-list"><a class="link-with-icon" href="mailto:{{profile.email}}">{{icons.email}}<span>Email</span></a><a class="link-with-icon" href="{{profile.resume}}" target="_blank" rel="noopener noreferrer">{{icons.resume}}<span>Résumé</span>{{icons.external}}</a><a class="link-with-icon" href="{{profile.github}}" target="_blank" rel="noopener noreferrer">{{icons.github}}<span>GitHub</span>{{icons.external}}</a><a class="link-with-icon" href="{{profile.linkedin}}" target="_blank" rel="noopener noreferrer">{{icons.linkedin}}<span>LinkedIn</span>{{icons.external}}</a></div></div><div class="shell footer-inner"><p class="copyright-line"><span class="copyright-symbol">©</span><span data-year>2026</span> {{profile.name}}</p><p>{{profile.location}}</p><a href="#top">Back to top ↑</a></div></footer>
+  </body>
+</html>

@@ -1,0 +1,24 @@
+node_modules/
+dist/
+build/
+.vite/
+.env
+.env.*
+!.env.example
+.DS_Store
+Thumbs.db
+*.log
+logs/
+
+# CV source — only the built PDF is published
+Gurmilan_Singh_2026_CV.docx
+
+# Internal working notes — not part of the published site
+CHANGELOG.md
+CLAIM_AUDIT.md
+CONTENT_TODO.md
+IMPLEMENTATION_REPORT.md
+MEDIA_INVENTORY.md
+PLACEHOLDERS.md
+TEST_REPORT.md
+VERIFY.md

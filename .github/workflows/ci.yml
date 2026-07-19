@@ -1,0 +1,26 @@
+name: CI
+
+# Build the static site and run the content/claims validator on every push and PR.
+# build.mjs and validate.mjs are pure Node (no third-party imports), so no install step is needed.
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  build-and-validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Build dist/
+        run: node build.mjs
+      - name: Validate templates, links, metadata, and claims
+        run: node validate.mjs

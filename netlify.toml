@@ -1,0 +1,5 @@
+# Netlify / Cloudflare Pages build settings.
+# Source stays private; only the built dist/ is served publicly.
+[build]
+  command = "node build.mjs"
+  publish = "dist"

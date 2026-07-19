@@ -1,0 +1,262 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#f3efe5" />
+    <script>
+      (() => {
+        try {
+          const saved = localStorage.getItem("portfolio-theme");
+          document.documentElement.dataset.theme = saved || (matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light");
+        } catch { document.documentElement.dataset.theme = "light"; }
+      })();
+    </script>
+    <script>
+      (() => {
+        try { if (!matchMedia("(prefers-reduced-motion: reduce)").matches && innerWidth > 768) document.documentElement.classList.add("scene-arm"); } catch { /* Hero renders fully without arming. */ }
+      })();
+    </script>
+    <title>{{profile.name}} - Full-Stack Web Developer &amp; Software Engineer</title>
+    <meta name="description" content="Full-stack web developer building responsive React interfaces, Node.js APIs, relational data workflows, and production business software." />
+    <meta name="author" content="{{profile.name}}" />
+    <meta name="robots" content="index, follow" />
+    <link rel="canonical" href="{{profile.domain}}/" />
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content="{{profile.domain}}/" />
+    <meta property="og:title" content="{{profile.name}} - Full-Stack Web Developer &amp; Software Engineer" />
+    <meta property="og:description" content="Responsive product interfaces, backend APIs, relational data, and software for real operational needs." />
+    <meta property="og:image" content="{{profile.domain}}/assets/social-preview.png" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:image:alt" content="{{profile.name}} - Full-Stack Web Developer &amp; Software Engineer" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="{{profile.name}} - Full-Stack Web Developer &amp; Software Engineer" />
+    <meta name="twitter:description" content="Responsive product interfaces, backend APIs, relational data, and software for real operational needs." />
+    <meta name="twitter:image" content="{{profile.domain}}/assets/social-preview.png" />
+    <link rel="preload" href="assets/fonts/archivo-var.woff2" as="font" type="font/woff2" crossorigin />
+    <link rel="icon" href="assets/favicon.svg" type="image/svg+xml" />
+    <link rel="stylesheet" href="assets/styles.css" />
+    <script src="assets/script.js" defer></script>
+    <script src="assets/scene.js" defer></script>
+    <script type="application/ld+json">
+      {"@context":"https://schema.org","@type":"Person","name":"{{profile.name}}","url":"{{profile.domain}}/","jobTitle":"{{profile.role}}","description":"{{profile.positioning}}","email":"mailto:{{profile.email}}","address":{"@type":"PostalAddress","addressLocality":"Modena","addressRegion":"MO","addressCountry":"IT"},"alumniOf":{"@type":"CollegeOrUniversity","name":"University of Modena and Reggio Emilia"},"sameAs":["{{profile.linkedin}}","{{profile.github}}"],"knowsLanguage":["Italian","Punjabi","English","Hindi"]}
+    </script>
+  </head>
+  <body>
+    <a class="skip-link" href="#main-content">Skip to content</a>
+    <div class="scroll-progress" aria-hidden="true" data-scroll-progress><span data-scroll-progress-bar></span></div>
+    <header class="site-header" data-header>
+      <div class="shell header-inner">
+        <a class="wordmark" href="#top" aria-label="{{profile.name}}, back to top"><span>GS</span><span class="wordmark-name">{{profile.name}}</span></a>
+        <button class="menu-toggle" type="button" aria-expanded="false" aria-controls="site-navigation" data-menu-toggle><span class="sr-only">Toggle navigation</span><span></span><span></span></button>
+        <nav id="site-navigation" class="site-nav" aria-label="Primary navigation" data-nav>
+          <a href="#work" data-section-link>Work</a><a href="#experience" data-section-link>About</a><a href="#capabilities" data-section-link>Capabilities</a>
+          <button class="theme-toggle" type="button" aria-pressed="false" aria-label="Switch to dark mode" data-theme-toggle><span class="theme-toggle-track" aria-hidden="true"></span><span data-theme-label>Dark</span></button>
+          <a class="nav-contact" href="#contact" data-section-link>Contact</a>
+          <a class="nav-cv link-with-icon" href="{{profile.resume}}" target="_blank" rel="noopener noreferrer">{{icons.resume}}<span>Résumé</span>{{icons.external}}</a>
+        </nav>
+      </div>
+    </header>
+
+    <main id="main-content">
+      <section id="top" class="hero shell" aria-labelledby="hero-title" data-operating-model>
+        <div class="hero-status">
+          <p class="hero-kicker"><span class="status-dot" aria-hidden="true"></span>{{profile.location}}</p>
+        </div>
+        <div class="hero-head">
+          <p class="eyebrow">React · JavaScript · Node.js · SQL · C#/.NET</p>
+          <h1 id="hero-title" aria-label="Full-stack developer and software engineer building for real operational needs."><span>Full-stack developer</span><span>and software engineer</span><span>building for real operational needs.</span></h1>
+        </div>
+        <div class="hero-frame">
+          <div class="hero-intro">
+            <p>I design and build responsive interfaces, backend APIs, and data-driven workflows — from production business systems to community and AI-assisted tools.</p>
+            <div class="hero-actions">
+              <a class="button button-primary" href="#work">View work</a>
+              <a class="button button-secondary link-with-icon" href="{{profile.resume}}" target="_blank" rel="noopener noreferrer" download>{{icons.resume}}<span>Download CV</span>{{icons.external}}</a>
+              <a class="text-action hero-contact-link" href="#contact">Contact →</a>
+            </div>
+          </div>
+          <div class="hero-stage" aria-hidden="true" data-hero-stage>
+            <canvas class="hero-webgl" data-hero-canvas></canvas>
+            <div class="schematic" data-schematic>
+              <p class="schematic-caption"><span>FIG. 01 / Full-stack engineering</span> Interface · Application · Data · Delivery</p>
+              <div class="plate plate-interface" data-plate="interface">
+                <span class="plate-label">01 / Interface</span>
+                <strong class="plate-heading">Responsive product interfaces</strong>
+                <div class="plate-modules"><span>React</span><span>JavaScript</span><span>Responsive UI</span><span>Accessibility</span></div>
+              </div>
+              <div class="plate plate-boundary" data-plate="boundary">
+                <span class="plate-label">02 / Application &amp; APIs</span>
+                <strong class="plate-heading">Backend services and business logic</strong>
+                <div class="plate-modules"><span>Node.js</span><span>Express / Fastify</span><span>REST APIs</span><span>C# / .NET</span></div>
+              </div>
+              <div class="plate plate-core" data-plate="core">
+                <span class="plate-label">03 / Data &amp; delivery</span>
+                <strong class="plate-heading">Relational data and production delivery</strong>
+                <div class="plate-modules"><span>SQL Server</span><span>MySQL</span><span>Linux</span><span>Release &amp; deployment</span></div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="proof-strip" aria-label="Professional highlights" data-reveal-group>
+          <p><strong>2+ years</strong><span>Commercial software development</span></p>
+          <p><strong>Business platform</strong><span>Used in daily internal operations</span></p>
+            <p><strong>Interfaces + APIs</strong><span>React frontends, Node.js services, and relational data</span></p>
+          <p><strong>Dec 2026</strong><span>Expected BSc graduation</span></p>
+        </div>
+      </section>
+
+      <section id="work" class="section section-work" aria-labelledby="work-title" data-work-rail>
+        <div class="rail-stage" data-rail-stage>
+        <div class="shell section-heading section-heading-rail" data-reveal-group><p class="section-number">01 / Selected work</p><div><h2 id="work-title">Software shaped by how people use it.</h2><p>A deployed community application, an event-operations platform in active development, and a confidential business platform.</p></div><div class="rail-hud" aria-hidden="true"><p class="rail-hud-count"><span data-rail-index>01</span><span>/ 03</span></p><p class="rail-hud-name" data-rail-name>Gurmat Saanj</p><span class="rail-hud-bar" data-rail-bar><i></i></span></div></div>
+        <div class="shell rail-viewport" data-rail-viewport>
+        <div class="work-track" data-work-track>
+          <article class="project project-gurmat project-interactive" data-work-project="gurmat">
+            <div class="project-title-row" data-reveal-group><p class="project-index"><span>01</span></p><div><p class="status-line"><span class="badge badge-deployed">{{projects.gurmat.status}}</span></p><h3><span>Gurmat Saanj</span></h3><p class="signature-marker">// speech matching + connected interfaces</p><p class="proof-note">Used at a local Gurdwara</p></div></div>
+            <div class="project-frame">
+              <div class="project-copy">
+                <p class="project-lead">A deployed full-stack application that follows live Punjabi recitation and matches recognized phrases to known Gurbani lines.</p>
+                <p>Connected viewers follow shared content with device-local reading preferences; one approved mobile editor operates the projector.</p>
+                <p class="tech-line">React · Node.js · Express · Web Speech API · BaniDB</p>
+                <div class="project-actions"><a class="button button-primary project-action" href="gurmat-saanj.html">Read case study</a>{{#if projects.gurmat.repository}}<a class="text-action" href="{{projects.gurmat.repository}}" target="_blank" rel="noopener noreferrer">Repository ↗</a>{{/if}}{{#if projects.gurmat.demo}}<a class="text-action" href="{{projects.gurmat.demo}}" target="_blank" rel="noopener noreferrer">Demo ↗</a>{{/if}}</div>
+              </div>
+              {{#if projects.gurmat.primaryImage}}<figure class="project-media project-media-gurmat"><a href="gurmat-saanj.html" aria-label="Explore the Gurmat Saanj case study"><picture><source srcset="{{projects.gurmat.primaryImageAvif}}" type="image/avif" /><source srcset="{{projects.gurmat.primaryImageWebp}}" type="image/webp" /><img src="{{projects.gurmat.primaryImage}}" width="1902" height="845" loading="lazy" alt="Gurmat Saanj projector output showing a Gurbani line with transliteration and English translation" /></picture><span class="media-link-label">See how the shared session works ↗</span></a><figcaption>Authentic projector output during a shared reading experience.</figcaption></figure>{{/if}}
+            </div>
+          </article>
+
+          <article class="project project-opssemble project-interactive" data-work-project="opssemble">
+            <div class="project-title-row" data-reveal-group><p class="project-index"><span>02</span></p><div><p class="status-line"><span class="badge badge-academic">{{projects.opssemble.status}}</span> · Core workflow implemented</p><h3><span>Opssemble</span></h3><p class="signature-marker">// event readiness + exception coordination</p></div></div>
+            <div class="project-frame">
+              <div class="project-copy">
+                <p class="project-lead">A university final project for coordinating event areas, tasks, exceptions, and readiness through one full-stack application.</p>
+                <dl class="evidence-strip"><div><dt>Coordination</dt><dd>Areas, tasks &amp; exceptions</dd></div><div><dt>Authorization</dt><dd>Server-side event roles</dd></div><div><dt>Area access</dt><dd>Revocable QR tokens</dd></div><div><dt>Readiness</dt><dd>Live per-area scoring</dd></div></dl>
+                <a class="button button-primary project-action" href="opssemble.html">Read Opssemble case study</a>
+              </div>
+              <ol class="project-system-card opssemble-system-card" aria-label="Opssemble flow from event structure through exceptions and readiness to scoped QR access">
+                <li class="system-step system-input"><span>Structure</span><strong>Event &amp; areas</strong><small>Tasks with status and priority</small></li><li class="system-step system-exception"><span>Log</span><strong>Exceptions</strong><small>Severity and resolution trail</small></li><li class="system-step system-state"><span>Score</span><strong>Readiness</strong><small>Blockers decide the score</small></li><li class="system-step system-output"><span>Share</span><strong>QR area access</strong><small>Scoped, revocable tokens</small></li>
+              </ol>
+            </div>
+          </article>
+
+          <article class="project project-erp project-interactive" data-work-project="erp">
+            <div class="project-title-row" data-reveal-group><p class="project-index"><span>03</span></p><div><p class="status-line"><span class="badge badge-production">{{projects.erp.status}}</span> · In-house</p><h3><span>Confidential Production Business Platform</span></h3><p class="signature-marker">// production business software</p></div></div>
+            <div class="project-frame">
+              <div class="project-copy">
+                <p class="project-lead">A full-stack internal business application for shared operational workflows and role-based access.</p>
+                <dl class="evidence-strip evidence-strip-operational"><div><dt>Previous</dt><dd>Not shared</dd></div><div><dt>Now</dt><dd>Shared operations</dd></div><div><dt>Boundary</dt><dd>Role-based access</dd></div><div><dt>Ownership</dt><dd>Build through support</dd></div></dl>
+                <p>Primary development across the product interface, API, relational data, permissions, releases, maintenance, and user support.</p>
+                <a class="button button-primary project-action" href="erp-case-study.html">Read the case study</a>
+              </div>
+              <ol class="project-system-card erp-system-card" aria-label="Operational flow from users through permissions and shared data to operations">
+                <li class="system-step system-input"><span>Enter</span><strong>Users</strong><small>Start daily work</small></li><li class="system-step system-boundary"><span>Permission boundary</span><strong>Permissions</strong><small>Controls access</small></li><li class="system-step system-data"><span>Shared source</span><strong>Relational data</strong><small>One record model</small></li><li class="system-step system-output"><span>Supports</span><strong>Operations</strong><small>Connected workflows</small></li>
+              </ol>
+            </div>
+          </article>
+        </div>
+        </div>
+        </div>
+        <div class="shell work-stack">
+          <section class="earlier-work archive-index" aria-labelledby="earlier-work-title" data-archive-index>
+            <div class="earlier-work-intro"><p class="eyebrow">Additional work / 04–05</p><h2 id="earlier-work-title">Additional engineering work</h2><p class="archive-note">Supporting evidence beyond the featured web projects.</p></div>
+            <div class="archive-list">
+              <details class="archive-entry">
+                <summary><span class="archive-no">04</span><span class="archive-title">Client-server licence manager</span><span class="archive-meta">{{projects.licenceManager.context}} · C# / .NET</span><span class="archive-toggle" aria-hidden="true"></span></summary>
+                <div class="archive-body">
+                  <p>C#/.NET client-server component controlling licence activation and concurrent use.</p>
+                  <ol class="protocol-trace connector-flow" data-connector-reveal aria-label="Licence manager protocol trace"><li><span>01</span>Client requests validation</li><li><span>02</span>Server checks activation</li><li><span>03</span>Concurrent-use rule evaluated</li><li><span>04</span>Validation result returned</li></ol>
+                  <p class="tech-line">C# · .NET · Client-server architecture</p>
+                </div>
+              </details>
+              <details class="archive-entry">
+                <summary><span class="archive-no">05</span><span class="archive-title">SIRD Epidemic Simulator</span><span class="archive-meta">Academic · Java 17 · JavaFX</span><span class="archive-toggle" aria-hidden="true"></span></summary>
+                <div class="archive-body">
+                  <p>Agent-based SIRD desktop simulator: a background engine drives moving agents with collision handling, real-time S/I/R/D visualisation, and CSV export, on a model–engine–controller architecture.</p>
+                  <p class="tech-line">Java 17 · JavaFX · Maven · concurrency</p>
+                </div>
+              </details>
+            </div>
+          </section>
+        </div>
+      </section>
+
+      <section id="experience" class="section shell" aria-labelledby="experience-title">
+        <div class="section-heading" data-reveal-group><p class="section-number">02 / Profile</p><div><h2 id="experience-title">Close to the software and its users.</h2></div></div>
+        <div class="profile-grid" data-reveal-group>
+          <article class="profile-role">
+            <p class="role-company">Phema S.r.l. · {{profile.employerLocation}}</p>
+            <h3>{{profile.employmentTitle}}</h3>
+            <p class="role-meta">{{profile.employmentPeriod}}</p>
+            <p>Primary developer of the company's confidential business platform, covering requirements, product interfaces, backend APIs, relational data, permissions, releases, and direct user support.</p>
+            <p>I also maintain the company's commercial C#/.NET software and its supporting infrastructure.</p>
+          </article>
+          <aside id="about" class="about-rail profile-rail" aria-label="About, education and languages">
+            <p class="about-lead">I build software close to the people who depend on it.</p>
+            <div><h3>BSc in Computer Engineering</h3><p>Ingegneria Informatica · University of Modena and Reggio Emilia (UNIMORE)</p><p class="about-meta">2023 - Present · {{profile.graduation}}</p></div>
+            <div><p><strong>Diploma in Computer Science and Telecommunications</strong></p><p>ITIS Enrico Fermi, Modena · 2018 - 2023</p></div>
+            <div><p class="eyebrow">Languages</p><p class="languages"><span>Italian · Native</span><span>Punjabi · Native</span><span>English · C1</span><span>Hindi · Advanced</span></p></div>
+          </aside>
+        </div>
+      </section>
+
+      <section id="capabilities" class="section section-ink" aria-labelledby="capabilities-title">
+        <div class="shell section-heading"><p class="section-number">03 / Engineering capabilities</p><div><h2 id="capabilities-title">Engineering across the stack</h2><p>Connected responsibilities from the interface to delivery and maintenance.</p></div></div>
+        <ol class="shell workflow capability-flow" aria-label="Four areas of full-stack engineering capability" data-reveal-group data-connector-reveal><li><span>01</span><div><h3>Product interface</h3><p>React, JavaScript, responsive layouts, accessibility, and component-based interfaces.</p></div></li><li><span>02</span><div><h3>Applications &amp; APIs</h3><p>Node.js, Express, Fastify, REST APIs, authentication, authorization, and validation.</p></div></li><li><span>03</span><div><h3>Data &amp; delivery</h3><p>SQL Server, MySQL, relational modelling, migrations, deployment, Linux, and Git.</p></div></li><li><span>04</span><div><h3>Systems & integrations</h3><p>C#/.NET software, client-server components, infrastructure support, Jest, and controlled AI integration.</p></div></li></ol>
+      </section>
+
+    </main>
+    <footer id="contact" class="site-footer contact-footer" aria-labelledby="contact-title">
+      <div class="shell footer-cta" data-reveal-group>
+        <div class="contact-copy">
+          <p class="section-number">04 / Contact</p>
+          <h2 id="contact-title">Let’s build useful software together.</h2>
+          <p class="footer-intro">Full-stack web development for product interfaces, backend services, and data-driven software.</p>
+          <div class="footer-contact">
+            <p class="eyebrow">Direct contact</p>
+            <div class="text-links contact-link-list direct-contact-links"><a class="link-with-icon" href="mailto:{{profile.email}}" aria-label="Email">{{icons.email}}<span class="sr-only">Email</span></a><a class="link-with-icon" href="{{profile.github}}" target="_blank" rel="noopener noreferrer" aria-label="GitHub">{{icons.github}}<span class="sr-only">GitHub</span></a><a class="link-with-icon" href="{{profile.linkedin}}" target="_blank" rel="noopener noreferrer" aria-label="LinkedIn">{{icons.linkedin}}<span class="sr-only">LinkedIn</span></a></div>
+            <p>{{profile.location}}</p>
+          </div>
+        </div>
+        <form class="contact-form" action="{{contactForm.action}}" method="{{contactForm.method}}" enctype="{{contactForm.enctype}}" data-contact-form data-contact-mode="{{contactForm.mode}}" data-contact-endpoint="{{contactForm.endpoint}}" data-contact-email="{{profile.email}}" data-contact-timeout="{{contactForm.timeoutMs}}" data-contact-turnstile="{{contactForm.turnstileSiteKey}}">
+          <div class="contact-form-heading">
+            <p class="eyebrow">Message directly</p>
+            <p id="contact-form-instructions">Your message comes straight to me — I usually reply within 1-2 business days.</p>
+          </div>
+          <div class="form-field">
+            <label for="contact-name">Name <span>(required)</span></label>
+            <input id="contact-name" name="name" type="text" autocomplete="name" required placeholder="Your name" aria-describedby="contact-form-instructions contact-name-error" />
+            <p class="field-error" id="contact-name-error" data-contact-error-for="name" hidden>{{icons.error}}<span data-contact-error-text></span></p>
+          </div>
+          <div class="form-field">
+            <label for="contact-email">Email <span>(required)</span></label>
+            <input id="contact-email" name="email" type="email" autocomplete="email" required placeholder="you@example.com" aria-describedby="contact-form-instructions contact-email-error" />
+            <p class="field-error" id="contact-email-error" data-contact-error-for="email" hidden>{{icons.error}}<span data-contact-error-text></span></p>
+          </div>
+          <div class="form-field">
+            <label for="contact-enquiry-type">Enquiry type <span>(optional)</span></label>
+            <select id="contact-enquiry-type" name="enquiryType" aria-describedby="contact-form-instructions">
+              <option value="">Select a type</option>
+              <option value="Software engineering role">Software engineering role</option>
+              <option value="Project collaboration">Project collaboration</option>
+              <option value="Technical discussion">Technical discussion</option>
+              <option value="Other">Other</option>
+            </select>
+          </div>
+          <div class="form-field form-field-message">
+            <label for="contact-message">Message <span>(required)</span></label>
+            <textarea id="contact-message" name="message" rows="7" required minlength="{{contactForm.messageMinLength}}" maxlength="{{contactForm.messageMaxLength}}" placeholder="A short note about the role, project, or technical discussion." aria-describedby="contact-form-instructions contact-message-error"></textarea>
+            <p class="field-error" id="contact-message-error" data-contact-error-for="message" hidden>{{icons.error}}<span data-contact-error-text></span></p>
+          </div>
+          <p class="contact-privacy">Your name, email address, and message are processed through Formspree and used only to respond to your enquiry. If sending fails, you can open a pre-filled email draft instead.</p>
+          <div class="contact-turnstile" data-contact-turnstile-widget hidden></div>
+          <p class="contact-form-status" aria-live="polite" data-contact-status><span class="contact-status-icons" aria-hidden="true">{{icons.success}}{{icons.error}}</span><span data-contact-status-text>Ready to send your message.</span></p>
+          <div class="contact-actions">
+            <button class="button button-primary contact-submit link-with-icon" type="submit" data-contact-submit>{{icons.send}}<span data-contact-submit-text>Send mail</span></button>
+            <button class="button button-secondary contact-mail-fallback link-with-icon" type="button" data-contact-mailfallback hidden>{{icons.email}}<span>Open mail draft</span></button>
+          </div>
+        </form>
+      </div>
+      <div class="shell footer-inner"><p class="copyright-line"><span class="copyright-symbol">©</span><span data-year>2026</span> {{profile.name}}</p><p>Hand-built static site. No frameworks, no tracking.</p><a href="#top">Back to top ↑</a></div>
+    </footer>
+  </body>
+</html>
