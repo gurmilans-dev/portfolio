@@ -6,6 +6,7 @@
     <meta name="theme-color" content="#f3efe5" />
     <script>
       (() => {
+        document.documentElement.classList.add("js");
         try {
           const saved = localStorage.getItem("portfolio-theme");
           document.documentElement.dataset.theme = saved || (matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light");

@@ -2,7 +2,7 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" /><meta name="viewport" content="width=device-width, initial-scale=1" /><meta name="theme-color" content="#f3efe5" />
-    <script>(()=>{try{const s=localStorage.getItem("portfolio-theme");document.documentElement.dataset.theme=s||(matchMedia("(prefers-color-scheme: dark)").matches?"dark":"light")}catch{document.documentElement.dataset.theme="light"}})();</script>
+    <script>(()=>{document.documentElement.classList.add("js");try{const s=localStorage.getItem("portfolio-theme");document.documentElement.dataset.theme=s||(matchMedia("(prefers-color-scheme: dark)").matches?"dark":"light")}catch{document.documentElement.dataset.theme="light"}})();</script>
     <title>Page not found - {{profile.name}}</title><meta name="description" content="The requested page could not be found." /><meta name="robots" content="noindex, follow" />
     <link rel="preload" href="assets/fonts/archivo-var.woff2" as="font" type="font/woff2" crossorigin />
     <link rel="icon" href="assets/favicon.svg" type="image/svg+xml" /><link rel="stylesheet" href="assets/styles.css" /><script src="assets/script.js" defer></script>

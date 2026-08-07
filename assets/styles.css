@@ -179,6 +179,10 @@ h3 { line-height: 1.15; }
 .theme-toggle-track::after { content: ""; position: absolute; top: 2px; left: 2px; width: 8px; height: 8px; border-radius: 50%; background: currentColor; transition: transform .18s ease; }
 [data-theme="dark"] .theme-toggle-track::after { transform: translateX(14px); }
 .menu-toggle { display: none; width: 44px; height: 44px; padding: 0; border: 0; background: transparent; color: var(--ink); }
+/* The theme toggle is driven entirely by script.js, and without JS no data-theme is
+   ever set, so the site stays light regardless. Hide the control rather than ship a
+   button that cannot do anything. */
+html:not(.js) .theme-toggle { display: none; }
 .menu-toggle span:not(.sr-only) { display: block; width: 22px; height: 1px; margin: 6px auto; background: currentColor; }
 
 .hero { padding-top: clamp(.9rem, 1.2vw, 1.2rem); }
@@ -619,7 +623,9 @@ h3 { line-height: 1.15; }
 .case-facts div { padding: .9rem .8rem .9rem 0; }
 .case-facts div + div { padding-left: .8rem; border-left: 1px solid var(--line); }
 .case-facts dt { color: var(--muted); font-family: var(--mono); font-size: .65rem; text-transform: uppercase; }
-.case-facts dd { margin: .2rem 0 0; font-weight: 750; font-size: .88rem; }
+.case-facts dd { display: flex; flex-wrap: wrap; align-items: center; gap: .55rem; margin: .2rem 0 0; font-weight: 750; font-size: .88rem; }
+/* Repository link sits with the status it describes, rather than orphaned below the row. */
+.case-facts .icon-action { width: 40px; min-height: 40px; }
 .case-layout { display: grid; grid-template-columns: 220px minmax(0, 760px); gap: clamp(3rem, 8vw, 8rem); justify-content: center; padding-block: clamp(3rem, 7vw, 6rem); }
 .case-aside { min-width: 0; }
 .case-toc { position: sticky; top: 100px; border-top: 2px solid var(--ink); }
@@ -1176,15 +1182,29 @@ h3 { line-height: 1.15; }
 @media (max-width: 768px) {
   :root { --shell: min(100% - 32px, 720px); --section: 4.5rem; }
   .header-inner { min-height: 68px; }
-  .menu-toggle { display: block; }
+  /* Drawer navigation, gated on .js throughout. The hamburger is the control that
+     opens it, so it may only appear when the script that opens it is running —
+     otherwise mobile gets an inert button and a nav still in its desktop row, which
+     overflowed the viewport by ~180px and pushed Résumé and the theme toggle
+     off-screen. .js is set inline in the head, before first paint, so this does not
+     flash. */
+  .js .menu-toggle { display: block; }
   .js .site-nav { position: fixed; inset: 68px 0 auto; display: none; flex-direction: column; align-items: stretch; gap: 0; max-height: calc(100dvh - 68px); overflow-y: auto; padding: 1rem 16px max(1.5rem, env(safe-area-inset-bottom)); border-bottom: 1px solid var(--line); background: var(--paper); }
   .js .site-nav.is-open { display: flex; }
-  .site-nav > a:not(.nav-contact):not(.nav-cv) { display: flex; }
-  .site-nav a, .site-nav button { min-height: 48px; justify-content: flex-start; border-bottom: 1px solid var(--line); }
-  .site-nav .nav-contact { padding-left: 0; border-left: 0; }
-  .site-nav .nav-cv { padding-left: 0; border-top: 0; border-right: 0; border-left: 0; }
+  .js .site-nav > a:not(.nav-contact):not(.nav-cv) { display: flex; }
+  .js .site-nav a, .js .site-nav button { min-height: 48px; justify-content: flex-start; border-bottom: 1px solid var(--line); }
+  .js .site-nav .nav-contact { padding-left: 0; border-left: 0; }
+  .js .site-nav .nav-cv { padding-left: 0; border-top: 0; border-right: 0; border-left: 0; }
+
+  /* Without JS there is no drawer to open, so the links simply wrap onto a second row
+     under the wordmark and everything stays reachable. */
+  html:not(.js) .header-inner { flex-wrap: wrap; gap: .2rem 1rem; padding-bottom: .5rem; }
+  html:not(.js) .site-nav { flex-basis: 100%; flex-wrap: wrap; gap: 0 1.15rem; }
+  html:not(.js) .site-nav a { min-height: 44px; display: inline-flex; align-items: center; }
+  html:not(.js) .site-nav .nav-contact { padding-left: 0; border-left: 0; }
+  html:not(.js) .site-nav .nav-cv { padding: 0; border: 0; }
   /* Theme toggle moves to the bottom of the menu, full-width with the switch pinned right so its label aligns with the links above. */
-  .site-nav .theme-toggle { order: 1; width: 100%; flex-direction: row-reverse; justify-content: space-between; border-bottom: 0; }
+  .js .site-nav .theme-toggle { order: 1; width: 100%; flex-direction: row-reverse; justify-content: space-between; border-bottom: 0; }
   .hero { padding-top: 3rem; }
   .hero-kicker { margin-bottom: 0; }
   .hero-status { margin-bottom: 1.2rem; }

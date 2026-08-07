@@ -4,7 +4,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="theme-color" content="#f3efe5" />
-    <script>(()=>{try{const s=localStorage.getItem("portfolio-theme");document.documentElement.dataset.theme=s||(matchMedia("(prefers-color-scheme: dark)").matches?"dark":"light")}catch{document.documentElement.dataset.theme="light"}})();</script>
+    <script>(()=>{document.documentElement.classList.add("js");try{const s=localStorage.getItem("portfolio-theme");document.documentElement.dataset.theme=s||(matchMedia("(prefers-color-scheme: dark)").matches?"dark":"light")}catch{document.documentElement.dataset.theme="light"}})();</script>
     <title>Confidential Production Business Platform - {{profile.name}}</title>
     <meta name="description" content="A confidential production business platform case study covering product interfaces, backend APIs, relational data, permissions, releases, maintenance, and user support." />
     <meta name="robots" content="index, follow" />

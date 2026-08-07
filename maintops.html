@@ -4,7 +4,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="theme-color" content="#f3efe5" />
-    <script>(()=>{try{const s=localStorage.getItem("portfolio-theme");document.documentElement.dataset.theme=s||(matchMedia("(prefers-color-scheme: dark)").matches?"dark":"light")}catch{document.documentElement.dataset.theme="light"}})();</script>
+    <script>(()=>{document.documentElement.classList.add("js");try{const s=localStorage.getItem("portfolio-theme");document.documentElement.dataset.theme=s||(matchMedia("(prefers-color-scheme: dark)").matches?"dark":"light")}catch{document.documentElement.dataset.theme="light"}})();</script>
     <title>MaintOps case study - {{profile.name}}</title>
     <meta name="description" content="MaintOps is a full-stack maintenance operations platform: role-based request workflow, versioned SLA policies, audited administration, and optional bounded AI assistance." />
     <meta name="robots" content="index, follow" />
@@ -25,8 +25,7 @@
         <div class="case-eyebrow"><span class="case-index">01 / MaintOps</span><span>Maintenance operations platform</span></div>
         <h1 id="case-title">Who owns this fault, and is it late?</h1>
         <p class="case-lead">MaintOps handles maintenance work for a single organization: a requester reports a fault, a supervisor triages and assigns it, a technician does the work, and SLA cycles record whether the targets were met. The source is public; there is no hosted instance.</p>
-        <dl class="case-facts" data-reveal-group><div><dt>Context</dt><dd>Single organization</dd></div><div><dt>Role</dt><dd>End-to-end developer</dd></div><div><dt>Stack</dt><dd>React · Fastify · MySQL</dd></div><div><dt>Status</dt><dd><span class="badge badge-public">{{projects.maintops.status}}</span></dd></div></dl>
-        {{#if projects.maintops.repository}}<div class="text-links"><a class="icon-action link-with-icon" href="{{projects.maintops.repository}}" target="_blank" rel="noopener noreferrer" aria-label="MaintOps source on GitHub, opens in a new tab">{{icons.github}}<span class="sr-only">GitHub</span></a></div>{{/if}}
+        <dl class="case-facts" data-reveal-group><div><dt>Context</dt><dd>Single organization</dd></div><div><dt>Role</dt><dd>End-to-end developer</dd></div><div><dt>Stack</dt><dd>React · Fastify · MySQL</dd></div><div><dt>Status</dt><dd><span class="badge badge-public">{{projects.maintops.status}}</span>{{#if projects.maintops.repository}}<a class="icon-action" href="{{projects.maintops.repository}}" target="_blank" rel="noopener noreferrer" aria-label="MaintOps source on GitHub, opens in a new tab">{{icons.github}}<span class="sr-only">GitHub</span></a>{{/if}}</dd></div></dl>
       </section>
 
       <div class="shell case-layout">
