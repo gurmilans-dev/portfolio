@@ -262,7 +262,7 @@ for (const [file, width, height, label] of declaredImages) {
 }
 
 for (const [file, expectedHash] of Object.entries({
-  "Gurmilan_Singh_2026_CV.pdf": "A7D2CA546E4B4841E3D1679A51D42D112519B9F245CD6D6663DB4E47D02C7C63"
+  "Gurmilan_Singh_2026_CV.pdf": "DDD033DD39D87E311C1A713A17D179E31BEB9E7AC7DF436E2AE575319117D5EE"
 })) {
   const bytes = await fs.readFile(path.resolve(file)).catch(() => null);
   const actualHash = bytes ? createHash("sha256").update(bytes).digest("hex").toUpperCase() : "";
