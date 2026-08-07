@@ -1,0 +1,109 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#f3efe5" />
+    <script>(()=>{try{const s=localStorage.getItem("portfolio-theme");document.documentElement.dataset.theme=s||(matchMedia("(prefers-color-scheme: dark)").matches?"dark":"light")}catch{document.documentElement.dataset.theme="light"}})();</script>
+    <title>Alfaaz case study - {{profile.name}}</title>
+    <meta name="description" content="Alfaaz is a private multilingual writing system for English, Hindi and Punjabi: browser-local transliteration, optimistic concurrency, revision history, and privacy enforced in the data layer." />
+    <meta name="robots" content="index, follow" />
+    <link rel="canonical" href="{{profile.domain}}/alfaaz.html" />
+    <meta property="og:type" content="article" /><meta property="og:url" content="{{profile.domain}}/alfaaz.html" /><meta property="og:title" content="Alfaaz case study - {{profile.name}}" /><meta property="og:description" content="A private writing environment across English, Hindi and Punjabi, where privacy is a property of the schema and the queries rather than a policy page." /><meta property="og:image" content="{{profile.domain}}/assets/social-preview.png" />
+    <meta name="twitter:card" content="summary_large_image" /><meta name="twitter:title" content="Alfaaz case study - {{profile.name}}" /><meta name="twitter:description" content="A private writing environment across English, Hindi and Punjabi, where privacy is a property of the schema and the queries rather than a policy page." /><meta name="twitter:image" content="{{profile.domain}}/assets/social-preview.png" />
+    <script type="application/ld+json">{"@context":"https://schema.org","@type":"SoftwareApplication","name":"Alfaaz","applicationCategory":"WritingApplication","operatingSystem":"Web","description":"A private multilingual writing environment for poetry, fragments and longer-form work in English, Hindi and Punjabi, with browser-local transliteration, autosave under optimistic concurrency, and revision history."}</script>
+    <link rel="preload" href="assets/fonts/archivo-var.woff2" as="font" type="font/woff2" crossorigin />
+    <link rel="icon" href="assets/favicon.svg" type="image/svg+xml" /><link rel="stylesheet" href="assets/styles.css" /><script src="assets/script.js" defer></script><script src="assets/scene.js" defer></script>
+  </head>
+  <body class="page-alfaaz">
+    <a class="skip-link" href="#main-content">Skip to content</a>
+    <div class="scroll-progress" aria-hidden="true" data-scroll-progress><span data-scroll-progress-bar></span></div>
+    <header class="site-header" data-header><div class="shell header-inner"><a class="wordmark" href="index.html" aria-label="{{profile.name}}, home"><span>GS</span><span class="wordmark-name">{{profile.name}}</span></a><button class="menu-toggle" type="button" aria-expanded="false" aria-controls="site-navigation" data-menu-toggle><span class="sr-only">Toggle navigation</span><span></span><span></span></button><nav id="site-navigation" class="site-nav" aria-label="Primary navigation" data-nav><a href="index.html#work" aria-current="page">Work</a><a href="index.html#experience">Experience</a><a href="index.html#capabilities">Capabilities</a><button class="theme-toggle" type="button" aria-pressed="false" aria-label="Switch to dark mode" data-theme-toggle><span class="theme-toggle-track" aria-hidden="true"></span><span data-theme-label>Dark</span></button><a class="nav-contact" href="index.html#contact">Contact</a><a class="nav-cv link-with-icon" href="{{profile.resume}}" target="_blank" rel="noopener noreferrer">{{icons.resume}}<span>Résumé</span>{{icons.external}}</a></nav></div></header>
+    <main id="main-content">
+      <section id="top" class="case-hero shell" aria-labelledby="case-title">
+        <nav class="breadcrumbs" aria-label="Breadcrumb"><a href="index.html">Home</a><span>/</span><a href="index.html#work">Work</a><span>/</span><span aria-current="page">Alfaaz</span></nav>
+        <div class="case-eyebrow"><span class="case-index">04 / Alfaaz</span><span>Private multilingual writing system</span></div>
+        <h1 id="case-title">Somewhere to write that keeps nothing it does not need.</h1>
+        <p class="case-lead">Alfaaz is a writing environment for poetry, fragments and longer-form work across English, Hindi and Punjabi. Interface language and writing language are independent, and what you write is never automatically translated. It is a private repository and is not publicly deployed.</p>
+        <dl class="case-facts" data-reveal-group><div><dt>Context</dt><dd>Personal product</dd></div><div><dt>Role</dt><dd>End-to-end developer</dd></div><div><dt>Stack</dt><dd>React · Express · MySQL</dd></div><div><dt>Status</dt><dd><span class="badge badge-private">{{projects.alfaaz.status}}</span></dd></div></dl>
+      </section>
+
+      <div class="shell case-layout">
+        <aside class="case-aside"><details class="case-toc" open data-toc><summary>On this page</summary><nav aria-label="On this page"><a href="#product">Product</a><a href="#architecture">Architecture</a><a href="#writing">Writing system</a><a href="#privacy">Privacy decisions</a><a href="#language">Design &amp; language</a><a href="#boundaries">Boundaries</a></nav></details></aside>
+        <article class="case-content">
+
+          <section id="product" class="case-section" aria-labelledby="product-title">
+            <p class="case-section-no">01 / Product</p>
+            <h2 id="product-title">Three languages, and no opinion about which one you think in.</h2>
+            <p>Most writing tools treat a second script as a localisation problem: pick a language, and the whole product follows. That is the wrong shape for someone who reads an interface in English, writes shayari in Gurmukhi, and drafts a note in Devanagari on the same evening.</p>
+            <p>So the two are separated. The interface language is a preference with three full locales; the language of an entry is simply whatever was typed into it. Nothing in the system reads an entry to decide what language it is in, and nothing translates it. That restraint is the product.</p>
+            <div class="operational-scope" data-reveal-group aria-label="Product surface"><p class="artifact-label">the whole navigation</p><ul><li><strong>Today</strong><span>The current day, and quick capture for fragments</span></li><li><strong>Write</strong><span>One editor, with focus mode when the room needs to disappear</span></li><li><strong>Library &amp; Calendar</strong><span>Search, filters, and everything by date</span></li><li><strong>Collections &amp; Books</strong><span>Grouping, and manuscripts assembled from existing entries</span></li></ul></div>
+            <p>Five destinations, deliberately. Every feature that arrived later — voice notes, ambience, postcards, exports — attached itself to one of them rather than earning a sixth tab.</p>
+          </section>
+
+          <section id="architecture" class="case-section" aria-labelledby="architecture-title">
+            <p class="case-section-no">02 / Architecture</p>
+            <h2 id="architecture-title">A boring server, so the editor can be interesting.</h2>
+            <div class="architecture connector-flow" data-reveal-group data-connector-reveal role="img" aria-label="A React single-page application calls an Express API, which validates input, scopes every query by user, and reads or writes MySQL."><div><span>01</span><strong>React SPA</strong><small>Editor · library · books</small></div><i aria-hidden="true">→</i><div><span>02</span><strong>Express API</strong><small>Validation · ownership · transactions</small></div><i aria-hidden="true">→</i><div><span>03</span><strong>MySQL</strong><small>18 tables · 15 migrations</small></div></div>
+            <p>The server is layered routes → controllers → services → repositories, and every write that touches more than one row runs inside a transaction with an explicit rollback. Repositories hold parameterized SQL directly; sort orders map to a fixed set of hard-coded fragments rather than being interpolated from the query string.</p>
+            <p>There is no ORM. That is worth stating only because it explains the shape of the code above: when the repository is the only thing that writes SQL, a rule like <em>every user-owned read is scoped by <code>user_id</code></em> is enforceable by reading one folder. The schema grew through 15 numbered migrations, so each feature — saved atmospheres, voice notes, books, typography, data transfer, account security — arrived as a reviewable change to the data model rather than an edit to a single evolving file.</p>
+          </section>
+
+          <section id="writing" class="case-section" aria-labelledby="writing-title">
+            <p class="case-section-no">03 / Writing system</p>
+            <h2 id="writing-title">The editor autosaves constantly and still refuses to lose your work.</h2>
+            <p>Autosave and version safety pull in opposite directions. Saving often means writing constantly; not losing anything means never letting a stale tab overwrite a newer save. Alfaaz resolves it with a version number on every entry and a server that would rather fail a write than accept a doubtful one.</p>
+            <div class="case-flow" data-reveal-group aria-label="Path of text from keystroke through transliteration, autosave and version checking to revision history">
+              <p class="artifact-label">technical artefact · the write path</p>
+              <ol class="case-flow-track">
+                <li><span class="case-flow-no">01</span><strong>Keystroke</strong><em>Roman, Devanagari or Gurmukhi — the editor does not care which</em></li>
+                <li><span class="case-flow-no">02</span><strong>Transliteration assist</strong><em>Runs in the browser; Space accepts, Escape keeps the Roman text</em></li>
+                <li><span class="case-flow-no">03</span><strong>Debounced autosave</strong><em>Unsaved text is held on the device until the save lands</em></li>
+                <li class="case-flow-gate"><span class="case-flow-no">04</span><strong>Ownership check</strong><em>The row is fetched by id <em>and</em> user, and locked for update</em></li>
+                <li class="case-flow-gate"><span class="case-flow-no">05</span><strong>Version check</strong><em>A mismatch raises a conflict and the write is refused — never merged silently</em></li>
+                <li class="case-flow-mark"><span class="case-flow-no">06</span><strong>Commit</strong><em>Entry updated, version advanced, transaction closed</em></li>
+                <li><span class="case-flow-no">07</span><strong>Restore, later</strong><em>Restoring a revision first archives the current text as a new revision</em></li>
+              </ol>
+            </div>
+            <p>Step 07 is the one that took the longest to get right. A naive restore is destructive: you recover last week's stanza and lose this morning's. Here the restore runs in a single transaction that locks the row, checks the version, writes the <em>current</em> text into the revision history, and only then applies the older text — so the operation you performed to recover something can itself be undone.</p>
+            <p>Books work on the same instinct. A manuscript holds references to entries rather than copies of them, so editing a poem updates the book, and a soft-deleted source visibly blocks export instead of quietly exporting a stale duplicate.</p>
+          </section>
+
+          <section id="privacy" class="case-section" aria-labelledby="privacy-title">
+            <p class="case-section-no">04 / Privacy decisions</p>
+            <h2 id="privacy-title">Privacy as a property of the queries, not a paragraph in the settings.</h2>
+            <p>A private journal makes a specific promise, and the only version of that promise worth making is one the architecture keeps even if the interface has a bug.</p>
+            <article class="decision-record" aria-labelledby="alfaaz-decision-title" data-reveal-group>
+              <p class="decision-id">decision 01</p>
+              <h3 id="alfaaz-decision-title">Store a digest of the session token, never the token</h3>
+              <dl><div><dt>Constraint</dt><dd>Sessions must survive restarts and be revocable, which means persisting something.</dd></div><div><dt>Decision</dt><dd>Issue an opaque 256-bit random token in an HttpOnly cookie and persist only its HMAC-SHA-256 digest.</dd></div><div><dt>Result</dt><dd>Read access to the sessions table does not yield a usable credential. Client IP addresses are stored the same way — hashed with a secret, never in the clear.</dd></div><div><dt>Trade-off</dt><dd>The digest secret becomes part of the deployment's security surface: rotating it invalidates every live session.</dd></div></dl>
+            </article>
+            <dl class="constraint-ledger" data-reveal-group><div><dt>Ownership</dt><dd>User-owned rows are fetched by identifier <em>and</em> user together. A row that is not yours is not "forbidden" — it does not exist, and the API answers 404.</dd></div><div><dt>Voice notes</dt><dd>MySQL stores metadata only. The audio bytes live outside anything served statically and stream through an authenticated per-entry route.</dd></div><div><dt>Focus sessions</dt><dd>Writing-session timing stays in browser storage with no database table at all — the server is never told how long someone sat with a blank page.</dd></div><div><dt>Local music</dt><dd>Device audio is played through temporary object URLs and never uploaded.</dd></div><div><dt>Exports</dt><dd>Postcards and PDFs are rendered client-side. No file and no export history is stored, and author and date are off by default.</dd></div><div><dt>Data transfer</dt><dd>Export and import jobs record counts and outcomes — never the contents that moved.</dd></div></dl>
+            <p>Only the built client is served as static files. Everything user-owned goes through a route that knows who is asking.</p>
+          </section>
+
+          <section id="language" class="case-section" aria-labelledby="language-title">
+            <p class="case-section-no">05 / Design &amp; language</p>
+            <h2 id="language-title">Three scripts that all have to look intentional.</h2>
+            <figure class="case-brand-mark" data-reveal-group>
+              <img src="{{projects.alfaaz.symbol}}" width="216" height="164" loading="lazy" alt="The Alfaaz symbol: a calligraphic mark combining a pen stroke and a flower" />
+              <figcaption>The project's own mark. The site's warm paper and rust accent on this page are Alfaaz's palette, not this portfolio's.</figcaption>
+            </figure>
+            <p>Latin, Devanagari and Gurmukhi have different vertical metrics and different ideas about where a line sits. Setting them in one stylesheet means pairing Lora with Noto Serif and Sans in each script and then accepting that a single line-height will not serve all three equally.</p>
+            <div class="operational-scope" data-reveal-group aria-label="Design system constraints"><p class="artifact-label">constraints that are enforced, not documented</p><ul><li><strong>Palette</strong><span>Eight approved colours, checked by a build-time validator over the brand assets</span></li><li><strong>Typography</strong><span>Per-entry and per-book typography, so a poem can be set differently from a journal</span></li><li><strong>Export rendering</strong><span>PDF pages are drawn to canvas so Indic text shapes correctly instead of decomposing</span></li><li><strong>Ambience</strong><span>Six mixable channels that never autoplay after a reload</span></li></ul></div>
+            <p>The export constraint is the interesting one. Generating a PDF by writing text runs into font-shaping limits for conjuncts and matras; rendering the page to a canvas first and placing that in the document costs file size and selectable text, and buys correctly shaped Gurmukhi. For a manuscript of someone's poetry that is the right side of the trade.</p>
+          </section>
+
+          <section id="boundaries" class="case-section" aria-labelledby="boundaries-title">
+            <p class="case-section-no">06 / Boundaries</p>
+            <h2 id="boundaries-title">What this project does not claim.</h2>
+            <dl class="constraint-ledger" data-reveal-group><div><dt>Repository</dt><dd>Private. There is no public source to inspect, which is a real limitation of this case study.</dd></div><div><dt>Deployment</dt><dd>Not publicly deployed. There is no hosted instance and no public URL — it runs locally against MySQL.</dd></div><div><dt>Users</dt><dd>Built as a single-writer product. No user numbers are claimed because there are none to claim.</dd></div><div><dt>Transliteration</dt><dd>An assist, not a converter. It suggests; the writer accepts or keeps the Roman text, and ambiguous mappings stay ambiguous.</dd></div><div><dt>Voice notes</dt><dd>Recording depends on browser MediaRecorder support, and the available container format varies by browser.</dd></div></dl>
+            <div class="outcome-summary" data-reveal-group><div><p class="artifact-label">what it demonstrates</p><p>Optimistic concurrency with a non-destructive restore path, ownership enforced in the data layer rather than the interface, a schema evolved through reviewable migrations, and multilingual typography carried all the way into generated documents.</p></div><div><p class="artifact-label">what it is tested with</p><p>Component and unit tests with Vitest and Testing Library, server tests with Vitest and Supertest including opt-in integration runs against a separate test database, and an end-to-end Playwright suite covering auth, mobile, exports, transliteration and voice notes.</p></div></div>
+          </section>
+        </article>
+      </div>
+      <nav class="case-pagination shell" aria-label="Project navigation"><a href="gurmat-saanj.html"><span>Previous project</span><strong>← Gurmat Saanj</strong></a><a href="opssemble.html"><span>Next project</span><strong>Opssemble →</strong></a></nav>
+    </main>
+    <footer id="contact" class="site-footer case-footer"><div class="shell case-footer-cta"><p>Full-stack web development — product interfaces, backend services, and data-driven software.</p><div class="text-links contact-link-list"><a class="link-with-icon" href="mailto:{{profile.email}}">{{icons.email}}<span>Email</span></a><a class="link-with-icon" href="{{profile.resume}}" target="_blank" rel="noopener noreferrer">{{icons.resume}}<span>Résumé</span>{{icons.external}}</a><a class="link-with-icon" href="{{profile.github}}" target="_blank" rel="noopener noreferrer">{{icons.github}}<span>GitHub</span>{{icons.external}}</a><a class="link-with-icon" href="{{profile.linkedin}}" target="_blank" rel="noopener noreferrer">{{icons.linkedin}}<span>LinkedIn</span>{{icons.external}}</a></div></div><div class="shell footer-inner"><p class="copyright-line"><span class="copyright-symbol">©</span><span data-year>2026</span> {{profile.name}}</p><p>{{profile.location}}</p><a href="#top">Back to top ↑</a></div></footer>
+  </body>
+</html>

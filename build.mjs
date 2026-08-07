@@ -4,7 +4,31 @@ import { siteConfig } from "./site.config.mjs";
 
 const ROOT = path.resolve(".");
 const OUT = path.join(ROOT, "dist");
-const HTML_FILES = ["index.html", "erp-case-study.html", "opssemble.html", "gurmat-saanj.html", "404.html"];
+const HTML_FILES = siteConfig.pages.map((page) => page.file);
+
+/* Project records carry ~15 fields each across five projects. Registering every one of
+   them by hand was the reason this site only ever shipped one screenshot, so the
+   projects branch — and only that branch — is flattened into dotted template keys.
+   profile.*, contactForm.* and icons.* stay written out below, where being explicit
+   still costs nothing. */
+function flatten(value, prefix, out = {}) {
+  for (const [key, entry] of Object.entries(value)) {
+    const dotted = `${prefix}.${key}`;
+    if (entry && typeof entry === "object" && !Array.isArray(entry)) flatten(entry, dotted, out);
+    else out[dotted] = entry ?? "";
+  }
+  return out;
+}
+
+const projectTokens = flatten(siteConfig.projects, "projects");
+const IMAGE_PATH = /^assets\/.+\.(png|avif|webp|svg|jpe?g)$/i;
+
+/* The templater has {{#if}} but no {{#else}}, and a featured panel needs to fall back
+   to its system model when no capture exists yet. One derived flag per project keeps
+   that a single config edit rather than an HTML edit. */
+for (const [key, project] of Object.entries(siteConfig.projects)) {
+  if (typeof project.order === "number") projectTokens[`projects.${key}.noPrimaryImage`] = project.primaryImage ? "" : "1";
+}
 const FONT_FILES = [
   "assets/fonts/archivo-var.woff2",
   "assets/fonts/plex-mono-400.woff2",
@@ -24,26 +48,8 @@ const COPY_FILES = [
   "assets/social-preview.svg",
   ...FONT_FILES,
   ...VENDOR_FILES,
-  ...[
-    siteConfig.projects.erp.primaryImage,
-    siteConfig.projects.erp.secondaryImage,
-    siteConfig.projects.opssemble.primaryImage,
-    siteConfig.projects.opssemble.secondaryImage,
-    siteConfig.projects.erp.primaryImageAvif,
-    siteConfig.projects.erp.primaryImageWebp,
-    siteConfig.projects.gurmat.primaryImage,
-    siteConfig.projects.gurmat.primaryImageAvif,
-    siteConfig.projects.gurmat.primaryImageWebp,
-    siteConfig.projects.gurmat.secondaryImage,
-    siteConfig.projects.gurmat.secondaryImageAvif,
-    siteConfig.projects.gurmat.secondaryImageWebp,
-    siteConfig.projects.gurmat.mobileImage,
-    siteConfig.projects.gurmat.mobileImageAvif,
-    siteConfig.projects.gurmat.mobileImageWebp,
-    siteConfig.projects.gurmat.transferImage,
-    siteConfig.projects.gurmat.transferImageAvif,
-    siteConfig.projects.gurmat.transferImageWebp
-  ].filter(Boolean)
+  // Every configured project image ships automatically; an empty slot copies nothing.
+  ...[...new Set(Object.values(projectTokens).filter((value) => typeof value === "string" && IMAGE_PATH.test(value)))]
 ];
 
 function inlineIcon(name, body) {
@@ -106,47 +112,11 @@ const tokenMap = {
   "icons.shield": icons.shield,
   "icons.craft": icons.craft,
   "icons.ai": icons.ai,
-  "projects.erp.status": siteConfig.projects.erp.status,
-  "projects.opssemble.status": siteConfig.projects.opssemble.status,
-  "projects.opssemble.primaryImage": siteConfig.projects.opssemble.primaryImage,
-  "projects.opssemble.secondaryImage": siteConfig.projects.opssemble.secondaryImage,
-  "projects.opssemble.repository": siteConfig.projects.opssemble.repository,
-  "projects.opssemble.demo": siteConfig.projects.opssemble.demo,
-  "projects.gurmat.status": siteConfig.projects.gurmat.status,
-  "projects.gurmat.primaryImage": siteConfig.projects.gurmat.primaryImage,
-  "projects.gurmat.primaryImageAvif": siteConfig.projects.gurmat.primaryImageAvif,
-  "projects.gurmat.primaryImageWebp": siteConfig.projects.gurmat.primaryImageWebp,
-  "projects.gurmat.secondaryImage": siteConfig.projects.gurmat.secondaryImage,
-  "projects.gurmat.secondaryImageAvif": siteConfig.projects.gurmat.secondaryImageAvif,
-  "projects.gurmat.secondaryImageWebp": siteConfig.projects.gurmat.secondaryImageWebp,
-  "projects.gurmat.mobileImage": siteConfig.projects.gurmat.mobileImage,
-  "projects.gurmat.mobileImageAvif": siteConfig.projects.gurmat.mobileImageAvif,
-  "projects.gurmat.mobileImageWebp": siteConfig.projects.gurmat.mobileImageWebp,
-  "projects.gurmat.transferImage": siteConfig.projects.gurmat.transferImage,
-  "projects.gurmat.transferImageAvif": siteConfig.projects.gurmat.transferImageAvif,
-  "projects.gurmat.transferImageWebp": siteConfig.projects.gurmat.transferImageWebp,
-  "projects.gurmat.repository": siteConfig.projects.gurmat.repository,
-  "projects.gurmat.demo": siteConfig.projects.gurmat.demo,
-  "projects.licenceManager.context": siteConfig.projects.licenceManager.context,
-  "projects.azure.status": siteConfig.projects.azure.status
+  ...projectTokens
 };
 
-const conditionMap = {
-  "projects.erp.primaryImage": siteConfig.projects.erp.primaryImage,
-  "projects.erp.secondaryImage": siteConfig.projects.erp.secondaryImage,
-  "projects.opssemble.primaryImage": siteConfig.projects.opssemble.primaryImage,
-  "projects.opssemble.secondaryImage": siteConfig.projects.opssemble.secondaryImage,
-  "projects.opssemble.repository": siteConfig.projects.opssemble.repository,
-  "projects.opssemble.demo": siteConfig.projects.opssemble.demo,
-  "projects.gurmat.primaryImage": siteConfig.projects.gurmat.primaryImage,
-  "projects.gurmat.secondaryImage": siteConfig.projects.gurmat.secondaryImage,
-  "projects.gurmat.mobileImage": siteConfig.projects.gurmat.mobileImage,
-  "projects.gurmat.transferImage": siteConfig.projects.gurmat.transferImage,
-  "projects.gurmat.repository": siteConfig.projects.gurmat.repository,
-  "projects.gurmat.demo": siteConfig.projects.gurmat.demo,
-  "projects.licenceManager.repository": siteConfig.projects.licenceManager.repository,
-  "projects.azure.repository": siteConfig.projects.azure.repository
-};
+// {{#if x}} only needs truthiness, so the same flattened project map serves both.
+const conditionMap = projectTokens;
 
 function renderTemplate(source, file) {
   let rendered = source;
@@ -167,7 +137,16 @@ function minifyHtml(source) {
 }
 
 function minifyCss(source) {
-  return source.replace(/\/\*[\s\S]*?\*\//g, "").replace(/\s+/g, " ").replace(/\s*([{}:;,])\s*/g, "$1").trim();
+  return source
+    .replace(/\/\*[\s\S]*?\*\//g, "")
+    .replace(/\s+/g, " ")
+    .replace(/\s*([{};,])\s*/g, "$1")
+    // Only the space AFTER a colon may go. Stripping the space *before* one silently
+    // turns a descendant selector like `.page-alfaaz :is(...)` into the compound
+    // `.page-alfaaz:is(...)`, which matches nothing — it had been quietly disabling
+    // the reduced-motion resets on the case-study diagrams.
+    .replace(/:\s+/g, ":")
+    .trim();
 }
 
 function minifyJs(source) {
@@ -202,7 +181,12 @@ async function build() {
 
   const domain = siteConfig.profile.domain.replace(/\/$/, "");
   await fs.writeFile(path.join(OUT, "robots.txt"), `User-agent: *\nAllow: /\n\nSitemap: ${domain}/sitemap.xml\n`);
-  await fs.writeFile(path.join(OUT, "sitemap.xml"), `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n  <url><loc>${domain}/</loc><changefreq>monthly</changefreq><priority>1.0</priority></url>\n  <url><loc>${domain}/erp-case-study.html</loc><changefreq>monthly</changefreq><priority>0.8</priority></url>\n  <url><loc>${domain}/opssemble.html</loc><changefreq>monthly</changefreq><priority>0.8</priority></url>\n  <url><loc>${domain}/gurmat-saanj.html</loc><changefreq>monthly</changefreq><priority>0.8</priority></url>\n</urlset>\n`);
+  // Sitemap follows siteConfig.pages, so a new page cannot be silently left unindexed.
+  const sitemapUrls = siteConfig.pages
+    .filter((page) => page.indexed)
+    .map((page) => `  <url><loc>${domain}/${page.file === "index.html" ? "" : page.file}</loc><changefreq>monthly</changefreq><priority>${page.priority}</priority></url>`)
+    .join("\n");
+  await fs.writeFile(path.join(OUT, "sitemap.xml"), `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${sitemapUrls}\n</urlset>\n`);
 
   for (const file of COPY_FILES) await copyFile(file);
   console.log(`Built dist/: ${HTML_FILES.length} pages, config resolved, assets optimized, SEO files generated.`);

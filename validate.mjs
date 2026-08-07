@@ -1,10 +1,10 @@
 import { promises as fs } from "node:fs";
 import path from "node:path";
 import { createHash } from "node:crypto";
-import { siteConfig } from "./site.config.mjs";
+import { siteConfig, featuredProjects } from "./site.config.mjs";
 
 const root = path.resolve("dist");
-const pages = ["index.html", "erp-case-study.html", "opssemble.html", "gurmat-saanj.html", "404.html"];
+const pages = siteConfig.pages.map((page) => page.file);
 let failures = 0;
 
 function fail(message) { failures += 1; console.error(`FAIL ${message}`); }
@@ -106,8 +106,27 @@ if (!home.includes('aria-label="Full-stack developer and software engineer build
 if (!home.includes("React · JavaScript · Node.js · SQL · C#/.NET")) fail("homepage: primary technology line is missing");
 if (!home.includes('id="capabilities"') || home.includes('id="workflow"') || home.includes('id="skills"')) fail("homepage: capabilities must remain consolidated into one section");
 if (!home.includes("Used in daily internal operations")) fail("homepage: approved ERP usage wording is missing");
-const featuredOrder = ["Gurmat Saanj", "Opssemble", "Confidential Production Business Platform"].map((label) => home.indexOf(label));
-if (featuredOrder.some((position) => position < 0) || featuredOrder.some((position, index) => index > 0 && position <= featuredOrder[index - 1])) fail("homepage: featured projects are not ordered ERP, Gurmat, Opssemble");
+// Featured order has one source of truth: siteConfig.projects[].order. Re-ranking the
+// section is a config edit, and the homepage must agree with it.
+const configuredKeys = featuredProjects.map((project) => project.key).join(",");
+const renderedPanelKeys = [...home.matchAll(/data-work-panel="([^"]+)"/g)].map((match) => match[1]).join(",");
+const renderedIndexKeys = [...home.matchAll(/href="#work-([^"]+)" data-work-index-link/g)].map((match) => match[1]).join(",");
+if (renderedPanelKeys !== configuredKeys) fail(`homepage: panel order is [${renderedPanelKeys}], config order is [${configuredKeys}]`);
+if (renderedIndexKeys !== configuredKeys) fail(`homepage: index order is [${renderedIndexKeys}], config order is [${configuredKeys}]`);
+for (const project of featuredProjects) {
+  if (!home.includes(`>${project.title}<`)) fail(`homepage: featured project title missing: ${project.title}`);
+}
+// Sticky-split contract: an index entry and a panel for every featured project, each
+// index href resolving to its panel, and a case study reachable from each panel.
+if ((home.match(/data-work-panel="/g) || []).length !== featuredProjects.length) fail(`homepage: expected ${featuredProjects.length} work panels`);
+if ((home.match(/data-work-index-link/g) || []).length !== featuredProjects.length) fail(`homepage: expected ${featuredProjects.length} project index links`);
+if (home.includes("data-work-track") || home.includes("data-rail-stage")) fail("homepage: the removed pinned rail markup is still present");
+for (const project of featuredProjects) {
+  if (!new RegExp(`<a href="#work-${project.key}" data-work-index-link`).test(home)) fail(`homepage: index link missing for ${project.key}`);
+  if (!new RegExp(`id="work-${project.key}"[^>]*data-work-panel="${project.key}"`).test(home)) fail(`homepage: panel missing for ${project.key}`);
+  if (!home.includes(`href="${project.caseStudy}"`)) fail(`homepage: ${project.key} panel does not link to its case study`);
+  if (!pages.includes(project.caseStudy)) fail(`${project.key}: case study ${project.caseStudy} is not a registered page`);
+}
 const validContactModes = new Set(["endpoint", "mailto", "disabled"]);
 const configuredContactMode = siteConfig.contactForm?.mode;
 const configuredContactEndpoint = siteConfig.contactForm?.endpoint?.trim() || "";
@@ -138,7 +157,7 @@ for (const [file, html] of htmlByFile) {
     if (!/currentColor/i.test(svg)) fail(`${file}: inline SVG does not inherit currentColor`);
   }
 }
-for (const file of ["erp-case-study.html", "opssemble.html", "gurmat-saanj.html"]) {
+for (const file of featuredProjects.map((project) => project.caseStudy)) {
   const html = htmlByFile.get(file);
   if ((html.match(/class="decision-record\b/g) || []).length !== 1) fail(`${file}: expected exactly one decision record`);
 }
@@ -180,13 +199,32 @@ if (/ollama|local (model|AI|assistance|LLM)/i.test(gurmat)) fail("gurmat-saanj.h
 if (/TypeScript/i.test(gurmat)) fail("gurmat-saanj.html: TypeScript contradicts the confirmed JavaScript stack");
 if ((gurmat.match(/data-media-open/g) || []).length !== 4) fail("gurmat-saanj.html: expected four inspectable authentic screenshots");
 if ((gurmat.match(/loading="lazy"/g) || []).length < 5) fail("gurmat-saanj.html: evidence images must lazy-load below the fold");
-if ((home.match(/project-media-gurmat/g) || []).length !== 1) fail("homepage: expected one Gurmat primary visual");
-if ((home.match(/project-opssemble/g) || []).length !== 1) fail("homepage: expected one Opssemble featured card");
-if (!home.includes("Read Opssemble case study")) fail("homepage: Opssemble case-study link missing");
-if (!home.includes("data-work-track")) fail("homepage: work rail track missing");
 if ((home.match(/class="archive-entry"/g) || []).length !== 2) fail("homepage: expected two expandable additional-engineering entries");
 if ((home.match(/<details class="archive-entry">\s*<summary>/g) || []).length !== 2) fail("homepage: additional-engineering entries must be native details/summary disclosures");
 if (/WebSockets?|Socket\.IO|SignalR|server-sent events|peer-to-peer|WebRTC|event sourcing|distributed locking|message queues?|OAuth|JWT|session persistence|persistent accounts/i.test(gurmat)) fail("gurmat-saanj.html: unsupported networking or account technology is named");
+// MaintOps: the source is public but nothing is hosted. Nothing may imply otherwise.
+const maintops = htmlByFile.get("maintops.html");
+for (const required of [
+  "not a security boundary", "until a supervisor accepts", "metadata only",
+  "no hosted instance", "Prompt Guard", "academic evaluation and portfolio review"
+]) {
+  if (!maintops.includes(required)) fail(`maintops.html: missing verified evidence: ${required}`);
+}
+if (/live demo|public demo available|try it (live|now)|hosted at|deployed (at|to) https?:/i.test(maintops)) fail("maintops.html: implies a live deployment that does not exist");
+if (/% ?uptime|99\.\d|availability of|\d+[,\d]* (active )?users|customers/i.test(maintops)) fail("maintops.html: unsupported usage or availability claim");
+
+// Alfaaz: private repository, not deployed, and no automatic translation of writing.
+const alfaaz = htmlByFile.get("alfaaz.html");
+for (const required of [
+  "never automatically translated", "HttpOnly", "private repository",
+  "Not publicly deployed", "404"
+]) {
+  if (!alfaaz.includes(required)) fail(`alfaaz.html: missing verified evidence: ${required}`);
+}
+if (/TypeScript/i.test(alfaaz)) fail("alfaaz.html: TypeScript contradicts the project's JavaScript-only stack");
+if (/live demo|public demo|open source|available on GitHub|try it (live|now)/i.test(alfaaz)) fail("alfaaz.html: implies public availability that does not exist");
+if (/\d+[,\d]* (active )?users|customers|downloads/i.test(alfaaz)) fail("alfaaz.html: unsupported usage claim");
+
 const productionHtml = [...htmlByFile.values()].join("\n");
 const privateDataPatterns = [
   /\b192\.168\.\d{1,3}\.\d{1,3}\b/,
@@ -203,15 +241,24 @@ if (/C#|\.NET|ASP\.NET|Entity Framework/i.test(erp)) fail("erp-case-study.html: 
 const notFound = htmlByFile.get("404.html");
 if (!notFound.includes("data-menu-toggle") || !notFound.includes("data-nav") || !notFound.includes('aria-controls="site-navigation"')) fail("404.html: responsive navigation contract is incomplete");
 
-for (const [file, width, height] of [
-  ["assets/gurmat/gurmat-projector-output.png", 1902, 845],
-  ["assets/gurmat/gurmat-main-workspace.png", 960, 817],
-  ["assets/gurmat/gurmat-mobile-editor.png", 1290, 2320],
-  ["assets/gurmat/gurmat-editor-transfer-request.png", 1290, 2320]
-]) {
+// Every configured PNG is checked against the width/height the HTML declares for it,
+// so a newly captured screenshot cannot ship with the wrong intrinsic size and shift
+// the layout. Derived from config: adding a capture adds its check automatically.
+const declaredImages = [];
+for (const project of featuredProjects) {
+  for (const slot of ["primary", "secondary", "mobile", "transfer"]) {
+    const file = project[`${slot}Image`];
+    if (!file) continue;
+    declaredImages.push([file, project[`${slot}ImageWidth`], project[`${slot}ImageHeight`], `${project.key}.${slot}`]);
+  }
+}
+if (!declaredImages.length) fail("config: no project imagery is configured at all");
+for (const [file, width, height, label] of declaredImages) {
+  if (!width || !height) { fail(`${label}: ${file} is configured without declared dimensions`); continue; }
   const bytes = await fs.readFile(path.join(root, file)).catch(() => null);
-  if (!bytes) { fail(`${file}: required Gurmat screenshot missing`); continue; }
-  if (bytes.readUInt32BE(16) !== width || bytes.readUInt32BE(20) !== height) fail(`${file}: unexpected dimensions`);
+  if (!bytes) { fail(`${label}: configured image missing from dist: ${file}`); continue; }
+  if (!file.endsWith(".png")) continue;
+  if (bytes.readUInt32BE(16) !== width || bytes.readUInt32BE(20) !== height) fail(`${label}: ${file} is ${bytes.readUInt32BE(16)}x${bytes.readUInt32BE(20)}, config declares ${width}x${height}`);
 }
 
 for (const [file, expectedHash] of Object.entries({

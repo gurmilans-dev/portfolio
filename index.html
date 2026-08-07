@@ -70,7 +70,7 @@
         </div>
         <div class="hero-frame">
           <div class="hero-intro">
-            <p>I design and build responsive interfaces, backend APIs, and data-driven workflows — from production business systems to community and AI-assisted tools.</p>
+            <p>I work on software people depend on to get something done — internal business platforms, operations tooling, and applications built for one specific community.</p>
             <div class="hero-actions">
               <a class="button button-primary" href="#work">View work</a>
               <a class="button button-secondary link-with-icon" href="{{profile.resume}}" target="_blank" rel="noopener noreferrer" download>{{icons.resume}}<span>Download CV</span>{{icons.external}}</a>
@@ -102,66 +102,132 @@
         <div class="proof-strip" aria-label="Professional highlights" data-reveal-group>
           <p><strong>2+ years</strong><span>Commercial software development</span></p>
           <p><strong>Business platform</strong><span>Used in daily internal operations</span></p>
-            <p><strong>Interfaces + APIs</strong><span>React frontends, Node.js services, and relational data</span></p>
           <p><strong>Dec 2026</strong><span>Expected BSc graduation</span></p>
         </div>
       </section>
 
-      <section id="work" class="section section-work" aria-labelledby="work-title" data-work-rail>
-        <div class="rail-stage" data-rail-stage>
-        <div class="shell section-heading section-heading-rail" data-reveal-group><p class="section-number">01 / Selected work</p><div><h2 id="work-title">Software shaped by how people use it.</h2><p>A deployed community application, an event-operations platform in active development, and a confidential business platform.</p></div><div class="rail-hud" aria-hidden="true"><p class="rail-hud-count"><span data-rail-index>01</span><span>/ 03</span></p><p class="rail-hud-name" data-rail-name>Gurmat Saanj</p><span class="rail-hud-bar" data-rail-bar><i></i></span></div></div>
-        <div class="shell rail-viewport" data-rail-viewport>
-        <div class="work-track" data-work-track>
-          <article class="project project-gurmat project-interactive" data-work-project="gurmat">
-            <div class="project-title-row" data-reveal-group><p class="project-index"><span>01</span></p><div><p class="status-line"><span class="badge badge-deployed">{{projects.gurmat.status}}</span></p><h3><span>Gurmat Saanj</span></h3><p class="signature-marker">// speech matching + connected interfaces</p><p class="proof-note">Used at a local Gurdwara</p></div></div>
-            <div class="project-frame">
-              <div class="project-copy">
-                <p class="project-lead">A deployed full-stack application that follows live Punjabi recitation and matches recognized phrases to known Gurbani lines.</p>
-                <p>Connected viewers follow shared content with device-local reading preferences; one approved mobile editor operates the projector.</p>
-                <p class="tech-line">React · Node.js · Express · Web Speech API · BaniDB</p>
-                <div class="project-actions"><a class="button button-primary project-action" href="gurmat-saanj.html">Read case study</a>{{#if projects.gurmat.repository}}<a class="text-action" href="{{projects.gurmat.repository}}" target="_blank" rel="noopener noreferrer">Repository ↗</a>{{/if}}{{#if projects.gurmat.demo}}<a class="text-action" href="{{projects.gurmat.demo}}" target="_blank" rel="noopener noreferrer">Demo ↗</a>{{/if}}</div>
-              </div>
-              {{#if projects.gurmat.primaryImage}}<figure class="project-media project-media-gurmat"><a href="gurmat-saanj.html" aria-label="Explore the Gurmat Saanj case study"><picture><source srcset="{{projects.gurmat.primaryImageAvif}}" type="image/avif" /><source srcset="{{projects.gurmat.primaryImageWebp}}" type="image/webp" /><img src="{{projects.gurmat.primaryImage}}" width="1902" height="845" loading="lazy" alt="Gurmat Saanj projector output showing a Gurbani line with transliteration and English translation" /></picture><span class="media-link-label">See how the shared session works ↗</span></a><figcaption>Authentic projector output during a shared reading experience.</figcaption></figure>{{/if}}
-            </div>
-          </article>
-
-          <article class="project project-opssemble project-interactive" data-work-project="opssemble">
-            <div class="project-title-row" data-reveal-group><p class="project-index"><span>02</span></p><div><p class="status-line"><span class="badge badge-academic">{{projects.opssemble.status}}</span> · Core workflow implemented</p><h3><span>Opssemble</span></h3><p class="signature-marker">// event readiness + exception coordination</p></div></div>
-            <div class="project-frame">
-              <div class="project-copy">
-                <p class="project-lead">A university final project for coordinating event areas, tasks, exceptions, and readiness through one full-stack application.</p>
-                <dl class="evidence-strip"><div><dt>Coordination</dt><dd>Areas, tasks &amp; exceptions</dd></div><div><dt>Authorization</dt><dd>Server-side event roles</dd></div><div><dt>Area access</dt><dd>Revocable QR tokens</dd></div><div><dt>Readiness</dt><dd>Live per-area scoring</dd></div></dl>
-                <a class="button button-primary project-action" href="opssemble.html">Read Opssemble case study</a>
-              </div>
-              <ol class="project-system-card opssemble-system-card" aria-label="Opssemble flow from event structure through exceptions and readiness to scoped QR access">
-                <li class="system-step system-input"><span>Structure</span><strong>Event &amp; areas</strong><small>Tasks with status and priority</small></li><li class="system-step system-exception"><span>Log</span><strong>Exceptions</strong><small>Severity and resolution trail</small></li><li class="system-step system-state"><span>Score</span><strong>Readiness</strong><small>Blockers decide the score</small></li><li class="system-step system-output"><span>Share</span><strong>QR area access</strong><small>Scoped, revocable tokens</small></li>
-              </ol>
-            </div>
-          </article>
-
-          <article class="project project-erp project-interactive" data-work-project="erp">
-            <div class="project-title-row" data-reveal-group><p class="project-index"><span>03</span></p><div><p class="status-line"><span class="badge badge-production">{{projects.erp.status}}</span> · In-house</p><h3><span>Confidential Production Business Platform</span></h3><p class="signature-marker">// production business software</p></div></div>
-            <div class="project-frame">
-              <div class="project-copy">
-                <p class="project-lead">A full-stack internal business application for shared operational workflows and role-based access.</p>
-                <dl class="evidence-strip evidence-strip-operational"><div><dt>Previous</dt><dd>Not shared</dd></div><div><dt>Now</dt><dd>Shared operations</dd></div><div><dt>Boundary</dt><dd>Role-based access</dd></div><div><dt>Ownership</dt><dd>Build through support</dd></div></dl>
-                <p>Primary development across the product interface, API, relational data, permissions, releases, maintenance, and user support.</p>
-                <a class="button button-primary project-action" href="erp-case-study.html">Read the case study</a>
-              </div>
-              <ol class="project-system-card erp-system-card" aria-label="Operational flow from users through permissions and shared data to operations">
-                <li class="system-step system-input"><span>Enter</span><strong>Users</strong><small>Start daily work</small></li><li class="system-step system-boundary"><span>Permission boundary</span><strong>Permissions</strong><small>Controls access</small></li><li class="system-step system-data"><span>Shared source</span><strong>Relational data</strong><small>One record model</small></li><li class="system-step system-output"><span>Supports</span><strong>Operations</strong><small>Connected workflows</small></li>
-              </ol>
-            </div>
-          </article>
+      <section id="work" class="section section-work" aria-labelledby="work-title">
+        <div class="shell work-intro">
+          <p class="section-number">01 / Selected work</p>
+          <h2 id="work-title">Five systems across production software, operations, language and real-time interaction.</h2>
         </div>
-        </div>
+        <div class="shell work-split">
+          <nav class="work-index" aria-label="Project index" data-work-index>
+            <ol>
+              <li><a href="#work-maintops" data-work-index-link><span class="work-index-no">01</span><span class="work-index-name">MaintOps</span><span class="work-index-meta">Maintenance operations</span></a></li>
+              <li><a href="#work-erp" data-work-index-link><span class="work-index-no">02</span><span class="work-index-name">Production Business Platform</span><span class="work-index-meta">Commercial · confidential</span></a></li>
+              <li><a href="#work-gurmat" data-work-index-link><span class="work-index-no">03</span><span class="work-index-name">Gurmat Saanj</span><span class="work-index-meta">Real-time shared reading</span></a></li>
+              <li><a href="#work-alfaaz" data-work-index-link><span class="work-index-no">04</span><span class="work-index-name">Alfaaz</span><span class="work-index-meta">Multilingual writing</span></a></li>
+              <li><a href="#work-opssemble" data-work-index-link><span class="work-index-no">05</span><span class="work-index-name">Opssemble</span><span class="work-index-meta">Event readiness</span></a></li>
+            </ol>
+          </nav>
+          <div class="work-panels">
+            <article id="work-maintops" class="work-panel" data-work-panel="maintops">
+              <header class="work-panel-head" data-reveal-group>
+                <p class="work-panel-no"><span class="work-panel-index">01</span><span class="badge {{projects.maintops.statusClass}}">{{projects.maintops.status}}</span></p>
+                <h3><span>{{projects.maintops.title}}</span></h3>
+                <p class="work-panel-category">{{projects.maintops.category}}</p>
+              </header>
+              <p class="work-panel-lead">{{projects.maintops.lead}}</p>
+              <p class="tech-line">{{projects.maintops.tech}}</p>
+              <div class="project-actions"><a class="button button-primary project-action" href="{{projects.maintops.caseStudy}}">Case study</a>{{#if projects.maintops.repository}}<a class="icon-action link-with-icon" href="{{projects.maintops.repository}}" target="_blank" rel="noopener noreferrer" aria-label="MaintOps source on GitHub, opens in a new tab">{{icons.github}}<span class="sr-only">GitHub</span></a>{{/if}}</div>
+              <figure class="work-visual">
+                {{#if projects.maintops.noPrimaryImage}}<ol class="project-system-card work-model maintops-system-card" aria-label="MaintOps request lifecycle from report through triage and tracked work to closure">
+                  <li class="system-step system-input"><span>Report</span><strong>Request</strong><small>Raised against an asset or location</small></li><li class="system-step system-boundary"><span>Triage</span><strong>Priority &amp; assignment</strong><small>Supervisor sets category and owner</small></li><li class="system-step system-state"><span>Track</span><strong>SLA clocks</strong><small>Work-start and resolution targets per cycle</small></li><li class="system-step system-output"><span>Close</span><strong>Resolve &amp; confirm</strong><small>Requester confirms or reopens</small></li>
+                </ol>
+                <figcaption>Implemented request lifecycle. Interface captures are not yet published.</figcaption>{{/if}}
+                {{#if projects.maintops.primaryImage}}<a href="{{projects.maintops.caseStudy}}" aria-label="Read the MaintOps case study"><picture><source srcset="{{projects.maintops.primaryImageAvif}}" type="image/avif" /><source srcset="{{projects.maintops.primaryImageWebp}}" type="image/webp" /><img src="{{projects.maintops.primaryImage}}" width="{{projects.maintops.primaryImageWidth}}" height="{{projects.maintops.primaryImageHeight}}" loading="lazy" alt="{{projects.maintops.primaryImageAlt}}" /></picture></a><figcaption>{{projects.maintops.primaryImageCaption}}</figcaption>{{/if}}
+              </figure>
+              <dl class="work-meta">
+                <div><dt>Role</dt><dd>{{projects.maintops.meta.role}}</dd></div><div><dt>Focus</dt><dd>{{projects.maintops.meta.focus}}</dd></div><div><dt>Evidence</dt><dd>{{projects.maintops.meta.evidence}}</dd></div>
+              </dl>
+            </article>
+
+            <article id="work-erp" class="work-panel" data-work-panel="erp">
+              <header class="work-panel-head" data-reveal-group>
+                <p class="work-panel-no"><span class="work-panel-index">02</span><span class="badge {{projects.erp.statusClass}}">{{projects.erp.status}}</span></p>
+                <h3><span>{{projects.erp.title}}</span></h3>
+                <p class="work-panel-category">{{projects.erp.category}}</p>
+              </header>
+              <p class="work-panel-lead">{{projects.erp.lead}}</p>
+              <p class="tech-line">{{projects.erp.tech}}</p>
+              <div class="project-actions"><a class="button button-primary project-action" href="{{projects.erp.caseStudy}}">Case study</a></div>
+              <figure class="work-visual">
+                <ol class="project-system-card work-model erp-system-card" aria-label="Operational flow from users through permissions and shared data to operations">
+                  <li class="system-step system-input"><span>Enter</span><strong>Users</strong><small>Start daily work</small></li><li class="system-step system-boundary"><span>Permission boundary</span><strong>Permissions</strong><small>Controls access</small></li><li class="system-step system-data"><span>Shared source</span><strong>Relational data</strong><small>One record model</small></li><li class="system-step system-output"><span>Supports</span><strong>Operations</strong><small>Connected workflows</small></li>
+                </ol>
+                <figcaption>Operating model. The source and interface are confidential, so no screenshots are shown.</figcaption>
+              </figure>
+              <dl class="work-meta">
+                <div><dt>Role</dt><dd>{{projects.erp.meta.role}}</dd></div><div><dt>Focus</dt><dd>{{projects.erp.meta.focus}}</dd></div><div><dt>Evidence</dt><dd>{{projects.erp.meta.evidence}}</dd></div>
+              </dl>
+            </article>
+
+            <article id="work-gurmat" class="work-panel" data-work-panel="gurmat">
+              <header class="work-panel-head" data-reveal-group>
+                <p class="work-panel-no"><span class="work-panel-index">03</span><span class="badge {{projects.gurmat.statusClass}}">{{projects.gurmat.status}}</span></p>
+                <h3><span>{{projects.gurmat.title}}</span></h3>
+                <p class="work-panel-category">{{projects.gurmat.category}}</p>
+              </header>
+              <p class="work-panel-lead">{{projects.gurmat.lead}}</p>
+              <p class="tech-line">{{projects.gurmat.tech}}</p>
+              <div class="project-actions"><a class="button button-primary project-action" href="{{projects.gurmat.caseStudy}}">Case study</a></div>
+              <figure class="work-visual">
+                {{#if projects.gurmat.primaryImage}}<a href="{{projects.gurmat.caseStudy}}" aria-label="Read the Gurmat Saanj case study"><picture><source srcset="{{projects.gurmat.primaryImageAvif}}" type="image/avif" /><source srcset="{{projects.gurmat.primaryImageWebp}}" type="image/webp" /><img src="{{projects.gurmat.primaryImage}}" width="{{projects.gurmat.primaryImageWidth}}" height="{{projects.gurmat.primaryImageHeight}}" loading="lazy" alt="{{projects.gurmat.primaryImageAlt}}" /></picture></a><figcaption>{{projects.gurmat.primaryImageCaption}}</figcaption>{{/if}}
+              </figure>
+              <dl class="work-meta">
+                <div><dt>Role</dt><dd>{{projects.gurmat.meta.role}}</dd></div><div><dt>Focus</dt><dd>{{projects.gurmat.meta.focus}}</dd></div><div><dt>Evidence</dt><dd>{{projects.gurmat.meta.evidence}}</dd></div>
+              </dl>
+            </article>
+
+            <article id="work-alfaaz" class="work-panel work-panel-alfaaz" data-work-panel="alfaaz">
+              <header class="work-panel-head" data-reveal-group>
+                <p class="work-panel-no"><span class="work-panel-index">04</span><span class="badge {{projects.alfaaz.statusClass}}">{{projects.alfaaz.status}}</span></p>
+                <h3><span>{{projects.alfaaz.title}}</span></h3>
+                <p class="work-panel-category">{{projects.alfaaz.category}}</p>
+              </header>
+              <p class="work-panel-lead">{{projects.alfaaz.lead}}</p>
+              <p class="tech-line">{{projects.alfaaz.tech}}</p>
+              <div class="project-actions"><a class="button button-primary project-action" href="{{projects.alfaaz.caseStudy}}">Case study</a></div>
+              <figure class="work-visual">
+                {{#if projects.alfaaz.noPrimaryImage}}<ol class="project-system-card work-model alfaaz-system-card" aria-label="Alfaaz writing flow from input through autosave and version checking to revision history">
+                  <li class="system-step system-input"><span>Input</span><strong>Roman or native script</strong><small>Transliteration runs in the browser</small></li><li class="system-step"><span>Autosave</span><strong>Debounced write</strong><small>Unsaved text kept on the device</small></li><li class="system-step system-state"><span>Guard</span><strong>Version check</strong><small>A conflicting write is refused</small></li><li class="system-step system-output"><span>History</span><strong>Revisions</strong><small>Restore archives the current text first</small></li>
+                </ol>
+                <figcaption>Editor write path. Interface captures are not yet published.</figcaption>{{/if}}
+                {{#if projects.alfaaz.primaryImage}}<a href="{{projects.alfaaz.caseStudy}}" aria-label="Read the Alfaaz case study"><picture><source srcset="{{projects.alfaaz.primaryImageAvif}}" type="image/avif" /><source srcset="{{projects.alfaaz.primaryImageWebp}}" type="image/webp" /><img src="{{projects.alfaaz.primaryImage}}" width="{{projects.alfaaz.primaryImageWidth}}" height="{{projects.alfaaz.primaryImageHeight}}" loading="lazy" alt="{{projects.alfaaz.primaryImageAlt}}" /></picture></a><figcaption>{{projects.alfaaz.primaryImageCaption}}</figcaption>{{/if}}
+              </figure>
+              <dl class="work-meta">
+                <div><dt>Role</dt><dd>{{projects.alfaaz.meta.role}}</dd></div><div><dt>Focus</dt><dd>{{projects.alfaaz.meta.focus}}</dd></div><div><dt>Evidence</dt><dd>{{projects.alfaaz.meta.evidence}}</dd></div>
+              </dl>
+            </article>
+
+            <article id="work-opssemble" class="work-panel" data-work-panel="opssemble">
+              <header class="work-panel-head" data-reveal-group>
+                <p class="work-panel-no"><span class="work-panel-index">05</span><span class="badge {{projects.opssemble.statusClass}}">{{projects.opssemble.status}}</span></p>
+                <h3><span>{{projects.opssemble.title}}</span></h3>
+                <p class="work-panel-category">{{projects.opssemble.category}}</p>
+              </header>
+              <p class="work-panel-lead">{{projects.opssemble.lead}}</p>
+              <p class="tech-line">{{projects.opssemble.tech}}</p>
+              <div class="project-actions"><a class="button button-primary project-action" href="{{projects.opssemble.caseStudy}}">Case study</a></div>
+              <figure class="work-visual">
+                <ol class="project-system-card work-model opssemble-system-card" aria-label="Opssemble flow from event structure through exceptions and readiness to scoped QR access">
+                  <li class="system-step system-input"><span>Structure</span><strong>Event &amp; areas</strong><small>Tasks with status and priority</small></li><li class="system-step system-exception"><span>Log</span><strong>Exceptions</strong><small>Severity and resolution trail</small></li><li class="system-step system-state"><span>Score</span><strong>Readiness</strong><small>Blockers decide the score</small></li><li class="system-step system-output"><span>Share</span><strong>QR area access</strong><small>Scoped, revocable tokens</small></li>
+                </ol>
+                <figcaption>Implemented coordination model. Interface captures are not yet published.</figcaption>
+              </figure>
+              <dl class="work-meta">
+                <div><dt>Role</dt><dd>{{projects.opssemble.meta.role}}</dd></div><div><dt>Focus</dt><dd>{{projects.opssemble.meta.focus}}</dd></div><div><dt>Evidence</dt><dd>{{projects.opssemble.meta.evidence}}</dd></div>
+              </dl>
+            </article>
+          </div>
         </div>
         <div class="shell work-stack">
           <section class="earlier-work archive-index" aria-labelledby="earlier-work-title" data-archive-index>
-            <div class="earlier-work-intro"><p class="eyebrow">Additional work / 04–05</p><h2 id="earlier-work-title">Additional engineering work</h2><p class="archive-note">Supporting evidence beyond the featured web projects.</p></div>
+            <div class="earlier-work-intro"><p class="eyebrow">Additional work / 06–07</p><h2 id="earlier-work-title">Additional engineering work</h2><p class="archive-note">Supporting evidence beyond the featured web projects.</p></div>
             <div class="archive-list">
               <details class="archive-entry">
-                <summary><span class="archive-no">04</span><span class="archive-title">Client-server licence manager</span><span class="archive-meta">{{projects.licenceManager.context}} · C# / .NET</span><span class="archive-toggle" aria-hidden="true"></span></summary>
+                <summary><span class="archive-no">06</span><span class="archive-title">Client-server licence manager</span><span class="archive-meta">{{projects.licenceManager.context}} · C# / .NET</span><span class="archive-toggle" aria-hidden="true"></span></summary>
                 <div class="archive-body">
                   <p>C#/.NET client-server component controlling licence activation and concurrent use.</p>
                   <ol class="protocol-trace connector-flow" data-connector-reveal aria-label="Licence manager protocol trace"><li><span>01</span>Client requests validation</li><li><span>02</span>Server checks activation</li><li><span>03</span>Concurrent-use rule evaluated</li><li><span>04</span>Validation result returned</li></ol>
@@ -169,7 +235,7 @@
                 </div>
               </details>
               <details class="archive-entry">
-                <summary><span class="archive-no">05</span><span class="archive-title">SIRD Epidemic Simulator</span><span class="archive-meta">Academic · Java 17 · JavaFX</span><span class="archive-toggle" aria-hidden="true"></span></summary>
+                <summary><span class="archive-no">07</span><span class="archive-title">SIRD Epidemic Simulator</span><span class="archive-meta">Academic · Java 17 · JavaFX</span><span class="archive-toggle" aria-hidden="true"></span></summary>
                 <div class="archive-body">
                   <p>Agent-based SIRD desktop simulator: a background engine drives moving agents with collision handling, real-time S/I/R/D visualisation, and CSV export, on a model–engine–controller architecture.</p>
                   <p class="tech-line">Java 17 · JavaFX · Maven · concurrency</p>

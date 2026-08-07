@@ -245,71 +245,17 @@
   }
 
   /* ---------- Work · pinned horizontal rail ---------- */
-  // The three featured projects ride a horizontal track while the section is pinned:
-  // the page keeps its reading order (plain vertical stack without JS, on coarse
-  // pointers, short viewports, or reduced motion), but capable desktops browse the
-  // work like a filmstrip with a HUD readout instead of three stacked screens.
-  function workRail(gsap) {
-    const ST = window.ScrollTrigger;
-    const stage = document.querySelector("[data-rail-stage]");
-    const track = document.querySelector("[data-work-track]");
-    if (!ST || !stage || !track) return false;
-    if (coarse.matches || innerWidth < 1100 || innerHeight < 740) return false;
-    const slides = Array.from(track.children);
-    if (slides.length < 2) return false;
-    root.classList.add("work-rail-active");
-
-    const viewport = track.parentElement;
-    const hudIndex = stage.querySelector("[data-rail-index]");
-    const hudName = stage.querySelector("[data-rail-name]");
-    const hudBar = stage.querySelector("[data-rail-bar]");
-    const names = slides.map((slide) => slide.querySelector("h3")?.textContent.trim() ?? "");
-    const headerOffset = () => document.querySelector(".site-header")?.offsetHeight ?? 76;
-    const distance = () => Math.max(1, track.scrollWidth - viewport.clientWidth);
-
-    const tween = gsap.to(track, {
-      x: () => -distance(),
-      ease: "none",
-      scrollTrigger: {
-        trigger: stage,
-        pin: true,
-        anticipatePin: 1,
-        scrub: 0.85,
-        start: () => `top ${headerOffset()}px`,
-        end: () => `+=${distance()}`,
-        invalidateOnRefresh: true,
-        snap: { snapTo: 1 / (slides.length - 1), duration: { min: 0.18, max: 0.45 }, ease: "power2.out", delay: 0.05 },
-        onUpdate(self) {
-          const index = Math.round(self.progress * (slides.length - 1));
-          if (hudIndex) hudIndex.textContent = String(index + 1).padStart(2, "0");
-          if (hudName) hudName.textContent = names[index];
-          if (hudBar) hudBar.style.setProperty("--rail-progress", self.progress.toFixed(4));
-        }
-      }
-    });
-
-    // Keyboard support: tabbing into a slide drives the page to that slide's
-    // scroll position so focus is never trapped off-screen inside the track.
-    track.addEventListener("focusin", (event) => {
-      const slide = event.target.closest("[data-work-track] > *");
-      const index = slides.indexOf(slide);
-      const trigger = tween.scrollTrigger;
-      if (index < 0 || !trigger) return;
-      window.scrollTo(0, trigger.start + (trigger.end - trigger.start) * (index / (slides.length - 1)));
-    });
-    return true;
-  }
-
   /* ---------- Page-wide parallax depth on scroll ---------- */
   // Decorative section markers float at a shallower depth than the body text, so the whole
   // page reads as spatial while you scroll — continuous, quiet, and never moves what you read.
-  function scrollDepth(gsap, railActive) {
+  function scrollDepth(gsap) {
     const ST = window.ScrollTrigger;
     if (!ST || coarse.matches || innerWidth <= 900) return;
     gsap.utils.toArray(".section").forEach((section) => {
-      // The pinned work rail manages its own heading; floating it would drift while pinned.
-      if (railActive && section.classList.contains("section-work")) return;
-      const num = section.querySelector(".section-number");
+      // Scoped to .section-heading on purpose: there the number sits in its own grid
+      // column, so an 86px float never reaches the headline. The work intro stacks the
+      // two, where the same float would drive the marker straight through the h2.
+      const num = section.querySelector(".section-heading .section-number");
       const eyebrow = section.querySelector(".section-heading .eyebrow");
       const heading = section.querySelector(".section-heading h2");
       const floatY = (el, amount) => el && gsap.fromTo(el, { y: amount }, {
@@ -324,15 +270,17 @@
 
 
   /* ---------- Work · spatial scroll choreography ---------- */
-  function workMotion(gsap, railActive) {
+  // The sticky split needs no JS to lay out or navigate; this only adds depth to it.
+  function workMotion(gsap) {
     const ST = window.ScrollTrigger;
     if (!ST) return;
-    // Project media drifts against the scroll — parallax depth. Skipped when the rail
-    // owns the work section: vertical drift inside a horizontal track reads as jitter.
-    if (!railActive) {
-      gsap.utils.toArray(".section-work .project-media").forEach((media) => {
-        gsap.fromTo(media, { y: 28 }, {
-          y: -28, ease: "none",
+    // Panel visuals drift against the scroll. Kept small on purpose: the figure sits in
+    // normal flow between the actions and the metadata strip, so a large offset would
+    // visibly change the spacing around it as you scroll.
+    if (!coarse.matches && innerWidth >= 1100) {
+      gsap.utils.toArray(".section-work .work-visual").forEach((media) => {
+        gsap.fromTo(media, { y: 14 }, {
+          y: -14, ease: "none",
           scrollTrigger: { trigger: media, start: "top bottom", end: "bottom top", scrub: true }
         });
       });
@@ -361,10 +309,9 @@
       root.classList.add("scene-ready");
       window.__sceneGsap = gsap;
       heroBoot(gsap);
-      const railActive = workRail(gsap);
-      workMotion(gsap, railActive);
+      workMotion(gsap);
       heroDepart(gsap);
-      scrollDepth(gsap, railActive);
+      scrollDepth(gsap);
       if (canRender3D()) {
         loadScript(`${VENDOR}three.min.js`)
           .then(() => { if (window.THREE) heroWireframe(window.THREE, gsap); })

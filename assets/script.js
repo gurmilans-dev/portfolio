@@ -199,13 +199,18 @@ const sections = tocLinks.map(link => document.querySelector(link.getAttribute("
 const homeLinks = [...document.querySelectorAll("[data-section-link]")];
 const homeSections = homeLinks.map(link => document.querySelector(link.getAttribute("href"))).filter(Boolean);
 
-function setupSectionAwareness(links, observedSections, { allowEmpty = false } = {}) {
+function setupSectionAwareness(links, observedSections, { allowEmpty = false, activeClass = "" } = {}) {
   if (!links.length || !observedSections.length) return;
   let awarenessFrame = 0;
   const setCurrent = section => {
-    links.forEach(link => link.removeAttribute("aria-current"));
+    links.forEach(link => {
+      link.removeAttribute("aria-current");
+      if (activeClass) link.classList.remove(activeClass);
+    });
     if (!section) return;
-    links.find(link => link.getAttribute("href") === `#${section.id}`)?.setAttribute("aria-current", "location");
+    const active = links.find(link => link.getAttribute("href") === `#${section.id}`);
+    active?.setAttribute("aria-current", "location");
+    if (activeClass) active?.classList.add(activeClass);
   };
   const updateCurrent = () => {
     const threshold = Math.min(260, innerHeight * .35);
@@ -238,6 +243,15 @@ function setupSectionAwareness(links, observedSections, { allowEmpty = false } =
 
 setupSectionAwareness(tocLinks, sections);
 setupSectionAwareness(homeLinks, homeSections, { allowEmpty: true });
+
+// Selected Work index. Pure enhancement: the index is a plain anchor list that works
+// without this, and the panels are already laid out by CSS position:sticky.
+const workIndexLinks = [...document.querySelectorAll("[data-work-index-link]")];
+setupSectionAwareness(
+  workIndexLinks,
+  workIndexLinks.map(link => document.querySelector(link.getAttribute("href"))).filter(Boolean),
+  { activeClass: "is-active" }
+);
 
 const reduceMotion = motionQuery.matches;
 const revealGroups = [...document.querySelectorAll("[data-reveal-group]")];
