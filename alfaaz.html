@@ -65,6 +65,7 @@
                 <li><span class="case-flow-no">07</span><strong>Restore, later</strong><em>Restoring a revision first archives the current text as a new revision</em></li>
               </ol>
             </div>
+            {{#if projects.alfaaz.writingImage}}<figure class="annotated-media evidence-media" data-reveal-group><picture><source srcset="{{projects.alfaaz.writingImageAvif}}" type="image/avif" /><source srcset="{{projects.alfaaz.writingImageWebp}}" type="image/webp" /><img src="{{projects.alfaaz.writingImage}}" width="{{projects.alfaaz.writingImageWidth}}" height="{{projects.alfaaz.writingImageHeight}}" loading="lazy" alt="{{projects.alfaaz.writingImageAlt}}" /></picture><figcaption>{{projects.alfaaz.writingImageCaption}}</figcaption></figure>{{/if}}
             <p>Step 07 is the one that took the longest to get right. A naive restore is destructive: you recover last week's stanza and lose this morning's. Here the restore runs in a single transaction that locks the row, checks the version, writes the <em>current</em> text into the revision history, and only then applies the older text — so the operation you performed to recover something can itself be undone.</p>
             <p>Books work on the same instinct. A manuscript holds references to entries rather than copies of them, so editing a poem updates the book, and a soft-deleted source visibly blocks export instead of quietly exporting a stale duplicate.</p>
           </section>

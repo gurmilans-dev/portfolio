@@ -60,13 +60,13 @@ export const siteConfig = {
         focus: "Workflow · SLA · authorization",
         evidence: "Public repository · frontend and backend test suites"
       },
-      primaryImage: "",
-      primaryImageAvif: "",
-      primaryImageWebp: "",
-      primaryImageWidth: 1600,
-      primaryImageHeight: 1000,
-      primaryImageAlt: "",
-      primaryImageCaption: ""
+      primaryImage: "assets/maintops/maintops-supervisor-queue.png",
+      primaryImageAvif: "assets/maintops/maintops-supervisor-queue.avif",
+      primaryImageWebp: "assets/maintops/maintops-supervisor-queue.webp",
+      primaryImageWidth: 1905,
+      primaryImageHeight: 831,
+      primaryImageAlt: "MaintOps supervisor dashboard showing SLA breach and at-risk counts, an unassigned request queue, current team workload and backlog aging",
+      primaryImageCaption: "Supervisor dashboard, captured from the synthetic demo database."
     },
     erp: {
       order: 2,
@@ -152,13 +152,22 @@ export const siteConfig = {
       // The repository's social/cover artwork is an unfilled template ("TITLE
       // PLACEHOLDER"), so it is not used. The panel renders the writing-system model
       // until a real Write-view capture exists.
-      primaryImage: "",
-      primaryImageAvif: "",
-      primaryImageWebp: "",
-      primaryImageWidth: 1600,
-      primaryImageHeight: 1000,
-      primaryImageAlt: "",
-      primaryImageCaption: "",
+      primaryImage: "assets/alfaaz/alfaaz-sign-in.png",
+      primaryImageAvif: "assets/alfaaz/alfaaz-sign-in.avif",
+      primaryImageWebp: "assets/alfaaz/alfaaz-sign-in.webp",
+      primaryImageWidth: 1843,
+      primaryImageHeight: 982,
+      primaryImageAlt: "The Alfaaz sign-in screen laid out as an open book on warm paper, with the wordmark and a botanical illustration on the left page and the sign-in form on the right",
+      primaryImageCaption: "The sign-in screen, set as an open book.",
+      // The sign-in screen carries the identity on the homepage; the writing surface
+      // itself belongs in the case study, beside the write-path diagram it illustrates.
+      writingImage: "assets/alfaaz/alfaaz-focus-mode.png",
+      writingImageAvif: "assets/alfaaz/alfaaz-focus-mode.avif",
+      writingImageWebp: "assets/alfaaz/alfaaz-focus-mode.webp",
+      writingImageWidth: 1897,
+      writingImageHeight: 985,
+      writingImageAlt: "Alfaaz focus mode in its dark theme: a Devanagari heading and subtitle on a ruled page, with a saved indicator, the ambience control and a live word and line count",
+      writingImageCaption: "Focus mode with rain ambience. The interface stays English while the writing is Devanagari — the autosave state is the small \"Saved\" marker, top left.",
       // Real brand asset, used inside the case study's design section only.
       symbol: "assets/alfaaz/alfaaz-symbol.svg"
     },

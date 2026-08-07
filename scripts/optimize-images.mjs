@@ -10,14 +10,19 @@ import sharp from "sharp";
 import { promises as fs } from "node:fs";
 import path from "node:path";
 
-const SOURCES = [
-  "assets/gurmat/gurmat-projector-output.png",
-  "assets/gurmat/gurmat-main-workspace.png",
-  "assets/gurmat/gurmat-mobile-editor.png",
-  "assets/gurmat/gurmat-editor-transfer-request.png"
-];
+// Every PNG under assets/<project>/ is a source. Dropping a new screenshot in and
+// re-running this is the whole workflow — no list to keep in sync.
+const SOURCES = (await fs.readdir("assets", { withFileTypes: true }))
+  .filter((entry) => entry.isDirectory())
+  .flatMap((dir) => [dir.name])
+  .reduce(async (acc, dir) => [
+    ...(await acc),
+    ...(await fs.readdir(path.join("assets", dir)))
+      .filter((file) => file.toLowerCase().endsWith(".png"))
+      .map((file) => `assets/${dir}/${file}`)
+  ], Promise.resolve([]));
 
-for (const src of SOURCES) {
+for (const src of await SOURCES) {
   const buf = await fs.readFile(src);
   const base = src.replace(/\.png$/i, "");
   const avif = await sharp(buf).avif({ quality: 52, effort: 6 }).toBuffer();
