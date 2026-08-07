@@ -692,9 +692,14 @@ html:not(.js) .theme-toggle { display: none; }
 .page-alfaaz .case-facts dt,
 .page-alfaaz .operational-scope strong,
 .page-alfaaz .architecture span,
+.page-alfaaz .architecture i,
+.page-alfaaz .protocol-trace li span,
+.page-alfaaz .protocol-trace li:not(:last-child)::after,
 .page-alfaaz .case-toc a[aria-current="location"] { color: var(--rust); }
 .page-alfaaz .decision-record { border-top-color: var(--rust); }
-.page-alfaaz .case-toc a[aria-current="location"] { border-left-color: var(--rust); }
+/* The active TOC marker is drawn three ways at once — border, inset shadow and tint —
+   so all three have to move to the accent, not just the border. */
+.page-alfaaz .case-toc a[aria-current="location"] { border-left-color: var(--rust); background: color-mix(in srgb, var(--rust) 6%, transparent); box-shadow: inset 2px 0 0 var(--rust); }
 
 .decision-record { margin: 2.5rem 0; padding: 1.5rem; border-top: 2px solid var(--blue); border-bottom: 1px solid var(--line); background: var(--paper-2); break-inside: avoid; }
 .decision-record-blue { background: color-mix(in srgb, var(--blue) 8%, var(--paper)); }
