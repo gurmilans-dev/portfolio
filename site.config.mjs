@@ -187,13 +187,13 @@ export const siteConfig = {
         focus: "Readiness · exceptions · scoped access",
         evidence: "University final project · core workflow implemented"
       },
-      primaryImage: "",
-      primaryImageAvif: "",
-      primaryImageWebp: "",
-      primaryImageWidth: 0,
-      primaryImageHeight: 0,
-      primaryImageAlt: "",
-      primaryImageCaption: ""
+      primaryImage: "assets/opssemble/opssemble-dashboard.png",
+      primaryImageAvif: "assets/opssemble/opssemble-dashboard.avif",
+      primaryImageWebp: "assets/opssemble/opssemble-dashboard.webp",
+      primaryImageWidth: 1900,
+      primaryImageHeight: 984,
+      primaryImageAlt: "Opssemble event dashboard showing a 45 per cent readiness score, blocking tasks, open exceptions and a per-area readiness summary",
+      primaryImageCaption: "Event dashboard: readiness score, blocking tasks and open exceptions. The interface is Italian."
     },
     licenceManager: {
       context: "Private commercial component",

@@ -212,10 +212,11 @@
               <p class="tech-line">{{projects.opssemble.tech}}</p>
               <div class="project-actions"><a class="button button-primary project-action" href="{{projects.opssemble.caseStudy}}">Case study</a></div>
               <figure class="work-visual">
-                <ol class="project-system-card work-model opssemble-system-card" aria-label="Opssemble flow from event structure through exceptions and readiness to scoped QR access">
+                {{#if projects.opssemble.noPrimaryImage}}<ol class="project-system-card work-model opssemble-system-card" aria-label="Opssemble flow from event structure through exceptions and readiness to scoped QR access">
                   <li class="system-step system-input"><span>Structure</span><strong>Event &amp; areas</strong><small>Tasks with status and priority</small></li><li class="system-step system-exception"><span>Log</span><strong>Exceptions</strong><small>Severity and resolution trail</small></li><li class="system-step system-state"><span>Score</span><strong>Readiness</strong><small>Blockers decide the score</small></li><li class="system-step system-output"><span>Share</span><strong>QR area access</strong><small>Scoped, revocable tokens</small></li>
                 </ol>
-                <figcaption>Implemented coordination model. Interface captures are not yet published.</figcaption>
+                <figcaption>Implemented coordination model. Interface captures are not yet published.</figcaption>{{/if}}
+                {{#if projects.opssemble.primaryImage}}<a href="{{projects.opssemble.caseStudy}}" aria-label="Read the Opssemble case study"><picture><source srcset="{{projects.opssemble.primaryImageAvif}}" type="image/avif" /><source srcset="{{projects.opssemble.primaryImageWebp}}" type="image/webp" /><img src="{{projects.opssemble.primaryImage}}" width="{{projects.opssemble.primaryImageWidth}}" height="{{projects.opssemble.primaryImageHeight}}" loading="lazy" alt="{{projects.opssemble.primaryImageAlt}}" /></picture></a><figcaption>{{projects.opssemble.primaryImageCaption}}</figcaption>{{/if}}
               </figure>
               <dl class="work-meta">
                 <div><dt>Role</dt><dd>{{projects.opssemble.meta.role}}</dd></div><div><dt>Focus</dt><dd>{{projects.opssemble.meta.focus}}</dd></div><div><dt>Evidence</dt><dd>{{projects.opssemble.meta.evidence}}</dd></div>
