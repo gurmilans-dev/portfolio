@@ -172,7 +172,7 @@
               </header>
               <p class="work-panel-lead">{{projects.gurmat.lead}}</p>
               <p class="tech-line">{{projects.gurmat.tech}}</p>
-              <div class="project-actions"><a class="button button-primary project-action" href="{{projects.gurmat.caseStudy}}">Case study</a></div>
+              <div class="project-actions"><a class="button button-primary project-action" href="{{projects.gurmat.caseStudy}}">Case study</a>{{#if projects.gurmat.repository}}<a class="icon-action" href="{{projects.gurmat.repository}}" target="_blank" rel="noopener noreferrer" aria-label="Gurmat Saanj source on GitHub, opens in a new tab">{{icons.github}}<span class="sr-only">GitHub</span></a>{{/if}}</div>
               <figure class="work-visual">
                 {{#if projects.gurmat.primaryImage}}<a href="{{projects.gurmat.caseStudy}}" aria-label="Read the Gurmat Saanj case study"><picture><source srcset="{{projects.gurmat.primaryImageAvif}}" type="image/avif" /><source srcset="{{projects.gurmat.primaryImageWebp}}" type="image/webp" /><img src="{{projects.gurmat.primaryImage}}" width="{{projects.gurmat.primaryImageWidth}}" height="{{projects.gurmat.primaryImageHeight}}" loading="lazy" alt="{{projects.gurmat.primaryImageAlt}}" /></picture></a><figcaption>{{projects.gurmat.primaryImageCaption}}</figcaption>{{/if}}
               </figure>

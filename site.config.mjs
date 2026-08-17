@@ -103,7 +103,7 @@ export const siteConfig = {
       status: "Deployed",
       statusClass: "badge-deployed",
       caseStudy: "gurmat-saanj.html",
-      repository: "",
+      repository: "https://github.com/gurmilans-dev/gurmatsaanj",
       demo: "",
       meta: {
         role: "Full-stack development",

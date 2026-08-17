@@ -25,8 +25,8 @@
         <div class="case-eyebrow"><span class="case-index">01 / Gurmat Saanj</span><span>Deployed community web application</span></div>
         <h1 id="case-title">Following live Gurbani recitation, line by line.</h1>
         <p class="case-lead">Built for live use at a local Gurdwara, Gurmat Saanj follows Punjabi recitation while one editor coordinates the projector and Sangat viewers read on their own devices—behaviour ordinary presentation software could not provide.</p>
-        <dl class="case-facts" data-reveal-group><div><dt>Context</dt><dd>Community application</dd></div><div><dt>Role</dt><dd>End-to-end developer</dd></div><div><dt>Access</dt><dd>QR code or session code</dd></div><div><dt>Devices</dt><dd>Multiple viewers · one editor</dd></div><div><dt>Source</dt><dd>BaniDB</dd></div><div><dt>Status</dt><dd><span class="badge badge-deployed">{{projects.gurmat.status}}</span></dd></div></dl>
-        {{#if projects.gurmat.repository}}<a class="text-action" href="{{projects.gurmat.repository}}" target="_blank" rel="noopener noreferrer">View repository ↗</a>{{/if}}{{#if projects.gurmat.demo}}<a class="text-action" href="{{projects.gurmat.demo}}" target="_blank" rel="noopener noreferrer">Watch demo ↗</a>{{/if}}
+        <dl class="case-facts" data-reveal-group><div><dt>Context</dt><dd>Community application</dd></div><div><dt>Role</dt><dd>End-to-end developer</dd></div><div><dt>Access</dt><dd>QR code or session code</dd></div><div><dt>Devices</dt><dd>Multiple viewers · one editor</dd></div><div><dt>Source</dt><dd>BaniDB</dd></div><div><dt>Status</dt><dd><span class="badge badge-deployed">{{projects.gurmat.status}}</span>{{#if projects.gurmat.repository}}<a class="icon-action" href="{{projects.gurmat.repository}}" target="_blank" rel="noopener noreferrer" aria-label="Gurmat Saanj source on GitHub, opens in a new tab">{{icons.github}}<span class="sr-only">GitHub</span></a>{{/if}}</dd></div></dl>
+        {{#if projects.gurmat.demo}}<div class="text-links"><a class="text-action" href="{{projects.gurmat.demo}}" target="_blank" rel="noopener noreferrer">Watch demo ↗</a></div>{{/if}}
       </section>
 
       <div class="shell case-layout">
