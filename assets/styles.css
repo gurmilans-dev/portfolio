@@ -490,6 +490,7 @@ html:not(.js) .theme-toggle { display: none; }
 .archive-entry[open] .archive-toggle::after { transform: translateY(-50%) rotate(0deg); }
 .archive-body { max-width: 760px; padding: .15rem 0 1.4rem 3.6rem; }
 .archive-body > p:first-child { margin: 0 0 .4rem; font-size: .95rem; }
+.archive-links { margin-top: var(--space-3); }
 .archive-body .protocol-trace { margin: 1.1rem 0; }
 @keyframes archiveOpen { from { opacity: 0; transform: translateY(-4px); } }
 .archive-entry[open] .archive-body { animation: archiveOpen .24s ease-out; }

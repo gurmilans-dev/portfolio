@@ -195,13 +195,14 @@ export const siteConfig = {
       primaryImageAlt: "Opssemble event dashboard showing a 45 per cent readiness score, blocking tasks, open exceptions and a per-area readiness summary",
       primaryImageCaption: "Event dashboard: readiness score, blocking tasks and open exceptions. The interface is Italian."
     },
+    // Archive entries (06-07). No `order`, so they stay out of the featured index.
     licenceManager: {
       context: "Private commercial component",
       repository: ""
     },
-    azure: {
+    sird: {
       status: "Academic",
-      repository: ""
+      repository: "https://github.com/gurmilans-dev/sir-simulation"
     }
   }
 };
