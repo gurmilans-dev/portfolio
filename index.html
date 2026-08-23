@@ -66,7 +66,7 @@
           <p class="hero-kicker"><span class="status-dot" aria-hidden="true"></span>{{profile.location}}</p>
         </div>
         <div class="hero-head">
-          <p class="eyebrow">React · JavaScript · Node.js · SQL · C#/.NET</p>
+          <p class="eyebrow">React · JavaScript · TypeScript · Node.js · SQL · C#/.NET</p>
           <h1 id="hero-title" aria-label="Full-stack developer and software engineer building for real operational needs."><span>Full-stack developer</span><span>and software engineer</span><span>building for real operational needs.</span></h1>
         </div>
         <div class="hero-frame">
@@ -120,6 +120,7 @@
               <li><a href="#work-gurmat" data-work-index-link><span class="work-index-no">03</span><span class="work-index-name">Gurmat Saanj</span><span class="work-index-meta">Real-time shared reading</span></a></li>
               <li><a href="#work-alfaaz" data-work-index-link><span class="work-index-no">04</span><span class="work-index-name">Alfaaz</span><span class="work-index-meta">Multilingual writing</span></a></li>
               <li><a href="#work-opssemble" data-work-index-link><span class="work-index-no">05</span><span class="work-index-name">Opssemble</span><span class="work-index-meta">Event readiness</span></a></li>
+              <li><a href="#work-esamarea" data-work-index-link><span class="work-index-no">06</span><span class="work-index-name">Esamarea</span><span class="work-index-meta">Study planning</span></a></li>
             </ol>
           </nav>
           <div class="work-panels">
@@ -222,14 +223,31 @@
                 <div><dt>Role</dt><dd>{{projects.opssemble.meta.role}}</dd></div><div><dt>Focus</dt><dd>{{projects.opssemble.meta.focus}}</dd></div><div><dt>Evidence</dt><dd>{{projects.opssemble.meta.evidence}}</dd></div>
               </dl>
             </article>
+
+            <article id="work-esamarea" class="work-panel" data-work-panel="esamarea">
+              <header class="work-panel-head" data-reveal-group>
+                <p class="work-panel-no"><span class="work-panel-index">06</span><span class="badge {{projects.esamarea.statusClass}}">{{projects.esamarea.status}}</span></p>
+                <h3><span>{{projects.esamarea.title}}</span></h3>
+                <p class="work-panel-category">{{projects.esamarea.category}}</p>
+              </header>
+              <p class="work-panel-lead">{{projects.esamarea.lead}}</p>
+              <p class="tech-line">{{projects.esamarea.tech}}</p>
+              <div class="project-actions"><a class="button button-primary link-with-icon" href="{{projects.esamarea.repository}}" target="_blank" rel="noopener noreferrer">{{icons.github}}<span>View source</span>{{icons.external}}</a></div>
+              <figure class="work-visual">
+                <a href="{{projects.esamarea.repository}}" target="_blank" rel="noopener noreferrer" aria-label="Esamarea source on GitHub, opens in a new tab"><picture><source srcset="{{projects.esamarea.primaryImageAvif}}" type="image/avif" /><source srcset="{{projects.esamarea.primaryImageWebp}}" type="image/webp" /><img src="{{projects.esamarea.primaryImage}}" width="{{projects.esamarea.primaryImageWidth}}" height="{{projects.esamarea.primaryImageHeight}}" loading="lazy" alt="{{projects.esamarea.primaryImageAlt}}" /></picture></a><figcaption>{{projects.esamarea.primaryImageCaption}}</figcaption>
+              </figure>
+              <dl class="work-meta">
+                <div><dt>Role</dt><dd>{{projects.esamarea.meta.role}}</dd></div><div><dt>Focus</dt><dd>{{projects.esamarea.meta.focus}}</dd></div><div><dt>Evidence</dt><dd>{{projects.esamarea.meta.evidence}}</dd></div>
+              </dl>
+            </article>
           </div>
         </div>
         <div class="shell work-stack">
           <section class="earlier-work archive-index" aria-labelledby="earlier-work-title" data-archive-index>
-            <div class="earlier-work-intro"><p class="eyebrow">Additional work / 06–07</p><h2 id="earlier-work-title">Additional engineering work</h2><p class="archive-note">Supporting evidence beyond the featured web projects.</p></div>
+            <div class="earlier-work-intro"><p class="eyebrow">Additional work / 07–08</p><h2 id="earlier-work-title">Additional engineering work</h2><p class="archive-note">Supporting evidence beyond the featured web projects.</p></div>
             <div class="archive-list">
               <details class="archive-entry">
-                <summary><span class="archive-no">06</span><span class="archive-title">Client-server licence manager</span><span class="archive-meta">{{projects.licenceManager.context}} · C# / .NET</span><span class="archive-toggle" aria-hidden="true"></span></summary>
+                <summary><span class="archive-no">07</span><span class="archive-title">Client-server licence manager</span><span class="archive-meta">{{projects.licenceManager.context}} · C# / .NET</span><span class="archive-toggle" aria-hidden="true"></span></summary>
                 <div class="archive-body">
                   <p>C#/.NET client-server component controlling licence activation and concurrent use.</p>
                   <ol class="protocol-trace connector-flow" data-connector-reveal aria-label="Licence manager protocol trace"><li><span>01</span>Client requests validation</li><li><span>02</span>Server checks activation</li><li><span>03</span>Concurrent-use rule evaluated</li><li><span>04</span>Validation result returned</li></ol>
@@ -237,7 +255,7 @@
                 </div>
               </details>
               <details class="archive-entry">
-                <summary><span class="archive-no">07</span><span class="archive-title">SIRD Epidemic Simulator</span><span class="archive-meta">Academic · Java 17 · JavaFX</span><span class="archive-toggle" aria-hidden="true"></span></summary>
+                <summary><span class="archive-no">08</span><span class="archive-title">SIRD Epidemic Simulator</span><span class="archive-meta">Academic · Java 17 · JavaFX</span><span class="archive-toggle" aria-hidden="true"></span></summary>
                 <div class="archive-body">
                   <p>Agent-based SIRD desktop simulator: a background engine drives moving agents with collision handling, real-time S/I/R/D visualisation, and CSV export, on a model–engine–controller architecture.</p>
                   <p class="tech-line">Java 17 · JavaFX · Maven · concurrency</p>

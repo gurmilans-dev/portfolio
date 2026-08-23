@@ -195,6 +195,32 @@ export const siteConfig = {
       primaryImageAlt: "Opssemble event dashboard showing a 45 per cent readiness score, blocking tasks, open exceptions and a per-area readiness summary",
       primaryImageCaption: "Event dashboard: readiness score, blocking tasks and open exceptions. The interface is Italian."
     },
+    esamarea: {
+      order: 6,
+      title: "Esamarea",
+      category: "Study planning application",
+      lead: "A study planner that splits one weekly availability budget across every active exam, and records study sessions on a timer the server owns rather than the browser.",
+      tech: "React · TypeScript · Express · Prisma · MySQL",
+      status: "Public repository",
+      statusClass: "badge-public",
+      // No case study: one commit, published in a day. The repository is the evidence,
+      // and a six-section analysis would claim a depth the history cannot support.
+      caseStudy: "",
+      repository: "https://github.com/gurmilans-dev/esamarea",
+      demo: "",
+      meta: {
+        role: "Full-stack development",
+        focus: "Deterministic planning · server-owned timers",
+        evidence: "Public repository · MIT · unit, API and end-to-end tests"
+      },
+      primaryImage: "assets/esamarea/esamarea-shared-plan.png",
+      primaryImageAvif: "assets/esamarea/esamarea-shared-plan.avif",
+      primaryImageWebp: "assets/esamarea/esamarea-shared-plan.webp",
+      primaryImageWidth: 1440,
+      primaryImageHeight: 950,
+      primaryImageAlt: "Esamarea shared-capacity plan showing available against planned hours, the number of exams at risk, overall progress and per-day capacity marked as overloaded",
+      primaryImageCaption: "One weekly availability budget, distributed across active exams. The interface is Italian."
+    },
     // Archive entries (06-07). No `order`, so they stay out of the featured index.
     licenceManager: {
       context: "Private commercial component",

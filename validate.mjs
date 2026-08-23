@@ -103,7 +103,7 @@ for (const [file, html] of htmlByFile) {
 
 const home = htmlByFile.get("index.html");
 if (!home.includes('aria-label="Full-stack developer and software engineer building for real operational needs."')) fail("homepage: full-stack hero statement is missing");
-if (!home.includes("React · JavaScript · Node.js · SQL · C#/.NET")) fail("homepage: primary technology line is missing");
+if (!home.includes("React · JavaScript · TypeScript · Node.js · SQL · C#/.NET")) fail("homepage: primary technology line is missing");
 if (!home.includes('id="capabilities"') || home.includes('id="workflow"') || home.includes('id="skills"')) fail("homepage: capabilities must remain consolidated into one section");
 if (!home.includes("Used in daily internal operations")) fail("homepage: approved ERP usage wording is missing");
 // Featured order has one source of truth: siteConfig.projects[].order. Re-ranking the
@@ -124,8 +124,12 @@ if (home.includes("data-work-track") || home.includes("data-rail-stage")) fail("
 for (const project of featuredProjects) {
   if (!new RegExp(`<a href="#work-${project.key}" data-work-index-link`).test(home)) fail(`homepage: index link missing for ${project.key}`);
   if (!new RegExp(`id="work-${project.key}"[^>]*data-work-panel="${project.key}"`).test(home)) fail(`homepage: panel missing for ${project.key}`);
-  if (!home.includes(`href="${project.caseStudy}"`)) fail(`homepage: ${project.key} panel does not link to its case study`);
-  if (!pages.includes(project.caseStudy)) fail(`${project.key}: case study ${project.caseStudy} is not a registered page`);
+  // A featured project must be inspectable: either a case study on this site, or a
+  // public repository. Which one is a judgement call per project; having neither is not.
+  const evidenceHref = project.caseStudy || project.repository;
+  if (!evidenceHref) fail(`${project.key}: featured project offers neither a case study nor a repository`);
+  else if (!home.includes(`href="${evidenceHref}"`)) fail(`homepage: ${project.key} panel does not link to its case study or repository`);
+  if (project.caseStudy && !pages.includes(project.caseStudy)) fail(`${project.key}: case study ${project.caseStudy} is not a registered page`);
 }
 const validContactModes = new Set(["endpoint", "mailto", "disabled"]);
 const configuredContactMode = siteConfig.contactForm?.mode;
@@ -157,7 +161,7 @@ for (const [file, html] of htmlByFile) {
     if (!/currentColor/i.test(svg)) fail(`${file}: inline SVG does not inherit currentColor`);
   }
 }
-for (const file of featuredProjects.map((project) => project.caseStudy)) {
+for (const file of featuredProjects.map((project) => project.caseStudy).filter(Boolean)) {
   const html = htmlByFile.get(file);
   if ((html.match(/class="decision-record\b/g) || []).length !== 1) fail(`${file}: expected exactly one decision record`);
 }
@@ -262,7 +266,7 @@ for (const [file, width, height, label] of declaredImages) {
 }
 
 for (const [file, expectedHash] of Object.entries({
-  "Gurmilan_Singh_2026_CV.pdf": "DDD033DD39D87E311C1A713A17D179E31BEB9E7AC7DF436E2AE575319117D5EE"
+  "Gurmilan_Singh_2026_CV.pdf": "3C8729590E926F33E89E863D1DE66E354C2BFDE04DDA79A6AC11D9AD745C70B0"
 })) {
   const bytes = await fs.readFile(path.resolve(file)).catch(() => null);
   const actualHash = bytes ? createHash("sha256").update(bytes).digest("hex").toUpperCase() : "";
