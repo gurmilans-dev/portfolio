@@ -4,7 +4,7 @@ export const siteConfig = {
     role: "Full-Stack Web Developer & Software Engineer",
     employmentTitle: "Software Developer",
     positioning: "I design and build responsive interfaces, backend APIs, and data-driven workflows for software used in real operational environments.",
-    experience: "2+ years of commercial software development",
+    experience: "3+ years of commercial software development",
     employmentPeriod: "September 2023 - Present",
     graduation: "Expected December 2026",
     location: "Modena, Italy",
