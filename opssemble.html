@@ -24,7 +24,7 @@
         <nav class="breadcrumbs" aria-label="Breadcrumb"><a href="index.html">Home</a><span>/</span><a href="index.html#work">Work</a><span>/</span><span aria-current="page">Opssemble</span></nav>
         <div class="case-eyebrow"><span class="case-index">02 / Opssemble</span><span>Active development · core workflow implemented</span></div>
         <h1 id="case-title">What isn’t ready, and what just went wrong.</h1>
-        <p class="case-lead">Opssemble is a university final project for coordinating event areas, tasks, exceptions, and readiness. The core workflow is implemented while interface evidence, tests, and public documentation are still being prepared.</p>
+        <p class="case-lead">Opssemble is a university final project for coordinating event areas, tasks, exceptions, and readiness. The core workflow is implemented, with a dashboard screenshot published below; tests and public documentation are still being prepared.</p>
         <dl class="case-facts" data-reveal-group><div><dt>Context</dt><dd>University final project</dd></div><div><dt>Role</dt><dd>End-to-end developer</dd></div><div><dt>Authorization</dt><dd>Server-side event roles</dd></div><div><dt>Status</dt><dd><span class="badge badge-academic">{{projects.opssemble.status}}</span></dd></div></dl>
         {{#if projects.opssemble.repository}}<a class="text-action" href="{{projects.opssemble.repository}}" target="_blank" rel="noopener noreferrer">View repository ↗</a>{{/if}}{{#if projects.opssemble.demo}}<a class="text-action" href="{{projects.opssemble.demo}}" target="_blank" rel="noopener noreferrer">Watch demo ↗</a>{{/if}}
       </section>
@@ -37,8 +37,8 @@
             <h2 id="overview-title">Tasks, exceptions, and readiness in one product.</h2>
             <p>Areas hold tasks, problems become tracked exceptions with severity, and readiness is computed from what's still open.</p>
             <div class="operational-scope" data-reveal-group aria-label="Implemented product coverage"><p class="artifact-label">implemented coverage</p><ul><li><strong>Structure</strong><span>Events, typed areas, tasks with status and priority</span></li><li><strong>Exceptions</strong><span>Severity, status, resolution note and resolver</span></li><li><strong>Readiness</strong><span>Per-area and event-wide scores with blockers</span></li><li><strong>Records</strong><span>Reports, CSV &amp; print export, activity log, dashboard</span></li></ul></div>
-            {{#if projects.opssemble.primaryImage}}<figure class="annotated-media evidence-media" data-reveal-group><img src="{{projects.opssemble.primaryImage}}" width="1440" height="900" loading="lazy" alt="Opssemble dashboard showing active events, needs-attention items, and open exceptions" /><figcaption>Dashboard evidence from the running application.</figcaption></figure>{{/if}}
-            <aside class="public-evidence-note"><p class="annotation-label">evidence status</p><p>Screenshots and a public repo aren't published yet — the diagrams summarize the implemented module structure and data rules, not interface mock-ups.</p></aside>
+            {{#if projects.opssemble.primaryImage}}<figure class="annotated-media evidence-media" data-reveal-group><img src="{{projects.opssemble.primaryImage}}" width="{{projects.opssemble.primaryImageWidth}}" height="{{projects.opssemble.primaryImageHeight}}" loading="lazy" alt="{{projects.opssemble.primaryImageAlt}}" /><figcaption>{{projects.opssemble.primaryImageCaption}}</figcaption></figure>{{/if}}
+            <aside class="public-evidence-note"><p class="annotation-label">evidence status</p><p>The dashboard above is a screenshot of the running application. The diagrams below explain the implemented module structure and data rules. A public repository, setup documentation, and test reporting are still being prepared.</p></aside>
           </section>
 
           <section id="architecture" class="case-section" aria-labelledby="architecture-title">
@@ -116,8 +116,8 @@
           <section id="outcome" class="case-section" aria-labelledby="outcome-title">
             <p class="case-section-no">06 / Current boundaries</p>
             <h2 id="outcome-title">Core workflow implemented; public evidence still in progress.</h2>
-            <dl class="constraint-ledger" data-reveal-group><div><dt>Scope</dt><dd>An active-development university project, not a commercial production SaaS.</dd></div><div><dt>Metrics</dt><dd>No load, uptime, or usage figures are published.</dd></div><div><dt>Evidence</dt><dd>Public screenshots, repository documentation, and test reporting are still required.</dd></div><div><dt>Assistant</dt><dd>Runs only when the optional assistant is configured.</dd></div></dl>
-            <div class="outcome-summary" data-reveal-group><div><p class="artifact-label">what it demonstrates</p><p>Product interface work, a layered API, relational data, authentication, roles, QR-scoped access, and controlled AI assistance.</p></div><div><p class="artifact-label">next evidence</p><p>Sanitized screenshots, focused tests, setup documentation, and a public repository are the next publication steps.</p></div></div>
+            <dl class="constraint-ledger" data-reveal-group><div><dt>Scope</dt><dd>An active-development university project, not a commercial production SaaS.</dd></div><div><dt>Metrics</dt><dd>No load, uptime, or usage figures are published.</dd></div><div><dt>Evidence</dt><dd>A dashboard screenshot is published here. Repository documentation and test reporting are still in progress.</dd></div><div><dt>Assistant</dt><dd>Runs only when the optional assistant is configured.</dd></div></dl>
+            <div class="outcome-summary" data-reveal-group><div><p class="artifact-label">what it demonstrates</p><p>Product interface work, a layered API, relational data, authentication, roles, QR-scoped access, and controlled AI assistance.</p></div><div><p class="artifact-label">next evidence</p><p>Additional interface captures, focused tests, setup documentation, and a public repository are the next publication steps.</p></div></div>
           </section>
         </article>
       </div>

@@ -193,7 +193,7 @@ export const siteConfig = {
       primaryImageWidth: 1900,
       primaryImageHeight: 984,
       primaryImageAlt: "Opssemble event dashboard showing a 45 per cent readiness score, blocking tasks, open exceptions and a per-area readiness summary",
-      primaryImageCaption: "Event dashboard: readiness score, blocking tasks and open exceptions. The interface is Italian."
+      primaryImageCaption: "Screenshot from the running application: event readiness, blocking tasks and open exceptions. The interface is Italian."
     },
     esamarea: {
       order: 6,
