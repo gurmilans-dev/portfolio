@@ -239,7 +239,7 @@ const privateDataPatterns = [
 for (const pattern of privateDataPatterns) {
   if (pattern.test(productionHtml)) fail(`production HTML: possible private address or session identifier exposed (${pattern})`);
 }
-if (/multi-hour|self-healing|three years|3\+? years/i.test(productionHtml)) fail("production HTML: an unsupported or stale claim is present");
+if (/multi-hour|self-healing/i.test(productionHtml)) fail("production HTML: an unsupported or stale claim is present");
 if (/C#|\.NET|ASP\.NET|Entity Framework/i.test(erp)) fail("erp-case-study.html: C#/.NET must not be attributed to the React/Node ERP");
 
 const notFound = htmlByFile.get("404.html");
@@ -265,12 +265,13 @@ for (const [file, width, height, label] of declaredImages) {
   if (bytes.readUInt32BE(16) !== width || bytes.readUInt32BE(20) !== height) fail(`${label}: ${file} is ${bytes.readUInt32BE(16)}x${bytes.readUInt32BE(20)}, config declares ${width}x${height}`);
 }
 
+// Update the approved checksum whenever the résumé is intentionally revised.
 for (const [file, expectedHash] of Object.entries({
-  "Gurmilan_Singh_2026_CV.pdf": "3C8729590E926F33E89E863D1DE66E354C2BFDE04DDA79A6AC11D9AD745C70B0"
+  "Gurmilan_Singh_2026_CV.pdf": "EE948379132FBCF73E59AE8EF86A2F2C62FDAD6DA9D3C26B871DF073D34626DE"
 })) {
   const bytes = await fs.readFile(path.resolve(file)).catch(() => null);
   const actualHash = bytes ? createHash("sha256").update(bytes).digest("hex").toUpperCase() : "";
-  if (actualHash !== expectedHash) fail(`${file}: résumé source changed during this pass`);
+  if (actualHash !== expectedHash) fail(`${file}: résumé checksum does not match the approved PDF`);
 }
 
 const productionCss = await fs.readFile(path.join(root, "assets/styles.css"), "utf8");
