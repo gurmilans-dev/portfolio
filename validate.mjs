@@ -2,6 +2,7 @@ import { promises as fs } from "node:fs";
 import path from "node:path";
 import { createHash } from "node:crypto";
 import { siteConfig, featuredProjects } from "./site.config.mjs";
+import { countHtmlWords } from "./scripts/html.mjs";
 
 const root = path.resolve("dist");
 const pages = siteConfig.pages.map((page) => page.file);
@@ -18,9 +19,7 @@ const htmlByFile = new Map();
 for (const file of pages) htmlByFile.set(file, await fs.readFile(path.join(root, file), "utf8"));
 
 for (const [file, html] of htmlByFile) {
-  const visible = html.replace(/<script[\s\S]*?<\/script>/gi, " ").replace(/<style[\s\S]*?<\/style>/gi, " ").replace(/<[^>]+>/g, " ").replace(/&[a-z#0-9]+;/gi, " ");
-  const words = visible.trim().split(/\s+/).filter(Boolean).length;
-  console.log(`INFO ${file}: ${words} visible words`);
+  console.log(`INFO ${file}: ${countHtmlWords(html)} content words`);
   if ((html.match(/<h1\b/gi) || []).length !== 1) fail(`${file}: expected exactly one h1`);
   if (!/<title>[^<]+<\/title>/i.test(html)) fail(`${file}: missing title`);
   if (file !== "404.html" && !/<meta name="description" content="[^"]+"/i.test(html)) fail(`${file}: missing meta description`);

@@ -1,6 +1,7 @@
 import { promises as fs } from "node:fs";
 import path from "node:path";
 import { siteConfig } from "./site.config.mjs";
+import { removeHtmlComments } from "./scripts/html.mjs";
 
 const ROOT = path.resolve(".");
 const OUT = path.join(ROOT, "dist");
@@ -132,10 +133,6 @@ function renderTemplate(source, file) {
   return rendered;
 }
 
-function minifyHtml(source) {
-  return source.replace(/<!--[\s\S]*?-->/g, "").replace(/>\s+</g, "><").trim();
-}
-
 function minifyCss(source) {
   return source
     .replace(/\/\*[\s\S]*?\*\//g, "")
@@ -176,7 +173,7 @@ async function build() {
   for (const file of HTML_FILES) {
     const template = await fs.readFile(path.join(ROOT, file), "utf8");
     const rendered = renderTemplate(template, file);
-    await fs.writeFile(path.join(OUT, file), minifyHtml(rendered));
+    await fs.writeFile(path.join(OUT, file), removeHtmlComments(rendered));
   }
 
   const domain = siteConfig.profile.domain.replace(/\/$/, "");

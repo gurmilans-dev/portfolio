@@ -5,14 +5,17 @@ A framework-free static portfolio for a full-stack software engineer, with no ru
 ## Run locally on Windows
 
 1. Open PowerShell in this folder.
-2. Build: `node build.mjs`
-3. Validate: `node validate.mjs`
-4. Serve the production folder: `npx serve dist -l 4173`
-5. Open `http://localhost:4173`
+2. Install development dependencies: `npm ci --include=dev`
+3. Build: `npm run build`
+4. Run the HTML regression tests and site validation: `npm test`
+5. Serve the production folder: `npx serve dist -l 4173`
+6. Open `http://localhost:4173`
 
 If Python is installed, `python -m http.server 4173 --directory dist` is an optional alternative. Python is not required for the project itself.
 
 The root HTML files are source templates. Essential values are resolved into complete static HTML during the build; production content and navigation do not depend on JavaScript.
+
+HTML comment removal and content word counts use the parse5 HTML parser at build and validation time. The deployed site has no npm runtime dependencies.
 
 ## Production deployment
 

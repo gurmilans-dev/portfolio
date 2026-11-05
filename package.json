@@ -5,9 +5,10 @@
   "description": "Static portfolio for Gurmilan Singh - full-stack software engineer. Hand-built HTML/CSS/JS with self-hosted GSAP and Three.js for motion and 3D; no runtime npm dependencies (sharp is dev-only image optimization).",
   "scripts": {
     "build": "node build.mjs",
-    "test": "node validate.mjs"
+    "test": "node --test scripts/html.test.mjs && node validate.mjs"
   },
   "devDependencies": {
-    "sharp": "^0.35.2"
+    "parse5": "8.0.0",
+    "sharp": "^0.35.5"
   }
 }
