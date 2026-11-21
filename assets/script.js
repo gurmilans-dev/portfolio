@@ -109,7 +109,7 @@
   const queueScroll = () => { if (!scrollFrame) scrollFrame = requestAnimationFrame(onScrollFrame); };
   addEventListener("scroll", queueScroll, { passive: true });
   addEventListener("resize", queueScroll, { passive: true });
-  onScrollFrame();
+  queueScroll();
 
   /* ---------- Section awareness: homepage nav + HUD, case-study contents ---------- */
   const hud = document.querySelector("[data-hud]");
@@ -141,7 +141,7 @@
     const queue = () => { if (!frame) frame = requestAnimationFrame(update); };
     addEventListener("scroll", queue, { passive: true });
     addEventListener("resize", queue, { passive: true });
-    update();
+    queue(); // first measurement after the browser's own first layout, not forced mid-script
   }
 
   const homeLinks = [...document.querySelectorAll("[data-section-link]")];
@@ -176,11 +176,17 @@
         observer.unobserve(entry.target);
       });
     }, { rootMargin: "0px 0px -8%", threshold: .08 });
-    reveals.forEach(element => {
-      if (element.getBoundingClientRect().top < innerHeight * .94) element.classList.add("is-in");
+    // Read every position first, then write: interleaving the two forced a layout per element.
+    const fold = innerHeight * .94;
+    const tops = reveals.map(element => element.getBoundingClientRect().top);
+    reveals.forEach((element, i) => {
+      if (tops[i] < fold) element.classList.add("is-in");
       else observer.observe(element);
     });
     root.classList.add("reveal-ready");
+    // A page opened on an anchor shows everything at once, so the browser scrolls to the
+    // target's final position rather than its pre-reveal offset (16px lower).
+    if (location.hash) reveals.forEach(element => element.classList.add("is-in"));
     // A hidden hash target must never stay invisible.
     addEventListener("hashchange", () => reveals.forEach(element => element.classList.add("is-in")));
   } else {

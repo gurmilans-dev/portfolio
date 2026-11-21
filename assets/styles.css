@@ -67,11 +67,14 @@
   --mono: "JetBrains Mono", ui-monospace, "SFMono-Regular", Consolas, "Liberation Mono", monospace;
 
   --header-h: 60px;
-  --pad: clamp(20px, 3vw, 48px);
+  /* Page margin: 20px on phones, rising to 36px across tablet widths (5vw - 6px), held
+     there until 3vw takes over on wider screens (1200px+), capped at 48px. */
+  --pad: clamp(20px, max(3vw, min(5vw - 6px, 36px)), 48px);
   --frame-max: 1760px;
   --ease: cubic-bezier(.2, .8, .2, 1);
 
-  --t-display: clamp(2.3rem, min(5.4vw, 9vh), 5.4rem);
+  /* Hero headline in one column; the wider compositions set their own size. */
+  --t-display: clamp(2.15rem, min(10.4vw, 10vh), 2.7rem);
   --t-section: clamp(2.1rem, 4.2vw, 4rem);
   --t-case: clamp(2.4rem, 5.2vw, 5.1rem);
   --t-h2: clamp(1.7rem, 2.9vw, 2.65rem);
@@ -121,7 +124,7 @@
   --plate-shadow: #dcdcd5;
   --plate-lift: #ffffff;
   --plane-edge: rgb(20 21 24 / .3);
-  --plane-fill: rgb(255 255 255 / .5);
+  --plane-fill: rgb(255 255 255 / .22);
   --plane-grid: rgb(20 21 24 / .07);
   --socket-edge: rgb(20 21 24 / .45);
   --plane-label: #7a7b81;
@@ -170,7 +173,7 @@
     --plate-shadow: #dcdcd5;
     --plate-lift: #ffffff;
     --plane-edge: rgb(20 21 24 / .3);
-    --plane-fill: rgb(255 255 255 / .5);
+    --plane-fill: rgb(255 255 255 / .22);
     --plane-grid: rgb(20 21 24 / .07);
     --socket-edge: rgb(20 21 24 / .45);
     --plane-label: #7a7b81;
@@ -223,7 +226,6 @@ code { font-family: var(--mono); font-size: .86em; padding: .08em .36em; backgro
 
 .label { display: block; font: 500 var(--t-mono)/1.4 var(--mono); letter-spacing: .08em; text-transform: uppercase; color: var(--text-4); }
 .label-accent { color: var(--accent); }
-.mono { font-family: var(--mono); }
 
 /* ---------- Buttons, status ---------- */
 .btn { display: inline-flex; align-items: center; justify-content: center; gap: .6em; min-height: 46px; padding: 0 18px; border: 1px solid var(--line-3); background: transparent; color: var(--text); font: 600 15px/1.1 var(--sans); text-decoration: none; text-align: center; transition: background-color .2s, border-color .2s, color .2s; }
@@ -323,15 +325,21 @@ code { font-family: var(--mono); font-size: .86em; padding: .08em .36em; backgro
 }
 
 /* ---------- Hero ---------- */
+/* Three compositions, chosen by the room there is rather than by device:
+   - under 760px, one column: statement, intro and actions, then the stack;
+   - 760-959px (portrait tablets), the statement spans the width, and the intro, actions
+     and highlights form a column beside the stack, so the hero fits one tablet screen;
+   - 960px and up, two columns: the text on the left, the stack on the right.
+   The base rules below are the one-column layout. */
 .hero { position: relative; overflow: hidden; overflow: clip; border-bottom: 1px solid var(--line); background: radial-gradient(50% 60% at 80% 60%, var(--glow) 0%, var(--bg) 70%); }
-.hero-grid { display: grid; grid-template-columns: minmax(0, 1fr); gap: 28px; padding: clamp(28px, 6vh, 64px) 0 clamp(16px, 3vh, 28px); }
+.hero-grid { display: grid; grid-template-columns: minmax(0, 1fr); gap: 24px; padding: clamp(28px, 6vh, 64px) 0 clamp(16px, 3vh, 28px); }
 .hero-head { display: grid; gap: 12px; }
 .hero-loc { display: inline-flex; align-items: center; gap: 10px; font: 500 12px/1.4 var(--mono); letter-spacing: .08em; text-transform: uppercase; color: var(--text-2); }
 .pulse { flex: none; width: 8px; height: 8px; border-radius: 50%; background: var(--accent-fill); box-shadow: 0 0 0 4px rgb(var(--accent-rgb) / .18); }
 .hero-tech { text-wrap: balance; font: 500 12px/1.5 var(--mono); letter-spacing: .08em; text-transform: uppercase; color: var(--accent); }
-.hero h1 { margin-top: 6px; max-width: 18ch; font-size: var(--t-display); line-height: .95; letter-spacing: -.045em; }
-.hero-copy { display: grid; gap: clamp(20px, 4vh, 34px); align-content: center; }
-.hero-lead { max-width: 33ch; font-size: clamp(1.12rem, min(1.6vw, 3vh), 1.5rem); line-height: 1.5; color: var(--text-2); }
+.hero h1 { margin-top: 6px; max-width: 20ch; font-size: var(--t-display); line-height: .95; letter-spacing: -.045em; }
+.hero-copy { display: grid; gap: 24px; align-content: center; }
+.hero-lead { max-width: 40ch; font-size: clamp(1.12rem, 1rem + .35vw, 1.2rem); line-height: 1.5; color: var(--text-2); }
 .hero-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; }
 
 /* FIG. 00 — the stack drawn as a request trace. A request leaves the client and descends
@@ -357,7 +365,7 @@ code { font-family: var(--mono); font-size: .86em; padding: .08em .36em; backgro
 .hero-stack { list-style: none; padding: 0; margin: var(--lead) 0 0; display: flex; flex-direction: column; gap: var(--gap); transform-style: preserve-3d; }
 /* translateZ(1px): plates and the stack would otherwise share one plane, and the 3D hit
    test can then pick the stack instead of the plate under the pointer. */
-.plate { --i: 0; position: relative; display: grid; gap: clamp(5px, .9vh, 9px); padding: clamp(10px, 1.5vh, 15px) 16px; border: 1px solid var(--line-3); background: var(--bg-1); box-shadow: 12px 14px 0 var(--plate-shadow); transform: translateZ(1px); transition: transform .45s var(--ease), border-color .25s, background-color .25s, box-shadow .45s var(--ease); }
+.plate { --i: 0; container: plate / inline-size; position: relative; display: grid; gap: clamp(5px, .9vh, 9px); padding: clamp(10px, 1.5vh, 15px) 16px; border: 1px solid var(--line-3); background: var(--bg-1); box-shadow: 12px 14px 0 var(--plate-shadow); transform: translateZ(1px); transition: transform .45s var(--ease), border-color .25s, background-color .25s, box-shadow .45s var(--ease); }
 .plate:nth-child(2) { --i: 1; }
 .plate:nth-child(3) { --i: 2; }
 .plate:nth-child(4) { --i: 3; }
@@ -375,13 +383,17 @@ code { font-family: var(--mono); font-size: .86em; padding: .08em .36em; backgro
 .plate-link:focus-visible { outline: none; }
 .plate:has(.plate-link:focus-visible) { outline: 2px solid var(--accent); outline-offset: 3px; }
 /* One row of modules sized to their labels (so "Express / Fastify" gets the room it
-   needs); a 2 × 2 board when the figure is narrow. */
+   needs); a 2 × 2 board when the plate is too narrow for its widest row. Each plate is
+   its own container, so the rule follows the plate's real width in every layout. The
+   widest row (L4) needs 358px inside the plate, or 339px with tighter padding. */
 .plate-chips { list-style: none; padding: 0; display: flex; gap: 6px; }
 .plate-chips li { flex: 1 1 auto; min-width: 0; }
 .plate-chips li { padding: clamp(4px, .75vh, 7px) 6px; border: 1px solid var(--line-2); background: var(--bg); font: 500 11.5px/1.25 var(--mono); color: var(--text-2); text-align: center; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-@container (max-width: 540px) { .plate-chips { flex-wrap: wrap; } .plate-chips li { flex: 1 1 calc(50% - 3px); } }
-@container (max-width: 340px) { .plate-chips li { padding-inline: 4px; font-size: 10.5px; } }
-@container (max-width: 300px) { .plate { padding-inline: 10px; } .plate-chips { gap: 4px; } .plate-chips li { padding-inline: 3px; } }
+@container plate (max-width: 357px) { .plate-chips { gap: 5px; } .plate-chips li { padding-inline: 4px; } }
+@container plate (max-width: 338px) { .plate-chips { flex-wrap: wrap; gap: 6px; } .plate-chips li { flex: 1 1 calc(50% - 3px); padding-inline: 6px; } }
+@container plate (max-width: 285px) { .plate-chips li { padding-inline: 4px; font-size: 10.5px; } }
+@container (max-width: 300px) { .plate { padding-inline: 10px; } }
+@container plate (max-width: 260px) { .plate-chips { gap: 4px; } .plate-chips li { padding-inline: 3px; } }
 /* Delivery reads as a pipeline: source, checks, release, and the host it runs on. */
 .plate-chips.is-pipeline { gap: 6px 16px; }
 .is-pipeline li { position: relative; overflow: visible; }
@@ -389,13 +401,7 @@ code { font-family: var(--mono); font-size: .86em; padding: .08em .36em; backgro
 .is-pipeline li:nth-child(3) { --n: 2; }
 .is-pipeline li:nth-child(4) { --n: 3; }
 .is-pipeline li + li::before { content: "›"; position: absolute; right: 100%; top: 50%; width: 16px; translate: 0 -50%; text-align: center; font: 500 13px/1 var(--mono); color: var(--text-4); }
-@container (max-width: 540px) { .is-pipeline li { flex-basis: calc(50% - 8px); } .is-pipeline li:nth-child(3)::before { content: none; } }
-/* Short laptop screens: tighten the stack so it sits above the fold beside the headline. */
-@media (min-width: 1024px) and (max-height: 860px) {
-  .hero-figure { --gap: 16px; --lead: 40px; }
-  .plate { gap: 5px; padding: 8px 14px; }
-  .plate-chips li { padding-block: 3px; }
-}
+@container plate (max-width: 338px) { .is-pipeline li { flex-basis: calc(50% - 8px); } .is-pipeline li:nth-child(3)::before { content: none; } }
 
 /* Each plate's wire layer sits exactly over it, and its edge lights while the request is
    inside the layer. Lanes, ports and the boundary label live in the gap above the plate:
@@ -458,31 +464,84 @@ code { font-family: var(--mono); font-size: .86em; padding: .08em .36em; backgro
 .proof span { font-size: 14px; color: var(--text-3); }
 .proof-cue { display: none; }
 
+/* Highlights side by side once each has room for its label on one line. */
 @media (min-width: 680px) {
   .proof { grid-template-columns: repeat(3, minmax(0, 1fr)); }
   .proof > div { padding: 16px 20px 0 0; border-bottom: 0; }
   .proof > div + div { padding-left: 20px; border-left: 1px solid var(--line-2); }
 }
-@media (min-width: 1024px) {
-  .hero-grid { min-height: calc(100svh - var(--header-h)); grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); grid-template-rows: auto 1fr auto; grid-template-areas: "head visual" "copy visual" "proof proof"; column-gap: clamp(28px, 4vw, 80px); row-gap: 0; padding-top: clamp(28px, 5vh, 56px); }
+
+/* One column (under 760px). The tilt carries the top of the drawing about 20px below its
+   box, so the negative margin keeps the caption one step below the actions instead of
+   two. The turn brings the figure's right edge closer, so it projects wider than its box
+   and off-centre: trim and shift it so the drawing sits on the text margins. */
+@media (max-width: 759px) {
+  .hero-visual { margin-top: -14px; padding-block: 0 22px; }
+  .hero-figure { width: min(720px, 94%); translate: -4.6cqi 0; }
+  .hero h1 { text-wrap: balance; }
+}
+@media (max-width: 479px) {
+  .hero h1 { text-wrap: wrap; }
+  .hero-figure { --tilt-x: 13deg; --tilt-y: -10deg; --tilt-z: -.5deg; translate: -2.9cqi 0; }
+  .plate { box-shadow: 8px 9px 0 var(--plate-shadow); }
+}
+
+/* Portrait tablets (760-959px). The statement spans the width on three lines; below it the
+   intro, actions and highlights form a column beside the stack, the highlights resting on
+   the stack's base line. The stack gets 56% so its modules stay on one row. The two
+   buttons share the column's width; Contact follows on the next line. A slightly flatter
+   turn and a small shift keep the projected right edge inside the page margin. */
+@media (min-width: 760px) and (max-width: 959px) {
+  .hero-grid { grid-template-columns: minmax(0, 1fr) minmax(0, 1.3fr); grid-template-rows: auto auto 1fr; grid-template-areas: "head head" "copy visual" "proof visual"; column-gap: clamp(26px, 3.6vw, 34px); row-gap: 0; padding-block: clamp(32px, 4.5vh, 56px) clamp(24px, 3vh, 36px); }
+  .hero-head { grid-area: head; padding-bottom: clamp(28px, 4vh, 44px); }
+  .hero h1 { max-width: 20ch; font-size: clamp(2.4rem, min(6vw, 11vh), 3rem); text-wrap: balance; }
+  .hero-copy { grid-area: copy; align-content: start; }
+  .hero-lead { max-width: none; }
+  .hero-actions { gap: 12px 10px; }
+  .hero-actions .btn { flex: 1 1 auto; padding-inline: 15px; }
+  .hero-visual { grid-area: visual; align-self: start; margin-top: -16px; padding-block: 0 30px; }
+  .hero-figure { --tilt-y: -13deg; translate: -2.5cqi 0; }
+  .proof { grid-area: proof; align-self: end; grid-template-columns: minmax(0, 1fr); margin-top: 36px; }
+  .proof > div { padding: 13px 0; border-bottom: 1px solid var(--line); }
+  .proof > div + div { padding-left: 0; border-left: 0; }
+}
+/* With the highlights right beside the stack, a hovered plate lifts straight towards the
+   reader instead of also sliding left into them. */
+@media (hover: hover) and (pointer: fine) and (min-width: 760px) and (max-width: 959px) {
+  .plate:hover { transform: translateZ(40px); }
+}
+
+/* Two columns (960px and up). The hero fills the first screen, except in a portrait-shaped
+   window (an upright 1024px tablet, a narrow tall browser), where that would open a gap
+   under the actions: past 0.72 × the width, the content sets the height instead. */
+@media (min-width: 960px) {
+  .hero-grid { min-height: min(calc(100svh - var(--header-h)), 72vw); grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); grid-template-rows: auto 1fr auto; grid-template-areas: "head visual" "copy visual" "proof proof"; column-gap: clamp(28px, 4vw, 80px); row-gap: 0; padding-top: clamp(28px, 5vh, 56px); }
   .hero-head { grid-area: head; }
   .hero h1 { font-size: clamp(2.4rem, min(4.5vw, 7.6vh), 5rem); max-width: 15ch; }
-  .hero-copy { grid-area: copy; align-content: start; padding-block: clamp(20px, 4vh, 40px) clamp(20px, 3vh, 32px); }
-  .hero-visual { grid-area: visual; align-content: center; padding-block: clamp(12px, 3vh, 32px); }
+  .hero-copy { grid-area: copy; align-content: start; gap: clamp(20px, 4vh, 34px); padding-block: clamp(20px, 4vh, 40px) clamp(20px, 3vh, 32px); }
+  .hero-lead { max-width: 33ch; font-size: clamp(1.12rem, min(1.6vw, 3vh), 1.5rem); }
+  /* The drawing is tilted towards the reader, so its lower right corner projects about
+     15-20px below its layout box, plus the 14px offset slab, plus the pointer lean and a
+     lifted plate on hover. The bottom padding reserves that overhang so the stack never
+     reaches the proof strip; nothing is clipped. */
+  .hero-visual { grid-area: visual; align-content: center; padding-block: clamp(12px, 3vh, 32px) calc(clamp(12px, 3vh, 32px) + 52px); }
   .proof { grid-column: 1 / -1; grid-template-columns: repeat(3, minmax(0, 1fr)) auto; }
   .proof-cue { display: grid; align-content: start; gap: 2px; padding: 16px 0 0 24px; border-left: 1px solid var(--line-2); font: 500 11px/1.6 var(--mono); letter-spacing: .08em; text-transform: uppercase; color: var(--text-4); text-decoration: none; }
   .proof-cue span:last-child { color: var(--accent); }
   .proof-cue:hover { color: var(--text); }
 }
-/* Single column: the turn brings the figure's right edge closer, so it projects wider
-   than its box and off-centre. Trim and shift it so the drawing sits on the text margins. */
-@media (max-width: 1023px) {
-  .hero-figure { width: min(720px, 94%); translate: -4.6cqi 0; }
+/* A narrow column (under 1100px) makes the stack tall next to the text beside it: a
+   tighter build keeps the two in proportion. */
+@media (min-width: 760px) and (max-width: 1099px) {
+  .hero-figure { --gap: 20px; --lead: 46px; }
+  .plate { gap: 7px; padding-block: 12px; }
+  .plate-chips li { padding-block: 5px; }
 }
-@media (max-width: 479px) {
-  .hero h1 { font-size: clamp(2.15rem, 10.4vw, 2.7rem); }
-  .hero-figure { --tilt-x: 13deg; --tilt-y: -10deg; --tilt-z: -.5deg; translate: -2.9cqi 0; }
-  .plate { box-shadow: 8px 9px 0 var(--plate-shadow); }
+/* Short screens with the stack beside the text: tighten it so it sits above the fold. */
+@media (min-width: 760px) and (max-height: 860px) {
+  .hero-figure { --gap: 16px; --lead: 40px; }
+  .plate { gap: 5px; padding: 8px 14px; }
+  .plate-chips li { padding-block: 3px; }
 }
 
 /* Load sequence: the headline rises, then the plates assemble from depth. */
@@ -498,8 +557,6 @@ code { font-family: var(--mono); font-size: .86em; padding: .08em .36em; backgro
 
 /* ---------- Sections ---------- */
 .section { border-top: 1px solid var(--line); padding-block: clamp(64px, 10vw, 128px); }
-.section-head { display: grid; gap: 14px; max-width: 900px; }
-.section-head h2 { font-size: var(--t-section); line-height: 1; letter-spacing: -.035em; }
 .section-lead { max-width: 60ch; font-size: var(--t-lead); line-height: 1.5; color: var(--text-2); }
 
 /* ---------- Workbench: list layout (no JavaScript) ---------- */
@@ -558,8 +615,6 @@ code { font-family: var(--mono); font-size: .86em; padding: .08em .36em; backgro
 .sf-shot picture { border: 1px solid var(--line-2); background: var(--bg); overflow: hidden; }
 .sf-shot img { width: 100%; }
 .sf-shot figcaption, .media-caption { font: 400 12px/1.5 var(--mono); color: var(--text-4); }
-.sf-noshot { display: grid; gap: 8px; padding: 24px; border: 1px dashed var(--line-3); font: 400 13px/1.55 var(--mono); color: var(--text-3); }
-.sf-noshot .sf-label { color: var(--accent); }
 .sf-block { display: grid; gap: 12px; }
 .arch-chain { list-style: none; padding: 0; display: grid; gap: 10px; counter-reset: arch; }
 .arch-chain li { position: relative; display: grid; gap: 4px; padding: 14px; border: 1px solid var(--line-2); }
@@ -601,7 +656,7 @@ code { font-family: var(--mono); font-size: .86em; padding: .08em .36em; backgro
 .workbench.wb-ready { width: 100%; max-width: 2000px; gap: 0; padding-block: 0; grid-template-columns: minmax(0, 1fr); grid-template-areas: "intro" "index" "stage" "files"; }
 .wb-ready .wb-intro { grid-area: intro; padding: clamp(40px, 7vw, 64px) var(--pad) 22px; }
 .wb-ready .wb-index { grid-area: index; padding: 0 var(--pad) 24px; }
-.wb-ready .wb-stage { grid-area: stage; display: block; position: relative; height: clamp(340px, 96vw, 520px); border-block: 1px solid var(--line); background: radial-gradient(60% 55% at 50% 60%, var(--glow-2) 0%, var(--bg) 72%); overflow: hidden; }
+.wb-ready .wb-stage { grid-area: stage; display: block; position: relative; height: clamp(380px, 112vw, 560px); border-block: 1px solid var(--line); background: radial-gradient(60% 55% at 50% 60%, var(--glow-2) 0%, var(--bg) 72%); overflow: hidden; }
 .wb-ready .wb-files { grid-area: files; display: block; padding: 28px var(--pad) 48px; }
 .wb-ready .system-file { padding: 0; border: 0; background: none; }
 .wb-ready .system-file:not(.is-current), .wb-ready .wb-files .sf-dossier { display: none; }
@@ -638,13 +693,21 @@ code { font-family: var(--mono); font-size: .86em; padding: .08em .36em; backgro
 /* ---------- The stack (CSS 3D, shared by the workbench and case studies) ---------- */
 .stage-scene { position: absolute; inset: 0; container-type: size; perspective: 2400px; perspective-origin: 50% 35%; overflow: hidden; touch-action: pan-y; user-select: none; -webkit-user-select: none; }
 .stack-shift { position: absolute; inset: 0; transform-style: preserve-3d; transition: transform .8s var(--ease); }
+/* The stack is sized and placed inside the free band between the caption (top) and the
+   controls (bottom). Measured at this pose, the exploded stack rises about 1.27 × --s
+   above its centre and drops about 0.49 × --s below it (1.76 × --s in all), so --s is
+   at most the band divided by 1.8, and that 1.76 × --s extent is centred in the band (on
+   tall stages the spare room is split above and below rather than left at the bottom).
+   workbench.js measures the caption and controls into --band-top and --band-bottom on the
+   stage (they change when the hint hides or the buttons wrap); these are the fallbacks. */
+.wb-stage { --band-top: 64px; --band-bottom: 88px; }
 .stack {
   --s: 340px;
-  --s: min(58cqw, 44cqh, 460px);
+  --s: min(58cqw, calc((100cqh - var(--band-top) - var(--band-bottom) - 24px) / 1.8), 460px);
   --gap: calc(var(--s) * .26);
   --rx: 58deg;
   --rz: -45deg;
-  position: absolute; left: 50%; top: 64%;
+  position: absolute; left: 50%; top: calc(var(--band-top) + (100cqh - var(--band-top) - var(--band-bottom) - var(--s) * 1.76) / 2 + var(--s) * 1.27);
   width: var(--s); height: var(--s);
   margin: calc(var(--s) / -2) 0 0 calc(var(--s) / -2);
   transform-style: preserve-3d;
@@ -660,12 +723,12 @@ code { font-family: var(--mono); font-size: .86em; padding: .08em .36em; backgro
 @media (hover: hover) and (pointer: fine) { [data-wb-stage]:hover .stack { --gap: calc(var(--s) * .36); } }
 .plane { position: absolute; inset: 0; transform-style: preserve-3d; transform: translateZ(calc(var(--z) * var(--gap))); border: 1px solid var(--plane-edge); background-color: var(--plane-fill); background-image: linear-gradient(var(--plane-grid) 1px, transparent 1px), linear-gradient(90deg, var(--plane-grid) 1px, transparent 1px); background-size: calc(var(--s) / 12) calc(var(--s) / 12); transition: transform 1s var(--ease), border-color .3s, background-color .3s; }
 .plane.is-active { border-color: var(--accent); background-color: rgb(var(--accent-rgb) / .13); }
-.plane-label { position: absolute; left: 3.5%; bottom: 3.2%; font: 700 calc(var(--s) * .036)/1 var(--mono); letter-spacing: .08em; text-transform: uppercase; color: var(--plane-label); white-space: nowrap; transition: color .3s; }
+.plane-label { position: absolute; left: 3.5%; bottom: 3.2%; font: 700 max(10.5px, calc(var(--s) * .036))/1 var(--mono); letter-spacing: .08em; text-transform: uppercase; color: var(--plane-label); white-space: nowrap; transition: color .3s; }
 .plane.is-active .plane-label { color: var(--accent); }
 .socket { position: absolute; left: var(--x); top: var(--y); width: calc(var(--s) * .026); height: calc(var(--s) * .026); translate: -50% -50%; border-radius: 50%; border: 1px solid var(--socket-edge); background: transparent; transition: width .35s var(--ease), height .35s var(--ease), background-color .35s, border-color .35s, box-shadow .35s; }
 .socket.is-sel { width: calc(var(--s) * .056); height: calc(var(--s) * .056); background: var(--accent-fill); border-color: var(--accent-fill); box-shadow: 0 0 24px var(--accent-fill); }
 .stage-scene .plane .socket { cursor: pointer; }
-.plane-tag { position: absolute; left: calc(var(--x) + var(--s) * .045); top: calc(var(--y) - var(--s) * .03); padding: .32em .5em; background: var(--scrim); color: var(--text-2); font: 700 calc(var(--s) * .031)/1 var(--mono); letter-spacing: .03em; white-space: nowrap; transition: left .8s var(--ease), top .8s var(--ease), background-color .35s, color .35s; }
+.plane-tag { position: absolute; left: calc(var(--x) + var(--s) * .045); top: calc(var(--y) - var(--s) * .03); padding: .32em .5em; background: var(--scrim); color: var(--text-2); font: 700 max(10.5px, calc(var(--s) * .031))/1 var(--mono); letter-spacing: .03em; white-space: nowrap; transition: left .8s var(--ease), top .8s var(--ease), background-color .35s, color .35s; }
 .plane.is-active .plane-tag { background: var(--accent-fill); color: var(--accent-ink); }
 .beam { position: absolute; left: var(--bx); top: var(--by); width: 3px; height: calc(var(--gap) * 3); margin-left: -1.5px; transform-origin: top center; transform: rotateX(90deg); background: linear-gradient(rgb(var(--accent-rgb) / .3), var(--accent-fill)); box-shadow: 0 0 18px var(--accent-fill); transition: left .8s var(--ease), top .8s var(--ease), height 1s var(--ease); }
 .packet { position: absolute; left: 50%; top: 100%; width: calc(var(--s) * .032); height: calc(var(--s) * .032); translate: -50% -50%; border-radius: 50%; background: var(--packet); box-shadow: 0 0 10px 3px var(--accent-fill); opacity: 0; animation: packet 3.4s var(--ease) 1.4s infinite; }
@@ -687,6 +750,8 @@ code { font-family: var(--mono); font-size: .86em; padding: .08em .36em; backgro
   .ls-btn { padding: 0 9px; }
   .ls-btn .ls-name { display: none; }
   .stage-hint { display: none; }
+  /* Phones: the layer list right below names every layer in full; the tags would only pile up. */
+  .wb-stage .plane-tag { display: none; }
 }
 @media (min-width: 900px) { .stage-controls { left: 22px; right: 22px; bottom: 20px; } }
 
@@ -737,7 +802,7 @@ code { font-family: var(--mono); font-size: .86em; padding: .08em .36em; backgro
 .xp-branch h4 { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 14px; font: 600 clamp(1.12rem, 1.5vw, 1.3rem)/1.3 var(--sans); letter-spacing: -.015em; }
 .xp-branch-role { font: 500 11px/1.5 var(--mono); letter-spacing: .08em; text-transform: uppercase; color: var(--accent); }
 .xp-branch p:not([class]) { max-width: 62ch; color: var(--text-2); }
-.xp-link { justify-self: start; margin-top: 4px; display: inline-flex; gap: 8px; font: 500 12.5px/1.6 var(--mono); color: var(--text); text-decoration: underline; text-decoration-color: var(--line-3); text-underline-offset: 4px; }
+.xp-link { justify-self: start; margin-top: 0; display: inline-flex; align-items: center; min-height: 32px; gap: 8px; font: 500 12.5px/1.6 var(--mono); color: var(--text); text-decoration: underline; text-decoration-color: var(--line-3); text-underline-offset: 4px; }
 .xp-link span { color: var(--accent); transition: translate .25s var(--ease); }
 .xp-link:hover { color: var(--text); text-decoration-color: var(--accent); }
 .xp-link:hover span { translate: 3px 0; }
@@ -989,6 +1054,9 @@ code { font-family: var(--mono); font-size: .86em; padding: .08em .36em; backgro
 .cut-visual .stage-hud { top: 18px; left: 0; }
 .mini-scene { perspective: 2000px; }
 .mini-scene .stack { --s: min(62cqw, 52cqh, 400px); --gap: calc(var(--s) * .3); top: 66%; }
+/* The case-page figure sits beside the same four layers written out in full, so its plane
+   tags only repeated that list at a smaller size and collided with the plane names. */
+.mini-scene .plane-tag { display: none; }
 .cut-copy { display: grid; gap: 14px; align-content: start; padding-block: 28px 36px; }
 .cut-title { font-size: clamp(1.45rem, 2.2vw, 1.9rem); line-height: 1.15; letter-spacing: -.02em; }
 .case-cut .lc-row { cursor: default; }
@@ -1017,7 +1085,7 @@ code { font-family: var(--mono); font-size: .86em; padding: .08em .36em; backgro
 .case-section:last-child { border-bottom: 0; }
 .case-section-no { font: 500 11.5px/1.4 var(--mono); letter-spacing: .08em; text-transform: uppercase; color: var(--accent); }
 .case-section h2 { max-width: 24ch; font-size: var(--t-h2); line-height: 1.06; letter-spacing: -.03em; }
-.case-section > p, .case-section > .case-prose { max-width: 70ch; font-size: 17px; line-height: 1.68; color: var(--text-2); }
+.case-section > p { max-width: 70ch; font-size: 17px; line-height: 1.68; color: var(--text-2); }
 .case-section > p em { color: var(--text); }
 @media (min-width: 1100px) {
   .case-layout { grid-template-columns: 220px minmax(0, 1fr); column-gap: clamp(40px, 5vw, 88px); }
@@ -1094,6 +1162,7 @@ code { font-family: var(--mono); font-size: .86em; padding: .08em .36em; backgro
 .outcome-summary > div:first-child .artifact-label, .evidence-next-step > div:first-child .artifact-label { color: var(--accent); }
 .outcome-summary p:not(.artifact-label), .evidence-next-step p:not(.artifact-label) { font-size: 15px; line-height: 1.6; color: var(--text-2); }
 @media (min-width: 680px) { .outcome-summary, .evidence-next-step { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 24px; } }
+@media (min-width: 680px) { .outcome-summary.is-single { grid-template-columns: minmax(0, 1fr); max-width: 72ch; } }
 
 /* Technical artefact: a short ordered protocol */
 .technical-artifact { display: grid; gap: 14px; padding: clamp(18px, 2.5vw, 26px); border: 1px dashed var(--line-3); }
@@ -1103,8 +1172,6 @@ code { font-family: var(--mono); font-size: .86em; padding: .08em .36em; backgro
 .technical-artifact li strong { font-size: 14.5px; font-weight: 500; }
 @media (min-width: 760px) { .technical-artifact ol { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
 
-.public-evidence-note { display: grid; gap: 6px; max-width: 72ch; padding: 16px 18px; border: 1px dashed var(--line-3); font-size: 14.5px; line-height: 1.55; color: var(--text-3); }
-.public-evidence-note .annotation-label { color: var(--accent); }
 
 /* ERP: before / after */
 .workflow-shift { display: grid; gap: 14px; }
@@ -1209,15 +1276,18 @@ code { font-family: var(--mono); font-size: .86em; padding: .08em .36em; backgro
 .immersive-step { display: grid; gap: 8px; padding: 18px 20px; border: 1px solid var(--line-2); border-left: 2px solid var(--line-3); transition: border-color .3s, background-color .3s, opacity .3s; }
 .immersive-step h3 { font-size: var(--t-h3); line-height: 1.25; }
 .immersive-step p:not(.step-label) { font-size: 15px; line-height: 1.55; color: var(--text-2); }
-.immersive-ready .immersive-step { opacity: .55; }
+/* Steps out of focus step down the text scale (every step clears 4.5:1) instead of fading. */
+.immersive-ready .immersive-step:not(.is-active) h3 { color: var(--text-3); }
+.immersive-ready .immersive-step:not(.is-active) p:not(.step-label) { color: var(--text-3); }
 .immersive-ready .immersive-step.is-active { opacity: 1; border-left-color: var(--accent); background: rgb(var(--accent-rgb) / .05); }
 .immersive-ready .immersive-step.is-active .step-label { color: var(--accent); }
-[data-step] { transition: opacity .35s, border-color .35s, box-shadow .35s; }
-.immersive-ready .case-immersive-frame[data-active] [data-step] { opacity: .42; }
+/* The part of the drawing the active step describes is outlined; the rest stays at full
+   strength, so its labels stay readable (fading them broke text contrast). */
+[data-step] { outline: 1px solid transparent; outline-offset: 4px; transition: outline-color .35s, border-color .35s, box-shadow .35s; }
 .immersive-ready .case-immersive-frame[data-active="1"] [data-step~="1"],
 .immersive-ready .case-immersive-frame[data-active="2"] [data-step~="2"],
 .immersive-ready .case-immersive-frame[data-active="3"] [data-step~="3"],
-.immersive-ready .case-immersive-frame[data-active="4"] [data-step~="4"] { opacity: 1; }
+.immersive-ready .case-immersive-frame[data-active="4"] [data-step~="4"] { outline-color: var(--accent-line); }
 @media (min-width: 1100px) {
   .case-immersive-frame { grid-template-columns: minmax(0, 1.18fr) minmax(0, .82fr); gap: clamp(24px, 3vw, 44px); align-items: start; }
   .case-immersive-visual { position: sticky; top: calc(var(--header-h) + 24px); }
@@ -1227,16 +1297,11 @@ code { font-family: var(--mono); font-size: .86em; padding: .08em .36em; backgro
 }
 
 /* Chip vocabulary used inside the system visuals */
-.chip-row { display: flex; flex-wrap: wrap; gap: 6px; }
-.v-chip, .erp-gate-row span, .erp-module-grid span, .erp-maintenance-loop span, .gurmat-recognition-rail span, .gurmat-local-preferences strong, .ops-area-grid span, .ops-gate-row span, .ops-rules-grid span, .ops-exception-rail span, .ops-qr-strip em, .ops-records-loop span {
+.erp-gate-row span, .erp-module-grid span, .erp-maintenance-loop span, .gurmat-recognition-rail span, .gurmat-local-preferences strong, .ops-area-grid span, .ops-gate-row span, .ops-rules-grid span, .ops-exception-rail span, .ops-qr-strip em, .ops-records-loop span {
   display: inline-flex; align-items: center; padding: 6px 9px; border: 1px solid var(--line-2); background: var(--bg); font: 500 11.5px/1.3 var(--mono); font-style: normal; color: var(--text-2);
 }
 
 /* ERP visual */
-.erp-fragment-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px; }
-.erp-fragment { display: grid; gap: 2px; padding: 10px; border: 1px dashed var(--line-3); }
-.erp-fragment span, .erp-fragment small { font: 500 10.5px/1.4 var(--mono); color: var(--text-4); }
-.erp-fragment strong { font-size: 13.5px; }
 .erp-system-field { display: grid; }
 .erp-boundary-frame, .ops-boundary-frame { position: relative; display: grid; gap: 12px; padding: 30px 14px 14px; border: 1px solid var(--accent-line); background: rgb(var(--accent-rgb) / .04); }
 .erp-boundary-label, .ops-boundary-label { position: absolute; top: -1px; left: -1px; padding: 5px 9px; background: var(--accent-fill); color: var(--accent-ink); font: 700 10.5px var(--mono); letter-spacing: .06em; text-transform: uppercase; }
@@ -1246,7 +1311,6 @@ code { font-family: var(--mono); font-size: .86em; padding: .08em .36em; backgro
 .erp-relational-core strong, .ops-readiness-core strong, .gurmat-shared-anchor strong { font-size: 15px; }
 .gurmat-shared-anchor small { font-size: 13px; color: var(--text-3); }
 .erp-maintenance-loop span:first-child { border-color: var(--accent-line); color: var(--accent); }
-@media (min-width: 640px) { .erp-fragment-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
 
 /* Gurmat visual */
 .gurmat-recognition-rail { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }

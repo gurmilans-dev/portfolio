@@ -97,6 +97,23 @@
   });
   if (canDrawer) bench.querySelectorAll("[data-open-file]").forEach(button => { button.hidden = false; });
   if (controls) controls.hidden = false;
+
+  /* The stack is drawn in the free band between the caption and the controls. Their heights
+     change with the layout (the hint hides on phones, the buttons wrap on narrow stages), so
+     measure them instead of guessing; the CSS keeps static fallbacks for when this cannot run. */
+  const hud = stage?.querySelector(".stage-hud");
+  if (stage && hud && controls && "ResizeObserver" in window) {
+    const fitBand = () => {
+      const top = hud.offsetTop + hud.offsetHeight;
+      const bottom = stage.clientHeight - controls.offsetTop;
+      if (top > 0 && bottom > 0) {
+        stage.style.setProperty("--band-top", `${Math.round(top + 8)}px`);
+        stage.style.setProperty("--band-bottom", `${Math.round(bottom + 8)}px`);
+      }
+    };
+    new ResizeObserver(() => requestAnimationFrame(fitBand)).observe(stage);
+    new ResizeObserver(() => requestAnimationFrame(fitBand)).observe(controls);
+  }
   if (hint) hint.textContent = finePointer.matches
     ? "Drag to orbit · hover to explode · click a layer to open its case file"
     : "Swipe sideways to orbit · tap a layer to highlight it";
@@ -365,7 +382,9 @@
       if (event.key === "ArrowLeft") { event.preventDefault(); step(-1); }
       else if (event.key === "ArrowRight") { event.preventDefault(); step(1); }
     });
-    addEventListener("pageshow", () => { if (drawer.open) finishClose(); });
+    // Only a page restored from the back/forward cache: pageshow also fires on every normal
+    // load, and closing then would undo a #work-<archive file> deep link the moment it opened.
+    addEventListener("pageshow", event => { if (event.persisted && drawer.open) finishClose(); });
   }
 
   /* ---------- Deep links: #work-<system> selects or opens that system ---------- */

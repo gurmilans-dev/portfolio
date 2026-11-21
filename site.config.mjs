@@ -6,7 +6,7 @@ export const siteConfig = {
     employer: "Phema S.r.l.",
     positioning: "I design and build responsive interfaces, backend APIs, and data-driven workflows for software used in real operational environments.",
     experience: "3+ years of commercial software development",
-    employmentPeriod: "September 2023 - Present",
+    employmentPeriod: "September 2023 – Present",
     graduation: "Expected December 2026",
     location: "Modena, Italy",
     employerLocation: "Modena province, Italy",
@@ -128,7 +128,7 @@ export const siteConfig = {
       },
       system: {
         head: "Full-stack software for the work behind the business.",
-        intro: "I am the primary developer of a full-stack system used in daily internal operations. It replaced disconnected legacy tools — a legacy system, separately maintained spreadsheets and paper hand-offs — with one application.",
+        intro: "I am the primary developer of a full-stack system used in daily internal operations. It replaced a legacy system, separately maintained spreadsheets and paper hand-offs with one application.",
         layers: [
           ["Role-scoped screens", "Responsive screens expose only the modules and actions relevant to the authenticated user."],
           ["Server-side roles", "The API validates access and input, and applies business rules before reading or writing data."],
@@ -150,8 +150,7 @@ export const siteConfig = {
           ]
         },
         evidence: "Used in daily internal operations. Behaviour is protected by input validation, relevant automated regression checks, manual verification and direct user feedback.",
-        boundary: "Source, interface, datasets and operational figures are confidential. Test counts and coverage are not published.",
-        noImageReason: "Confidential software. Screenshots, datasets, specific internal workflows and operational figures are omitted; this file covers responsibilities and engineering decisions."
+        boundary: "Source, interface, datasets and operational figures are confidential. Test counts and coverage are not published."
       },
       // Confidential: no screenshots exist and none will be fabricated.
       primaryImage: "",
@@ -167,7 +166,7 @@ export const siteConfig = {
       title: "Gurmat Saanj",
       shortTitle: "Gurmat Saanj",
       category: "Real-time shared reading system",
-      lead: "A deployed system that follows live Punjabi recitation, matches recognised phrases against known Gurbani, and holds a projector and connected viewers on the same line.",
+      lead: "A deployed system that follows live Punjabi recitation, matches recognized phrases against known Gurbani, and holds a projector and connected viewers on the same line.",
       tech: "React · Node.js · Web Speech API · BaniDB",
       status: "Deployed",
       statusClass: "badge-deployed",
@@ -312,7 +311,7 @@ export const siteConfig = {
       },
       system: {
         head: "What isn't ready, and what just went wrong.",
-        intro: "Areas hold tasks, problems become tracked exceptions with severity, and readiness is computed from what is still open. The core workflow is implemented; tests and public documentation are still being prepared.",
+        intro: "Areas hold tasks, problems become tracked exceptions with severity, and readiness is computed from what is still open. The core workflow is implemented and the project is in active development.",
         layers: [
           ["Readiness dashboard", "Readiness dashboard with blocking tasks, open exceptions and a per-area summary."],
           ["4 event roles", "Fastify feature modules. Owner, coordinator, operator and viewer roles are checked on every write; optional AI has no write authority."],
@@ -333,7 +332,7 @@ export const siteConfig = {
             ["Trade-off", "Every new write endpoint requires an authorization rule and test."]
           ]
         },
-        evidence: "Dashboard screenshot from the running application. Module structure and data rules are documented in the case study.",
+        evidence: "A screenshot of the running application, and a case study documenting the module structure, roles and data rules.",
         boundary: "An active-development university project, not commercial SaaS. No load, uptime or usage figures. Public repository and test reporting are still in progress."
       },
       primaryImage: "assets/opssemble/opssemble-dashboard.png",
@@ -359,7 +358,7 @@ export const siteConfig = {
       repository: "https://github.com/gurmilans-dev/esamarea",
       demo: "",
       meta: {
-        role: "Full-stack development",
+        role: "Full-stack developer",
         context: "Open source · MIT",
         focus: "Deterministic planning · server-owned timers",
         evidence: "Public repository · MIT · unit, API and end-to-end tests"
@@ -386,7 +385,7 @@ export const siteConfig = {
           ]
         },
         evidence: "Public repository under MIT, with unit, API and end-to-end tests.",
-        boundary: "No separate case study: the repository is the primary evidence."
+        boundary: "No usage figures are claimed; the public repository is the evidence."
       },
       primaryImage: "assets/esamarea/esamarea-shared-plan.png",
       primaryImageAvif: "assets/esamarea/esamarea-shared-plan.avif",
@@ -424,8 +423,7 @@ export const siteConfig = {
           steps: ["Client requests validation", "Server checks activation", "Concurrent-use rule evaluated", "Validation result returned"]
         },
         evidence: "A private component of the company's commercial C#/.NET software.",
-        boundary: "Source is private and not published, and no interface is shown.",
-        noImageReason: "Private commercial component: no interface or source is published."
+        boundary: "Source and interface are private to the company and not published."
       }
     },
     sird: {
@@ -433,9 +431,9 @@ export const siteConfig = {
       title: "SIRD Epidemic Simulator",
       shortTitle: "SIRD Simulator",
       category: "Academic · Java 17 · JavaFX",
-      lead: "Agent-based SIRD desktop simulator: a background engine drives moving agents with collision handling, real-time S/I/R/D visualisation, and CSV export, on a model–engine–controller architecture.",
+      lead: "Agent-based SIRD desktop simulator: a background engine drives moving agents with collision handling, real-time S/I/R/D visualization, and CSV export, on a model–engine–controller architecture.",
       tech: "Java 17 · JavaFX · Maven · concurrency",
-      status: "Academic",
+      status: "Public repository",
       statusClass: "badge-public",
       caseStudy: "",
       repository: "https://github.com/gurmilans-dev/sir-simulation",
@@ -450,11 +448,10 @@ export const siteConfig = {
         ],
         trace: {
           title: "Model–engine–controller",
-          steps: ["A background engine drives moving agents with collision handling", "Real-time S/I/R/D visualisation in JavaFX", "CSV export of the run"]
+          steps: ["A background engine drives moving agents with collision handling", "Real-time S/I/R/D visualization in JavaFX", "CSV export of the run"]
         },
         evidence: "Public repository.",
-        boundary: "Academic desktop project. No interface capture is published here; the repository is the evidence.",
-        noImageReason: "Desktop application: the repository is the evidence for this one."
+        boundary: "Academic desktop project. Not a validated epidemiological model; no accuracy figures are claimed."
       }
     }
   }

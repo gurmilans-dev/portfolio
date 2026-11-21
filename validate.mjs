@@ -133,7 +133,7 @@ const configuredKeys = featuredProjects.map((project) => project.key).join(",");
 const archiveKeys = archiveProjects.map((project) => project.key).join(",");
 const tabKeys = [...home.matchAll(/data-wb-tab="([^"]+)"/g)].map((match) => match[1]).join(",");
 const alsoKeys = [...home.matchAll(/data-wb-also="([^"]+)"/g)].map((match) => match[1]).join(",");
-const fileKeys = [...home.matchAll(/<article id="work-([^"]+)" class="system-file[^"]*" data-system="([^"]+)"/g)]
+const fileKeys = [...home.matchAll(/<section id="work-([^"]+)" class="system-file[^"]*" data-system="([^"]+)"/g)]
   .map((match) => (match[1] === match[2] ? match[1] : `MISMATCH:${match[1]}`)).join(",");
 if (tabKeys !== configuredKeys) fail(`homepage: index order is [${tabKeys}], config order is [${configuredKeys}]`);
 if (alsoKeys !== archiveKeys) fail(`homepage: "Also" order is [${alsoKeys}], config order is [${archiveKeys}]`);
@@ -142,10 +142,10 @@ for (const project of [...featuredProjects, ...archiveProjects]) {
   if (!home.includes(`>${project.shortTitle}<`)) fail(`homepage: project title missing: ${project.shortTitle}`);
   if (!home.includes(`data-open-file="${project.key}" hidden`)) fail(`homepage: ${project.key} lacks a progressive "Open case file" control`);
   // Every case file is inspectable: a case study on this site, a public repository, or —
-  // for confidential and private work only — an explicit reason nothing more is shown.
+  // for confidential and private work only — a "Not claimed" line that says it is private.
   const evidenceHref = project.caseStudy || project.repository;
   if (evidenceHref && !home.includes(`href="${evidenceHref}"`)) fail(`homepage: ${project.key} does not link to its case study or repository`);
-  if (!evidenceHref && !project.system?.noImageReason) fail(`${project.key}: offers neither a case study, a repository, nor a stated reason`);
+  if (!evidenceHref && !/private|confidential/i.test(project.system?.boundary || "")) fail(`${project.key}: offers neither a case study, a repository, nor a stated reason`);
   if (project.caseStudy && !pages.includes(project.caseStudy)) fail(`${project.key}: case study ${project.caseStudy} is not a registered page`);
   if (!project.system?.evidence || !project.system?.boundary) fail(`${project.key}: a case file must state its evidence and what it does not claim`);
 }

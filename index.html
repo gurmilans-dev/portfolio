@@ -6,7 +6,7 @@
     <meta name="theme-color" content="#0c0d0f" />
     <script>(function (d) { var t; try { t = localStorage.getItem("portfolio-theme"); } catch (e) {} if (t !== "light" && t !== "dark") t = matchMedia("(prefers-color-scheme: light)").matches ? "light" : "dark"; d.dataset.theme = t; d.classList.add("js"); if (t === "light") document.querySelector('meta[name="theme-color"]').content = "#f4f4f1"; })(document.documentElement);</script>
     <title>{{profile.name}} - Full-Stack Web Developer &amp; Software Engineer</title>
-    <meta name="description" content="Full-stack web developer building responsive React interfaces, Node.js APIs, relational data workflows, and production business software. Six systems, each cut through interface, application, data and delivery." />
+    <meta name="description" content="Full-stack developer in Modena, Italy, building React interfaces, Node.js APIs, relational data and production business software. Six systems, four layers." />
     <meta name="author" content="{{profile.name}}" />
     <meta name="robots" content="index, follow" />
     <link rel="canonical" href="{{profile.domain}}/" />
@@ -48,7 +48,7 @@
             <p class="hero-lead">I work on software people depend on to get something done — internal business platforms, operations tooling, and applications built for one specific community.</p>
             <div class="hero-actions">
               <a class="btn btn-primary" href="#work">View work<span aria-hidden="true">↓</span></a>
-              <a class="btn btn-line" href="{{profile.resume}}" target="_blank" rel="noopener noreferrer" download>Download CV<span class="sr-only"> (PDF)</span><span aria-hidden="true">↗</span></a>
+              <a class="btn btn-line" href="{{profile.resume}}" target="_blank" rel="noopener noreferrer" download>Download CV<span class="sr-only"> (PDF)</span><span aria-hidden="true">↓</span></a>
               <a class="btn-text" href="#contact">Contact<span aria-hidden="true">→</span></a>
             </div>
           </div>
@@ -83,7 +83,7 @@
                 </ol>
             </figure>
           </div>
-          <div class="proof" aria-label="Professional highlights">
+          <div role="group" class="proof" aria-label="Professional highlights">
             <div><strong>3+ years</strong><span>Commercial software development</span></div>
             <div><strong>Business platform</strong><span>Used in daily internal operations</span></div>
             <div><strong>Dec 2026</strong><span>Expected BSc graduation</span></div>

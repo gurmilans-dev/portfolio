@@ -87,7 +87,7 @@ export function header(mode = "home") {
   const hud = caseProject ? `case file ${nn(caseProject.order)} · ${esc(caseProject.shortTitle)}` : home ? "full-stack developer" : "route not found";
   return `<header class="site-header" data-header>
       <div class="header-inner">
-        <a class="brand" href="${home ? "#top" : "index.html"}" aria-label="${esc(profile.name)}, ${home ? "back to top" : "home"}"><span class="brand-mark" aria-hidden="true">GS</span><span class="brand-name">${esc(profile.name)}</span></a>
+        <a class="brand" href="${home ? "#top" : "index.html"}"><span class="brand-mark" aria-hidden="true">GS</span><span class="brand-name">${esc(profile.name)}</span><span class="sr-only">, ${home ? "back to top" : "home"}</span></a>
         <p class="header-hud" aria-hidden="true"><span data-hud>${hud}</span><span class="hud-sep">/</span><span>${featuredProjects.length} systems × ${LAYERS.length} layers</span></p>
         <nav id="site-navigation" class="site-nav" aria-label="Primary navigation" data-nav>
           ${link("work", "Work")}${link("experience", "Profile")}${link("contact", "Contact")}
@@ -157,7 +157,7 @@ function dossier(project) {
   ].filter(([, value]) => value);
   const shot = project.primaryImage
     ? `<figure class="sf-shot">${picture(project, "primary", { sizes: "(min-width: 900px) 680px, 100vw" })}<figcaption>${esc(project.primaryImageCaption)}</figcaption></figure>`
-    : `<p class="sf-noshot"><span class="sf-label">Interface not shown</span>${esc(system.noImageReason || "No interface capture is published.")}</p>`;
+    : ""; // No capture (confidential or desktop-only work): the file goes straight to the architecture.
   const arch = `<div class="sf-block"><h4 class="sf-label">Architecture</h4><ol class="arch-chain">${system.architecture.map(([title, sub], i) => `<li><span class="arch-no">${nn(i + 1)}</span><strong>${esc(title)}</strong><span>${esc(sub)}</span></li>`).join("")}</ol></div>`;
   const record = system.decision
     ? `<div class="sf-record"><p class="sf-record-head"><span>Decision 01</span><span>Engineering trade-off</span></p><h4 class="sf-record-title">${esc(system.decision.title)}</h4><dl>${system.decision.rows.map(([k, v]) => `<div><dt>${esc(k)}</dt><dd>${esc(v)}</dd></div>`).join("")}</dl></div>`
@@ -180,7 +180,7 @@ function systemFile(project, featured) {
     project.caseStudy ? `<a class="btn btn-line" href="${project.caseStudy}">Read the case study<span aria-hidden="true">→</span></a>` : "",
     githubLink(project)
   ].join("");
-  return `<article id="work-${project.key}" class="system-file${featured ? "" : " is-also"}" data-system="${project.key}" aria-labelledby="work-${project.key}-title">
+  return `<section id="work-${project.key}" class="system-file${featured ? "" : " is-also"}" data-system="${project.key}" aria-labelledby="work-${project.key}-title">
           <header class="sf-head">
             <p class="sf-kicker"><span class="sf-no">${number}</span>${status(project)}</p>
             <h3 id="work-${project.key}-title" class="sf-title">${esc(project.shortTitle)}</h3>
@@ -191,7 +191,7 @@ function systemFile(project, featured) {
           ${featured ? layerCut(project) : ""}
           <div class="sf-actions">${actions}</div>
           ${dossier(project)}
-        </article>`;
+        </section>`;
 }
 
 export function workbenchIndex() {
@@ -266,7 +266,7 @@ export function caseEnd(key) {
   return `<section class="case-end" aria-labelledby="case-end-title">
         <div class="frame case-end-grid">
           <div class="case-end-copy"><p class="label">Discuss this work</p><h2 id="case-end-title" class="case-end-title">Questions about ${esc(current.shortTitle)}, or a role where this experience fits?</h2></div>
-          <div class="case-end-actions"><a class="btn btn-primary" href="mailto:${profile.email}?subject=${subject}">Email me about ${esc(current.shortTitle)}<span aria-hidden="true">→</span></a><a class="btn btn-line" href="${profile.resume}" target="_blank" rel="noopener noreferrer">Download CV${NEW_TAB}<span aria-hidden="true">↓</span></a></div>
+          <div class="case-end-actions"><a class="btn btn-primary" href="mailto:${profile.email}?subject=${subject}">Email me about ${esc(current.shortTitle)}<span aria-hidden="true">→</span></a><a class="btn btn-line" href="${profile.resume}" target="_blank" rel="noopener noreferrer" download>Download CV<span class="sr-only"> (PDF)</span><span aria-hidden="true">↓</span></a></div>
         </div>
         <nav class="frame case-pager" aria-label="Project navigation">
           ${card(prev, "<span aria-hidden=\"true\">←</span> Previous system", "pager-prev")}
