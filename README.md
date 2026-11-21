@@ -31,6 +31,8 @@ The root HTML files are source templates. Essential values and repeated markup a
 
 Dark (graphite) and light (drafting film). A first visit follows the system setting; the Dark / Light switch in the header stores an explicit choice in `localStorage` under `portfolio-theme`, and a small inline script in every page's `<head>` applies it before the first paint. All colours are custom properties in `assets/styles.css`: the dark values sit on `:root`, the light values on `:root[data-theme="light"]`, repeated inside a `prefers-color-scheme: light` query so pages without JavaScript still follow the system. `validate.mjs` fails the build if the two light blocks differ or a colour token has no light value. In light mode the bright signal orange stays on filled surfaces (`--accent-fill`, with dark ink) while text and lines use a deeper orange (`--accent`) that clears 4.5:1.
 
+The homepage's contact section and footer reverse figure and ground in both themes: a slightly deeper shade of the signal orange (`#ea7a2e`) becomes the ground, and the left column and footer line swap their text, line and accent tokens for graphite-ink tones that clear 4.5:1 on it (3:1 for control edges). The form keeps the reader's theme as a plate on the orange, on the same offset slab as the hero plates.
+
 ## Fallbacks
 
 Without JavaScript the workbench is a plain list of every system with its full case file. Reduced-motion preferences disable the load sequence, the ambient drift, and the request/response trace and release pipeline in the hero figure, which then rests in its final state. The 3D stack is decorative and hidden from assistive technology; the same information is in the index and the layer files.

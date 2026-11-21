@@ -78,10 +78,8 @@ const tokenMap = {
   "contactForm.turnstileSiteKey": (contactForm.turnstileSiteKey || "").trim(),
   "contactForm.messageMinLength": contactForm.messageMinLength,
   "contactForm.messageMaxLength": contactForm.messageMaxLength,
-  "icons.send": icons.send,
-  "icons.success": icons.success,
-  "icons.error": icons.error,
-  "icons.copy": icons.copy,
+  // Every icon is available to templates as {{icons.<name>}}.
+  ...Object.fromEntries(Object.entries(icons).map(([name, svg]) => [`icons.${name}`, svg])),
   ...projectTokens
 };
 

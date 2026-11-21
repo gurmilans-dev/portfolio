@@ -104,7 +104,11 @@ const home = htmlByFile.get("index.html");
 if (!home.includes(">Full-stack developer and software engineer building for real operational needs.</h1>")) fail("homepage: full-stack hero statement is missing");
 // Separators are bound to the preceding word with no-break spaces, so normalise them.
 if (!home.replace(/&nbsp;| /g, " ").includes("React · JavaScript · TypeScript · Node.js · Java · SQL · C#/.NET")) fail("homepage: primary technology line is missing");
-if (!home.includes('id="capabilities"') || home.includes('id="workflow"') || home.includes('id="skills"')) fail("homepage: capabilities must remain consolidated into one section");
+// Technical breadth is shown once, by the hero stack; technologies otherwise appear where
+// the projects use them. #capabilities stays as an anchor on that stack, and no separate
+// skills list or workflow section may return.
+if (!/<div id="capabilities" class="hero-visual"/.test(home)) fail("homepage: #capabilities must point at the hero stack");
+if (/id="(?:workflow|skills)"|class="cap-stack"/.test(home)) fail("homepage: a separate skills or workflow section has returned");
 // Previously shared links point at these anchors; the redesign must keep them resolvable.
 for (const anchor of ["top", "work", "experience", "about", "capabilities", "contact"]) {
   if (!home.includes(`id="${anchor}"`)) fail(`homepage: legacy anchor #${anchor} is missing`);

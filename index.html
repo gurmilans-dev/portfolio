@@ -52,7 +52,7 @@
               <a class="btn-text" href="#contact">Contact<span aria-hidden="true">→</span></a>
             </div>
           </div>
-          <div class="hero-visual" data-hero-visual>
+          <div id="capabilities" class="hero-visual" data-hero-visual>
             <figure class="hero-figure" data-hero-stack>
               <figcaption class="fig-cap"><span>Fig. 00 / Full-stack engineering</span><span class="fig-key"><span class="key-req">Request</span> <span class="key-res">Response</span> <span class="key-rel">Release</span></span></figcaption>
               <ol class="hero-stack" aria-label="Engineering capabilities, from interface to delivery">
@@ -106,60 +106,57 @@
 
       <section id="experience" class="section profile" aria-labelledby="experience-title">
         <div class="frame">
-          <header class="section-head" data-reveal>
-            <p class="label label-accent">Profile · building since 2023</p>
-            <h2 id="experience-title">Close to the software and its users.</h2>
-            <p class="section-lead">I build software close to the people who depend on it. Since September 2023 I have been the primary developer of a production business platform, while studying for a degree in Computer Engineering.</p>
-          </header>
-          <div class="profile-grid">
-            <ol class="timeline" aria-label="Experience and education" data-reveal>
-              <li>
-                <p class="tl-when">2023.09 → now</p>
-                <div class="tl-what">
-                  <h3>{{profile.employmentTitle}} · {{profile.employer}}</h3>
-                  <p class="tl-where">{{profile.employerLocation}} · {{profile.employmentPeriod}}</p>
-                  <p>Primary developer of the company's confidential business platform, covering requirements, product interfaces, backend APIs, relational data, permissions, releases, and direct user support.</p>
-                  <p>I also maintain the company's commercial C#/.NET software and its supporting infrastructure.</p>
-                </div>
-              </li>
-              <li>
-                <p class="tl-when">2023 → 2026.12</p>
-                <div class="tl-what">
-                  <h3>BSc in Computer Engineering</h3>
-                  <p class="tl-where">Ingegneria Informatica · University of Modena and Reggio Emilia (UNIMORE) · {{profile.graduation}}</p>
-                </div>
-              </li>
-              <li>
-                <p class="tl-when">2018 → 2023</p>
-                <div class="tl-what">
-                  <h3>Diploma in Computer Science and Telecommunications</h3>
-                  <p class="tl-where">ITIS Enrico Fermi, Modena</p>
-                </div>
-              </li>
-            </ol>
-            <aside id="about" class="profile-side" aria-label="Languages and way of working" data-reveal>
-              <div>
-                <p class="label">Languages</p>
-                <dl class="langs"><div><dt>Italian</dt><dd>Native</dd></div><div><dt>Punjabi</dt><dd>Native</dd></div><div><dt>English</dt><dd>C1</dd></div><div><dt>Hindi</dt><dd>Advanced</dd></div></dl>
+          <div class="xp" data-reveal>
+            <header id="about" class="xp-head">
+              <h2 id="experience-title" class="label label-accent">Experience &amp; background</h2>
+            </header>
+            <article class="xp-work" aria-labelledby="xp-role">
+              <p class="xp-when"><span class="xp-dot" aria-hidden="true"></span>{{profile.employmentPeriod}}</p>
+              <h3 id="xp-role" class="xp-role">{{profile.employmentTitle}} <span>{{profile.employer}}</span></h3>
+              <p class="xp-meta">{{profile.employerLocation}} · Full-stack web and C#/.NET</p>
+              <div class="xp-duties">
+                <p class="xp-k">Responsibilities</p>
+                <ul><li>Requirements analysis</li><li>Frontend and backend</li><li>Database design</li><li>Authentication</li><li>Testing</li><li>Releases</li><li>Maintenance</li><li>User support</li></ul>
               </div>
-              <div class="profile-note">
-                <p class="label">How I take on a change</p>
-                <p>Requirements come directly from the people using the software. I clarify their goal, trace the records and roles involved, implement the smallest coherent change across the stack, and review the result with the people who asked for it.</p>
+              <ol class="xp-branches" aria-label="Software I work on at {{profile.employer}}">
+                <li class="xp-branch">
+                  <p class="xp-key" aria-hidden="true">A</p>
+                  <h4>Business platform <span class="badge badge-production">Production</span></h4>
+                  <p class="xp-branch-role">Primary developer</p>
+                  <p>Internal business software used in daily company operations. It replaced disconnected legacy tools with one application built around shared records and role-based access.</p>
+                  <a class="xp-link" href="erp-case-study.html">Read the case study <span aria-hidden="true">→</span></a>
+                </li>
+                <li class="xp-branch">
+                  <p class="xp-key" aria-hidden="true">B</p>
+                  <h4>Commercial C#/.NET software <span class="badge badge-private">Commercial</span></h4>
+                  <p class="xp-branch-role">Development and maintenance</p>
+                  <p>The company’s commercial software, including a client-server component that controls licence activation and concurrent use, and the infrastructure it runs on.</p>
+                  <a class="xp-link" href="#work-licenceManager">Open the licence manager file <span aria-hidden="true">→</span></a>
+                </li>
+              </ol>
+            </article>
+            <aside class="xp-side" aria-label="Education and languages">
+              <div class="xp-group">
+                <h3 class="xp-k">Education</h3>
+                <ol class="xp-edu">
+                  <li>
+                    <p class="xp-date">2023 → 2026.12</p>
+                    <h4>BSc in Computer Engineering</h4>
+                    <p>Ingegneria Informatica · University of Modena and Reggio Emilia (UNIMORE)</p>
+                    <p class="xp-status">Final year · {{profile.graduation}}</p>
+                  </li>
+                  <li>
+                    <p class="xp-date">2018 → 2023</p>
+                    <h4>Diploma in Computer Science and Telecommunications</h4>
+                    <p>ITIS Enrico Fermi, Modena</p>
+                  </li>
+                </ol>
+              </div>
+              <div class="xp-group">
+                <h3 class="xp-k">Languages</h3>
+                <dl class="xp-langs"><div><dt>Italian</dt><dd>Native</dd></div><div><dt>Punjabi</dt><dd>Native</dd></div><div><dt>English</dt><dd>C1</dd></div><div><dt>Hindi</dt><dd>Advanced</dd></div></dl>
               </div>
             </aside>
-          </div>
-          <div id="capabilities" class="capabilities">
-            <header data-reveal>
-              <p class="label">Capabilities by layer</p>
-              <h3>Engineering across the stack, from the interface to delivery and maintenance.</h3>
-            </header>
-            <ol class="cap-stack" data-reveal>
-              <li class="cap-row"><p class="cap-code"><span>L4</span> Interface</p><p>React, JavaScript, TypeScript, responsive layouts, accessibility, and component-based interfaces.</p></li>
-              <li class="cap-row"><p class="cap-code"><span>L3</span> Application</p><p>Node.js, Express, Fastify, Java, REST APIs, authentication, authorization, and validation.</p></li>
-              <li class="cap-row"><p class="cap-code"><span>L2</span> Data</p><p>SQL Server, MySQL, Prisma, relational modelling, and migrations.</p></li>
-              <li class="cap-row"><p class="cap-code"><span>L1</span> Delivery</p><p>Deployment, Linux, Git, Jest, Vitest, Playwright, releases, and user support.</p></li>
-              <li class="cap-row"><p class="cap-code"><span>+</span> Systems</p><p>C#/.NET software, client-server components, infrastructure support, Java 17, and controlled AI integration.</p></li>
-            </ol>
           </div>
         </div>
       </section>
@@ -170,60 +167,70 @@
             <p class="label label-accent">Contact · reply within 1–2 business days</p>
             <h2 id="contact-title">Let’s build useful software together.</h2>
             <p class="section-lead">Software engineering roles, project collaboration, or a technical conversation. Your message comes straight to me.</p>
-            <ul class="direct">
-              <li><span class="label">Email</span><span class="direct-email"><a href="mailto:{{profile.email}}">{{profile.email}}</a><button class="copy-btn" type="button" data-copy="{{profile.email}}" hidden>{{icons.copy}}<span data-copy-label>Copy</span></button></span></li>
-              <li><span class="label">GitHub</span><a href="{{profile.github}}" target="_blank" rel="noopener noreferrer">gurmilans-dev<span class="sr-only"> on GitHub (opens in a new tab)</span> <span aria-hidden="true">↗</span></a></li>
-              <li><span class="label">LinkedIn</span><a href="{{profile.linkedin}}" target="_blank" rel="noopener noreferrer">{{profile.name}}<span class="sr-only"> on LinkedIn (opens in a new tab)</span> <span aria-hidden="true">↗</span></a></li>
-              <li><span class="label">CV</span><a href="{{profile.resume}}" target="_blank" rel="noopener noreferrer" download>Download PDF<span class="sr-only"> résumé</span> <span aria-hidden="true">↓</span></a></li>
-              <li><span class="label">Based in</span><span>{{profile.location}} · <span data-clock>Central European Time</span></span></li>
-            </ul>
+            <div class="reach">
+              <p class="label reach-title" id="reach-title">Direct contact</p>
+              <div class="reach-row">
+                <ul class="reach-links" aria-labelledby="reach-title">
+                  <li class="reach-mail">
+                    <a class="reach-icon" href="mailto:{{profile.email}}"><span class="reach-face" aria-hidden="true">{{icons.email}}</span><span class="reach-tip"><span class="sr-only">Email </span>{{profile.email}}</span></a>
+                    <button class="reach-icon copy-btn" type="button" data-copy="{{profile.email}}" hidden><span class="reach-face" aria-hidden="true">{{icons.copy}}{{icons.success}}</span><span class="reach-tip" data-copy-label>Copy address</span></button>
+                  </li>
+                  <li><a class="reach-icon" href="{{profile.github}}" target="_blank" rel="noopener noreferrer"><span class="reach-face" aria-hidden="true">{{icons.github}}</span><span class="reach-tip">GitHub <span class="reach-handle">gurmilans-dev</span></span><span class="sr-only"> (opens in a new tab)</span></a></li>
+                  <li><a class="reach-icon" href="{{profile.linkedin}}" target="_blank" rel="noopener noreferrer"><span class="reach-face" aria-hidden="true">{{icons.linkedin}}</span><span class="reach-tip">LinkedIn <span class="reach-handle">{{profile.name}}</span></span><span class="sr-only"> (opens in a new tab)</span></a></li>
+                </ul>
+                <a class="reach-cv" href="{{profile.resume}}" target="_blank" rel="noopener noreferrer" download>{{icons.download}}<span><span class="reach-cv-verb">Download </span>CV</span> <span class="reach-cv-type">PDF</span></a>
+              </div>
+              <p class="reach-place">{{icons.pin}}<span>{{profile.location}}</span> <span class="reach-time" aria-hidden="true">·</span> <span class="reach-time" data-clock>Central European Time</span></p>
+            </div>
           </div>
           <form class="contact-form" action="{{contactForm.action}}" method="{{contactForm.method}}" enctype="{{contactForm.enctype}}" data-contact-form data-contact-mode="{{contactForm.mode}}" data-contact-endpoint="{{contactForm.endpoint}}" data-contact-email="{{profile.email}}" data-contact-timeout="{{contactForm.timeoutMs}}" data-contact-turnstile="{{contactForm.turnstileSiteKey}}" data-reveal>
-            <div class="form-intro">
-              <p class="label">Message directly</p>
-              <p id="contact-form-instructions">Name, email and message are required.</p>
+            <div class="form-head">
+              <p class="label label-accent">Message directly</p>
+              <p id="contact-form-instructions" class="form-note">Name, email and message are required.</p>
             </div>
-            <fieldset class="enquiry">
-              <legend class="label">Enquiry type <span>(optional)</span></legend>
-              <div class="chips">
-                <div class="chip"><input type="radio" id="enquiry-role" name="enquiryType" value="Software engineering role" /><label for="enquiry-role">Software engineering role</label></div>
-                <div class="chip"><input type="radio" id="enquiry-project" name="enquiryType" value="Project collaboration" /><label for="enquiry-project">Project collaboration</label></div>
-                <div class="chip"><input type="radio" id="enquiry-technical" name="enquiryType" value="Technical discussion" /><label for="enquiry-technical">Technical discussion</label></div>
-                <div class="chip"><input type="radio" id="enquiry-other" name="enquiryType" value="Other" /><label for="enquiry-other">Other</label></div>
+            <div class="form-body">
+              <fieldset class="enquiry">
+                <legend class="label">Enquiry type <span>(optional)</span></legend>
+                <div class="chips">
+                  <div class="chip"><input type="radio" id="enquiry-role" name="enquiryType" value="Software engineering role" /><label for="enquiry-role">Software engineering role</label></div>
+                  <div class="chip"><input type="radio" id="enquiry-project" name="enquiryType" value="Project collaboration" /><label for="enquiry-project">Project collaboration</label></div>
+                  <div class="chip"><input type="radio" id="enquiry-technical" name="enquiryType" value="Technical discussion" /><label for="enquiry-technical">Technical discussion</label></div>
+                  <div class="chip"><input type="radio" id="enquiry-other" name="enquiryType" value="Other" /><label for="enquiry-other">Other</label></div>
+                </div>
+              </fieldset>
+              <div class="fields">
+                <div class="field">
+                  <label for="contact-name">Name <span>required</span></label>
+                  <input id="contact-name" name="name" type="text" autocomplete="name" required placeholder="Your name" aria-describedby="contact-form-instructions contact-name-error" />
+                  <p class="field-error" id="contact-name-error" data-contact-error-for="name" hidden>{{icons.error}}<span data-contact-error-text></span></p>
+                </div>
+                <div class="field">
+                  <label for="contact-email">Email <span>required</span></label>
+                  <input id="contact-email" name="email" type="email" autocomplete="email" required placeholder="you@example.com" aria-describedby="contact-form-instructions contact-email-error" />
+                  <p class="field-error" id="contact-email-error" data-contact-error-for="email" hidden>{{icons.error}}<span data-contact-error-text></span></p>
+                </div>
+                <div class="field field-message">
+                  <label for="contact-message">Message <span>required, at least {{contactForm.messageMinLength}} characters</span></label>
+                  <textarea id="contact-message" name="message" rows="6" required minlength="{{contactForm.messageMinLength}}" maxlength="{{contactForm.messageMaxLength}}" placeholder="A short note about the role, project, or technical question." aria-describedby="contact-form-instructions contact-message-error"></textarea>
+                  <p class="field-error" id="contact-message-error" data-contact-error-for="message" hidden>{{icons.error}}<span data-contact-error-text></span></p>
+                </div>
               </div>
-            </fieldset>
-            <div class="fields">
-              <div class="field">
-                <label for="contact-name">Name <span>required</span></label>
-                <input id="contact-name" name="name" type="text" autocomplete="name" required placeholder="Your name" aria-describedby="contact-form-instructions contact-name-error" />
-                <p class="field-error" id="contact-name-error" data-contact-error-for="name" hidden>{{icons.error}}<span data-contact-error-text></span></p>
+              <div class="turnstile" data-contact-turnstile-widget hidden></div>
+              <div class="form-foot">
+                <p class="privacy">Your name, email address and message are processed through Formspree and used only to respond to your enquiry. If sending fails, you can open a pre-filled email draft instead.</p>
+                <div class="form-actions">
+                  <button class="btn btn-primary" type="submit" data-contact-submit>{{icons.send}}<span data-contact-submit-text>Send message</span></button>
+                  <button class="btn btn-line" type="button" data-contact-mailfallback hidden>{{icons.email}}<span>Open email draft</span></button>
+                </div>
+                <p class="form-status" aria-live="polite" data-contact-status><span class="status-icons" aria-hidden="true">{{icons.success}}{{icons.error}}</span><span data-contact-status-text>Ready to send your message.</span></p>
               </div>
-              <div class="field">
-                <label for="contact-email">Email <span>required</span></label>
-                <input id="contact-email" name="email" type="email" autocomplete="email" required placeholder="you@example.com" aria-describedby="contact-form-instructions contact-email-error" />
-                <p class="field-error" id="contact-email-error" data-contact-error-for="email" hidden>{{icons.error}}<span data-contact-error-text></span></p>
-              </div>
-              <div class="field field-message">
-                <label for="contact-message">Message <span>required, at least {{contactForm.messageMinLength}} characters</span></label>
-                <textarea id="contact-message" name="message" rows="6" required minlength="{{contactForm.messageMinLength}}" maxlength="{{contactForm.messageMaxLength}}" placeholder="A short note about the role, project, or technical question." aria-describedby="contact-form-instructions contact-message-error"></textarea>
-                <p class="field-error" id="contact-message-error" data-contact-error-for="message" hidden>{{icons.error}}<span data-contact-error-text></span></p>
-              </div>
-            </div>
-            <div class="turnstile" data-contact-turnstile-widget hidden></div>
-            <div class="form-foot">
-              <p class="privacy">Your name, email address and message are processed through Formspree and used only to respond to your enquiry. If sending fails, you can open a pre-filled email draft instead.</p>
-              <div class="form-actions">
-                <button class="btn btn-primary" type="submit" data-contact-submit>{{icons.send}}<span data-contact-submit-text>Send message</span></button>
-                <button class="btn btn-line" type="button" data-contact-mailfallback hidden>Open email draft</button>
-              </div>
-              <p class="form-status" aria-live="polite" data-contact-status><span class="status-icons" aria-hidden="true">{{icons.success}}{{icons.error}}</span><span data-contact-status-text>Ready to send your message.</span></p>
             </div>
           </form>
         </div>
       </section>
     </main>
 
-    {{> footer}}
+    {{> footer home}}
     {{> drawer}}
   </body>
 </html>

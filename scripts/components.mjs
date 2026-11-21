@@ -21,7 +21,17 @@ function inlineIcon(name, body) {
   return `<svg class="icon icon-${name}" aria-hidden="true" focusable="false" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">${body}</svg>`;
 }
 
+/* One line style: 24-unit grid, 1.8 stroke, round caps. Email, GitHub, résumé, external
+   and send are the shapes from the current gurmilansingh.com; LinkedIn is redrawn in line
+   (the live one is filled), and pin and download are drawn to the same grid. */
 export const icons = {
+  email: inlineIcon("email", '<path d="M4 6.5h16v11H4z" /><path d="m4.8 7.2 7.2 5.5 7.2-5.5" />'),
+  github: inlineIcon("github", '<path d="M9 19c-4.2 1.3-4.2-2.2-5.6-2.8" /><path d="M15 21v-3.4c0-1 .3-1.7.9-2.2 3-.4 5.8-1.5 5.8-6.4 0-1.4-.5-2.6-1.4-3.6.1-.4.5-1.8-.2-3.5 0 0-1.3-.4-3.9 1.4a13.4 13.4 0 0 0-7.1 0C6.5 1.5 5.2 1.9 5.2 1.9c-.7 1.7-.3 3.1-.2 3.5A5 5 0 0 0 3.6 9c0 4.9 2.8 6 5.8 6.4.6.5.9 1.2.9 2.2V21" />'),
+  linkedin: inlineIcon("linkedin", '<path d="M7 10.2v7.3" /><path d="M7 6.7v.01" /><path d="M11 17.5v-7.3" /><path d="M11 13.6c0-2 1.3-3.4 3-3.4s3 1.4 3 3.4v3.9" />'),
+  resume: inlineIcon("resume", '<path d="M7 3.8h6.8L18 8v12.2H7z" /><path d="M13.5 3.8v4.5H18" /><path d="M9.7 12.2h4.6" /><path d="M9.7 15.4h4.6" />'),
+  pin: inlineIcon("pin", '<path d="M12 20.6s-6-5.6-6-10.4a6 6 0 0 1 12 0c0 4.8-6 10.4-6 10.4z" /><circle cx="12" cy="10.2" r="2.1" />'),
+  external: inlineIcon("external", '<path d="M8 8h8v8" /><path d="M7.5 16.5 16 8" />'),
+  download: inlineIcon("download", '<path d="M12 4.5V15" /><path d="m7.5 10.8 4.5 4.5 4.5-4.5" /><path d="M5.5 19.5h13" />'),
   send: inlineIcon("send", '<path d="m4 12 16-7-7 16-2.4-6.6L4 12z" /><path d="m10.6 14.4 4-4" />'),
   success: inlineIcon("success", '<path d="M20 6 9 17l-5-5" />'),
   error: inlineIcon("error", '<path d="M12 8v5" /><path d="M12 17h.01" /><path d="M4.8 4.8h14.4v14.4H4.8z" />'),
@@ -69,11 +79,11 @@ export function header(mode = "home") {
   const hud = caseProject ? `case file ${nn(caseProject.order)} · ${esc(caseProject.shortTitle)}` : home ? "full-stack developer" : "route not found";
   return `<header class="site-header" data-header>
       <div class="header-inner">
-        <a class="brand" href="${home ? "#top" : "index.html"}" aria-label="${esc(profile.name)}, ${home ? "back to top" : "home"}"><span class="brand-mark" aria-hidden="true">GS</span><span class="brand-name">gurmilansingh.com</span></a>
+        <a class="brand" href="${home ? "#top" : "index.html"}" aria-label="${esc(profile.name)}, ${home ? "back to top" : "home"}"><span class="brand-mark" aria-hidden="true">GS</span><span class="brand-name">${esc(profile.name)}</span></a>
         <p class="header-hud" aria-hidden="true"><span data-hud>${hud}</span><span class="hud-sep">/</span><span>${featuredProjects.length} systems × ${LAYERS.length} layers</span></p>
         <nav id="site-navigation" class="site-nav" aria-label="Primary navigation" data-nav>
           ${link("work", "Work")}${link("experience", "Profile")}${link("contact", "Contact")}
-          <a class="nav-cv" href="${profile.resume}" target="_blank" rel="noopener noreferrer">CV<span class="sr-only"> (PDF, opens in a new tab)</span><span aria-hidden="true">↓</span></a>
+          <a class="nav-cv" href="${profile.resume}" target="_blank" rel="noopener noreferrer">${icons.resume}<span>CV</span><span class="sr-only"> (PDF, opens in a new tab)</span>${icons.external}</a>
           <p class="nav-meta"><a href="mailto:${profile.email}">${profile.email}</a><span>${esc(profile.location)}</span></p>
         </nav>
         <div class="theme-switch" role="group" aria-label="Colour theme" data-theme-switch hidden><button class="ts-btn" type="button" data-theme-choice="dark" aria-pressed="true" title="Dark theme">${icons.moon}<span class="sr-only">Dark theme</span></button><button class="ts-btn" type="button" data-theme-choice="light" aria-pressed="false" title="Light theme">${icons.sun}<span class="sr-only">Light theme</span></button></div>
@@ -82,16 +92,21 @@ export function header(mode = "home") {
     </header>`;
 }
 
-export function footer() {
-  return `<footer class="site-footer">
-      <div class="frame footer-strip">
-        <div class="fs-cell fs-email"><a class="fs-mail" href="mailto:${profile.email}">${profile.email}</a><button class="copy-btn" type="button" data-copy="${profile.email}" hidden>${icons.copy}<span data-copy-label>Copy</span></button></div>
-        <div class="fs-cell"><strong>${esc(profile.employmentTitle)}, ${esc(profile.employer)}</strong><span>Sep 2023 → present</span></div>
-        <div class="fs-cell"><strong>BSc Computer Engineering</strong><span>UNIMORE · expected Dec 2026</span></div>
-        <div class="fs-cell"><strong>Italian · Punjabi · English C1 · Hindi</strong><span>Modena · <span data-clock>Central European Time</span></span></div>
-        <div class="fs-cell fs-links">${externalLink(profile.github, "GitHub", "fs-link")}${externalLink(profile.linkedin, "LinkedIn", "fs-link")}<a class="fs-link" href="${profile.resume}" target="_blank" rel="noopener noreferrer">CV${NEW_TAB}<span class="arrow" aria-hidden="true">↓</span></a></div>
+/* One quiet line. The homepage ends on its contact section, so its footer repeats none of
+   it and stays on that section's orange ground (is-end); other pages have no contact
+   section and keep three icon links on the normal ground. */
+export function footer(mode = "") {
+  const links = mode === "home" ? "" : `<ul class="footer-links" aria-label="Contact">
+          <li><a href="mailto:${profile.email}" title="Email">${icons.email}<span class="sr-only">Email ${profile.email}</span></a></li>
+          <li><a href="${esc(profile.github)}" target="_blank" rel="noopener noreferrer" title="GitHub">${icons.github}<span class="sr-only">GitHub${NEW_TAB}</span></a></li>
+          <li><a href="${esc(profile.linkedin)}" target="_blank" rel="noopener noreferrer" title="LinkedIn">${icons.linkedin}<span class="sr-only">LinkedIn${NEW_TAB}</span></a></li>
+        </ul>`;
+  return `<footer class="site-footer${mode === "home" ? " is-end" : ""}">
+      <div class="frame footer-base">
+        <p>© <span data-year>2026</span> ${esc(profile.name)}</p>
+        <p class="footer-note">Hand-built static site. No frameworks, no tracking.</p>
+        ${links}<a class="footer-top" href="#top">Back to top <span aria-hidden="true">↑</span></a>
       </div>
-      <div class="frame footer-base"><p>© <span data-year>2026</span> ${esc(profile.name)}</p><p>Hand-built static site. No frameworks, no tracking.</p><a href="#top">Back to top <span aria-hidden="true">↑</span></a></div>
     </footer>`;
 }
 
@@ -257,7 +272,7 @@ export function caseEnd(key) {
 
 const PARTIALS = {
   header: (arg) => header(arg || "home"),
-  footer: () => footer(),
+  footer: (arg) => footer(arg),
   "wb-index": () => workbenchIndex(),
   "wb-stage": () => workbenchStage(),
   "wb-files": () => workbenchFiles(),

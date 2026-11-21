@@ -262,6 +262,10 @@ code { font-family: var(--mono); font-size: .86em; padding: .08em .36em; backgro
 .site-nav > a[aria-current] { color: var(--text); border-color: var(--line-3); }
 .site-nav > .nav-cv { margin-left: 4px; background: var(--accent-fill); color: var(--accent-ink); font-weight: 700; }
 .site-nav > .nav-cv:hover { background: var(--accent-fill-hi); color: var(--accent-ink); }
+/* The CV opens in a new tab: a document icon and an outward arrow, not a download arrow. */
+.nav-cv .icon { width: 15px; height: 15px; flex: none; }
+.nav-cv .icon-external { width: 13px; height: 13px; transition: translate .2s var(--ease); }
+.nav-cv:hover .icon-external { translate: 1px -1px; }
 .nav-meta { display: none; }
 .site-nav { margin-left: auto; }
 @media (min-width: 1100px) { .header-hud { display: flex; margin-inline: auto; } .site-nav { margin-left: 0; } }
@@ -290,7 +294,9 @@ code { font-family: var(--mono); font-size: .86em; padding: .08em .36em; backgro
   .js .site-nav.is-open { opacity: 1; visibility: visible; transform: none; transition: opacity .25s, transform .35s var(--ease), visibility 0s; }
   .js .site-nav > a { min-height: 64px; padding: 0; border: 0; border-bottom: 1px solid var(--line); font: 600 clamp(28px, 8vw, 40px)/1 var(--sans); letter-spacing: -.02em; color: var(--text); }
   .js .site-nav > a[aria-current] { color: var(--accent); }
-  .js .site-nav > .nav-cv { margin: 24px 0 0; min-height: 52px; padding: 0 18px; justify-content: space-between; font: 700 15px var(--mono); border: 0; color: var(--accent-ink); }
+  .js .site-nav > .nav-cv { margin: 24px 0 0; min-height: 52px; padding: 0 18px; justify-content: flex-start; gap: 10px; font: 700 15px var(--mono); border: 0; color: var(--accent-ink); }
+  .js .nav-cv .icon { width: 18px; height: 18px; }
+  .js .nav-cv .icon-external { width: 16px; height: 16px; margin-left: auto; }
   .js .nav-meta { display: grid; gap: 8px; margin-top: auto; padding-top: 32px; font: 500 12px/1.4 var(--mono); color: var(--text-4); }
   .js .nav-meta a { color: var(--text); text-decoration: none; }
   html:not(.js) .site-nav { width: 100%; padding-bottom: 10px; }
@@ -325,7 +331,8 @@ code { font-family: var(--mono); font-size: .86em; padding: .08em .36em; backgro
    client, lanes and labels all sit in the same tilted plane as the plates.
    The resting pose (--tilt-*) is a gentle three-quarter view: a close perspective keeps
    the depth while labels stay nearly level. workbench.js only adds the pointer lean. */
-.hero-visual { container-type: inline-size; perspective: 1500px; display: grid; justify-items: center; padding-block: 8px 18px; }
+/* #capabilities: older links to the removed skills list now land on this stack. */
+.hero-visual { container-type: inline-size; perspective: 1500px; display: grid; justify-items: center; padding-block: 8px 18px; scroll-margin-top: calc(var(--header-h) + 16px); }
 .hero-figure { --tilt-x: 15deg; --tilt-y: -16deg; --tilt-z: -1deg; --req-x: 64%; --res-x: calc(var(--req-x) + min(32px, 9%)); --t0: 1.9s; --hop: .7s; --gap: clamp(16px, 2.8vh, 26px); --lead: clamp(42px, 6vh, 58px); position: relative; width: min(720px, 100%); margin: 0; transform-style: preserve-3d; transform: rotateX(calc(var(--tilt-x) + var(--lean-x, 0deg))) rotateY(calc(var(--tilt-y) + var(--lean-y, 0deg))) rotateZ(var(--tilt-z)); transition: transform .55s var(--ease); }
 .fig-cap { display: grid; gap: 6px; max-width: 64%; font: 500 11px/1.4 var(--mono); letter-spacing: .08em; text-transform: uppercase; color: var(--text-4); }
 .fig-cap > span:first-child { color: var(--accent); }
@@ -690,87 +697,200 @@ code { font-family: var(--mono); font-size: .86em; padding: .08em .36em; backgro
 @media (max-width: 899px) { .drawer { width: 100%; border-left: 0; } .drawer-btn { padding: 0 10px; } }
 @media (max-width: 420px) { .drawer-crumb .crumb-extra { display: none; } }
 
-/* ---------- Profile ---------- */
-.profile-grid { display: grid; gap: 48px; margin-top: clamp(40px, 6vw, 72px); }
-.timeline { list-style: none; padding: 0; border-top: 1px solid var(--line-2); }
-.timeline > li { display: grid; gap: 8px; padding: 22px 0; border-bottom: 1px solid var(--line-2); }
-.tl-when { font: 500 12px/1.5 var(--mono); color: var(--text-4); }
-.timeline > li:first-child .tl-when { color: var(--accent); }
-.tl-what { display: grid; gap: 6px; }
-.tl-what h3 { font-size: clamp(1.15rem, 1.6vw, 1.35rem); line-height: 1.25; letter-spacing: -.01em; }
-.tl-where { font: 400 12px/1.5 var(--mono); color: var(--text-4); }
-.tl-what p:not(.tl-where) { color: var(--text-2); max-width: 64ch; }
-.profile-side { display: grid; gap: 32px; align-content: start; }
-.langs { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); border-top: 1px solid var(--line-2); }
-.langs > div { display: grid; gap: 2px; padding: 14px 12px 14px 0; border-bottom: 1px solid var(--line); }
-.langs dt { font: 600 18px var(--sans); }
-.langs dd { font: 500 11px var(--mono); letter-spacing: .08em; text-transform: uppercase; color: var(--text-4); }
-.profile-note { padding: 18px; border: 1px solid var(--line-2); background: var(--bg-1); display: grid; gap: 8px; font-size: 15px; color: var(--text-2); }
-.capabilities { margin-top: clamp(56px, 8vw, 96px); display: grid; gap: 22px; scroll-margin-top: calc(var(--header-h) + 16px); }
-.capabilities > header { display: grid; gap: 10px; }
-.capabilities h3 { font-size: var(--t-h2); line-height: 1.05; letter-spacing: -.03em; }
-.cap-stack { list-style: none; padding: 0; display: grid; gap: 8px; }
-.cap-row { --step: 0; display: grid; gap: 6px; padding: 16px 18px; border: 1px solid var(--line-2); background: var(--bg-1); transition: border-color .25s, transform .4s var(--ease); }
-.cap-row:hover { border-color: var(--accent-line); }
-.cap-code { font: 700 11px/1.5 var(--mono); letter-spacing: .08em; text-transform: uppercase; color: var(--text-2); }
-.cap-code span { color: var(--accent); }
-.cap-row p { font-size: 15px; line-height: 1.5; color: var(--text-2); }
+/* ---------- Experience & background ----------
+   One sheet. The job at Phema leads on the left; education and languages sit beside it
+   on a quieter surface. Phones stack the parts; tablets put the background in two
+   columns under the job; from 1100px the sheet splits into two columns. */
+/* The framed sheet already closes the section, so less space is needed before Contact. */
+.section.profile { padding-bottom: clamp(48px, 6vw, 80px); }
+.xp { display: grid; }
+.xp-head { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 8px 24px; padding-bottom: 14px; border-bottom: 1px solid var(--line-2); }
+.xp-k { font: 500 10.5px/1.4 var(--mono); letter-spacing: .08em; text-transform: uppercase; color: var(--text-4); }
+
+/* The job: when, the role, what I am responsible for, then the two systems as taps on
+   one bus. */
+.xp-work { display: grid; align-content: start; gap: 10px; padding-top: 28px; }
+.xp-when { display: flex; align-items: center; gap: 10px; font: 500 12px/1.5 var(--mono); letter-spacing: .04em; color: var(--accent); }
+.xp-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--accent-fill); box-shadow: 0 0 0 4px rgb(var(--accent-rgb) / .16); }
+.xp-role { font: 600 clamp(2rem, 3.4vw, 3rem)/1.02 var(--sans); letter-spacing: -.035em; }
+.xp-role span { display: block; color: var(--text-3); font-weight: 500; }
+.xp-meta { font: 500 12px/1.6 var(--mono); color: var(--text-4); }
+.xp-duties { display: grid; gap: 10px; margin-top: 14px; }
+.xp-duties ul { list-style: none; padding: 0; display: flex; flex-wrap: wrap; gap: 6px; }
+.xp-duties li { padding: 5px 9px; border: 1px solid var(--line-2); background: var(--bg-1); font: 500 11.5px/1.3 var(--mono); color: var(--text-2); }
+.xp-branches { list-style: none; padding: 0; margin-top: 18px; display: grid; }
+.xp-branch { position: relative; display: grid; gap: 6px; padding: 20px 0 22px 46px; border-top: 1px solid var(--line); }
+.xp-branch::before { content: ""; position: absolute; left: 13px; top: 0; bottom: 0; width: 1px; background: var(--line-3); }
+.xp-branch:last-child::before { bottom: auto; height: 34px; }
+.xp-key { position: absolute; left: 0; top: 20px; width: 27px; height: 27px; display: grid; place-items: center; border: 1px solid var(--accent-line); background: var(--bg); font: 600 11px/1 var(--mono); color: var(--accent); transition: background-color .25s, color .25s, border-color .25s; }
+.xp-branch h4 { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 14px; font: 600 clamp(1.12rem, 1.5vw, 1.3rem)/1.3 var(--sans); letter-spacing: -.015em; }
+.xp-branch-role { font: 500 11px/1.5 var(--mono); letter-spacing: .08em; text-transform: uppercase; color: var(--accent); }
+.xp-branch p:not([class]) { max-width: 62ch; color: var(--text-2); }
+.xp-link { justify-self: start; margin-top: 4px; display: inline-flex; gap: 8px; font: 500 12.5px/1.6 var(--mono); color: var(--text); text-decoration: underline; text-decoration-color: var(--line-3); text-underline-offset: 4px; }
+.xp-link span { color: var(--accent); transition: translate .25s var(--ease); }
+.xp-link:hover { color: var(--text); text-decoration-color: var(--accent); }
+.xp-link:hover span { translate: 3px 0; }
+.xp-branch:hover .xp-key, .xp-branch:focus-within .xp-key { border-color: var(--accent-fill); background: var(--accent-fill); color: var(--accent-ink); }
+
+/* Background: smaller type, quieter colour, the same hairlines. */
+.xp-side { display: grid; align-content: start; gap: 32px; margin-top: 8px; padding-top: 28px; border-top: 1px solid var(--line-2); }
+.xp-group { display: grid; align-content: start; gap: 12px; }
+.xp-edu { list-style: none; padding: 0; display: grid; }
+.xp-edu li { display: grid; gap: 3px; padding: 14px 0; border-top: 1px solid var(--line); }
+.xp-date { font: 500 11.5px/1.5 var(--mono); color: var(--text-4); }
+.xp-edu h4 { font: 600 1.05rem/1.3 var(--sans); letter-spacing: -.01em; }
+.xp-edu p:not([class]) { font-size: 14px; line-height: 1.5; color: var(--text-3); }
+.xp-status { font: 500 11px/1.5 var(--mono); color: var(--text-3); }
+.xp-langs { display: grid; }
+.xp-langs > div { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; padding: 9px 0; border-top: 1px solid var(--line); }
+.xp-langs dt { font: 500 15px/1.4 var(--sans); color: var(--text); }
+.xp-langs dd { font: 500 10.5px/1.4 var(--mono); letter-spacing: .08em; text-transform: uppercase; color: var(--text-4); }
 @media (min-width: 760px) {
-  .timeline > li { grid-template-columns: 170px minmax(0, 1fr); gap: 20px; }
-  .langs { grid-template-columns: repeat(4, minmax(0, 1fr)); }
-  .cap-row { grid-template-columns: 200px minmax(0, 1fr); gap: 20px; align-items: baseline; }
+  /* Framed sheet; the background runs as two columns under the job. */
+  .xp { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); border: 1px solid var(--line-2); }
+  .xp-head { grid-column: 1 / -1; padding: 14px clamp(20px, 3vw, 36px); }
+  .xp-work { grid-column: 1 / -1; padding: clamp(28px, 3.4vw, 44px) clamp(20px, 3vw, 36px) 12px; }
+  .xp-side { grid-column: 1 / -1; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 0; margin: 0; padding: 0; background: var(--bg-1); }
+  .xp-group { padding: 24px clamp(20px, 3vw, 36px) 28px; }
+  .xp-group + .xp-group { border-left: 1px solid var(--line-2); }
 }
 @media (min-width: 1100px) {
-  .profile-grid { grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr); gap: clamp(40px, 5vw, 96px); }
-  /* Rows step to the right like a stack seen from its edge: L4 on top, L1 at the base. */
-  .cap-row { margin-left: calc(var(--step) * 28px); margin-right: calc((4 - var(--step)) * 28px); }
-  .cap-row:nth-child(2) { --step: 1; }
-  .cap-row:nth-child(3) { --step: 2; }
-  .cap-row:nth-child(4) { --step: 3; }
-  .cap-row:nth-child(5) { --step: 4; border-style: dashed; }
+  .xp { grid-template-columns: minmax(0, 7fr) minmax(0, 4fr); }
+  .xp-work { grid-column: 1; padding-bottom: 20px; }
+  .xp-side { grid-column: 2; grid-template-columns: minmax(0, 1fr); border-top: 0; border-left: 1px solid var(--line-2); }
+  .xp-group { padding-top: clamp(28px, 3.4vw, 44px); }
+  .xp-group + .xp-group { padding-top: 24px; border-left: 0; border-top: 1px solid var(--line-2); }
 }
 
-/* ---------- Contact ---------- */
-.contact { background: linear-gradient(var(--bg), var(--sink)); }
+/* ---------- Contact ----------
+   The ending reverses figure and ground. Everywhere else the signal orange is a cut
+   through graphite; here a slightly deeper shade of it becomes the ground (--signal), the
+   type turns to graphite ink (the pairing
+   every filled orange surface already uses), and the form rests on it as the last plate,
+   on the same offset slab as the plates in FIG. 00. The ground is the same in both themes;
+   the form plate keeps the reader's theme. The homepage footer stays on the ground, so the
+   page ends here.
+   --signal and --ink are read on the section (and footer) before the tokens are swapped
+   one level down, in the left column and the footer line. */
+.contact, .site-footer.is-end { --signal: #ea7a2e; --ink: var(--accent-ink); --ink-hi: #2a2b30; --slab: rgb(12 13 15 / .24); background: var(--signal); }
+.contact { border-top: 0; }
+.contact-copy, .is-end .footer-base {
+  /* Ink tones over the orange: every text step clears 4.5:1 on it in both themes. */
+  --text: var(--ink);
+  --text-2: rgb(12 13 15 / .9);
+  --text-3: rgb(12 13 15 / .82);
+  --text-4: rgb(12 13 15 / .8);
+  --text-5: rgb(12 13 15 / .4);
+  --line: rgb(12 13 15 / .3); /* decorative rules */
+  --line-2: rgb(12 13 15 / .56); /* control edges: clear 3:1 on the ground */
+  --line-3: rgb(12 13 15 / .72);
+  --bg-1: transparent;
+  --accent: var(--ink);
+  --accent-line: var(--ink);
+  --accent-soft: rgb(12 13 15 / .08);
+  --accent-fill: var(--ink);
+  --accent-ink: var(--signal);
+  --ok: var(--ink);
+  color: var(--text);
+}
 .contact-grid { display: grid; gap: 48px; }
 .contact-copy { display: grid; gap: 20px; align-content: start; }
-.contact-copy h2 { font-size: var(--t-section); line-height: 1; letter-spacing: -.035em; max-width: 14ch; }
-.direct { list-style: none; padding: 0; border-top: 1px solid var(--line-2); }
-.direct li { display: flex; justify-content: space-between; align-items: center; gap: 12px; min-height: 56px; border-bottom: 1px solid var(--line-2); }
-.direct .label { flex: none; }
-.direct a { font: 600 16px var(--sans); text-decoration: none; overflow-wrap: anywhere; text-align: right; }
-.direct-email { display: inline-flex; align-items: center; gap: 10px; flex-wrap: wrap; justify-content: flex-end; }
-.copy-btn { display: inline-flex; align-items: center; gap: 6px; min-height: 32px; padding: 0 9px; border: 1px solid var(--line-2); background: transparent; color: var(--text-4); font: 500 10.5px var(--mono); letter-spacing: .06em; text-transform: uppercase; }
-.copy-btn .icon { width: 14px; height: 14px; }
-.copy-btn:hover { color: var(--text); border-color: var(--line-3); }
-.copy-btn.is-done { color: var(--accent); border-color: var(--accent-line); }
-.contact-form { display: grid; gap: 18px; padding: clamp(20px, 3vw, 36px); border: 1px solid var(--line-2); background: var(--bg-1); }
-.form-intro { display: grid; gap: 6px; }
-.form-intro p { font-size: 15px; color: var(--text-3); }
-.enquiry { margin: 0; padding: 0; border: 0; display: grid; gap: 10px; min-width: 0; }
-.enquiry legend { padding: 0; margin-bottom: 10px; }
-.chips { display: flex; flex-wrap: wrap; gap: 8px; }
+.contact-copy h2 { font-size: clamp(2.3rem, 4.6vw, 4.6rem); line-height: .98; letter-spacing: -.04em; max-width: 13ch; }
+
+/* Direct contact: one compact row of icon links, the CV as the only text link, and the
+   location underneath. Each icon carries its name (for email, the address) in a tip that
+   doubles as its accessible name; on hover or keyboard focus the tip takes the place of the
+   "Direct contact" label, so the label line becomes a readout of what the icon does. */
+.reach { position: relative; display: grid; gap: 14px; margin-top: 12px; }
+.reach-title { transition: opacity .15s, translate .2s var(--ease); }
+.reach-row { display: flex; flex-wrap: wrap; align-items: center; gap: 12px 14px; }
+/* Each icon is a small black tile with a white glyph, centred in a touch area 36px wide and
+   44px tall, so tiles sit 12px apart; the list's negative margin lines the first tile up
+   with the text above. */
+.reach-links { list-style: none; padding: 0; display: flex; gap: 6px; margin-inline: -3px; }
+.reach-mail { display: flex; }
+.reach-icon { display: grid; place-items: center; width: 36px; height: 44px; padding: 0; border: 0; background: none; color: #fff; cursor: pointer; }
+.reach-face { display: grid; place-items: center; width: 30px; height: 30px; background: var(--ink); color: #fff; transition: background-color .2s, color .2s, translate .15s var(--ease); }
+.reach-face .icon { width: 16px; height: 16px; }
+/* Hover inverts the tile: white with a black glyph. */
+.reach .reach-icon:hover .reach-face { background: #fff; color: var(--ink); }
+.reach-icon:active .reach-face { translate: 0 1px; }
+.reach-icon:focus-visible { outline: none; }
+.reach-icon:focus-visible .reach-face { outline: 2px solid var(--ink); outline-offset: 3px; }
+/* Copy is a narrow tab fixed to the email tile's right edge: the email face sits at the
+   end of its touch area, the copy face at the start of its own (still 44px tall). */
+.reach-mail > a.reach-icon { width: 33px; justify-items: end; }
+.reach-mail > .copy-btn { width: 23px; justify-items: start; }
+.reach-mail > .copy-btn .reach-face { width: 20px; border-left: 1px solid rgb(255 255 255 / .18); }
+.reach-mail > .copy-btn .reach-face .icon { width: 12px; height: 12px; }
+.copy-btn .icon-success { display: none; }
+.copy-btn.is-done .reach-face { background: #fff; color: var(--ink); }
+.copy-btn.is-done .icon-copy { display: none; }
+.copy-btn.is-done .icon-success { display: block; }
+.reach-tip { position: absolute; top: 0; left: 0; font: 500 var(--t-mono)/1.4 var(--mono); letter-spacing: .04em; color: var(--text); white-space: nowrap; pointer-events: none; opacity: 0; translate: 0 3px; transition: opacity .15s, translate .2s var(--ease); }
+.reach-handle { margin-left: .4em; color: var(--text-4); }
+.copy-btn.is-done .reach-tip { color: var(--ok); }
+@media (hover: hover) {
+  .reach-icon:hover .reach-tip { opacity: 1; translate: 0 0; }
+  .reach:has(.reach-icon:hover) .reach-title { opacity: 0; translate: 0 -3px; }
+}
+.reach-icon:focus-visible .reach-tip, .copy-btn.is-done .reach-tip { opacity: 1; translate: 0 0; }
+.reach:has(.reach-icon:focus-visible, .copy-btn.is-done) .reach-title { opacity: 0; translate: 0 -3px; }
+/* The CV is the one filled control on the ground: ink with orange type, sized to sit with
+   the tiles; its touch area still extends to 44px. */
+.reach-cv { position: relative; display: inline-flex; align-items: center; gap: 9px; min-height: 34px; padding: 0 12px 0 11px; border: 1px solid var(--ink); background: var(--ink); color: var(--signal); font: 600 13.5px/1.2 var(--sans); text-decoration: none; transition: border-color .2s, background-color .2s; }
+.reach-cv::after { content: ""; position: absolute; inset: -6px 0; }
+.reach-cv .icon { width: 15px; height: 15px; flex: none; transition: translate .2s var(--ease); }
+.reach-cv-type { padding-left: 9px; border-left: 1px solid rgb(var(--accent-rgb) / .4); font: 500 10px/1 var(--mono); letter-spacing: .08em; }
+.reach-cv:hover { border-color: var(--ink-hi); background: var(--ink-hi); color: var(--signal); }
+.reach-cv:hover .icon { translate: 0 2px; }
+.reach-cv:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
+.reach-place { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 8px; font: 500 12.5px/1.5 var(--mono); color: var(--text-3); }
+.reach-place .icon { width: 14px; height: 14px; flex: none; color: var(--text-4); }
+.reach-time { color: var(--text-4); }
+/* Phones: the row stays on one line; "Download" stays in the accessible name. */
+@media (max-width: 479px) {
+  .reach-row { column-gap: 12px; }
+  .reach-cv { gap: 8px; padding: 0 12px 0 11px; }
+  .reach-cv-type { padding-left: 8px; }
+  .reach-cv-verb { position: absolute; width: 1px; height: 1px; margin: -1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+}
+
+/* The form: the last plate, in the reader's theme, drawn in ink and resting on the same
+   offset slab as the FIG. 00 plates. Its header strip matches the experience sheet. */
+.contact-form { display: grid; align-content: start; border: 1px solid var(--ink); background: var(--bg-1); box-shadow: clamp(8px, 1vw, 12px) clamp(10px, 1.2vw, 14px) 0 var(--slab); }
+.form-head { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 6px 20px; padding: 14px clamp(20px, 3vw, 32px); border-bottom: 1px solid var(--line-2); }
+.form-note { font: 500 11.5px/1.5 var(--mono); color: var(--text-4); }
+.form-body { display: grid; gap: 24px; padding: clamp(20px, 3vw, 32px); }
+.enquiry { margin: 0; padding: 0; border: 0; display: grid; min-width: 0; }
+.enquiry legend { padding: 0; margin-bottom: 12px; }
+.enquiry legend span { color: var(--text-4); text-transform: none; letter-spacing: 0; }
+.chips { display: grid; grid-template-columns: minmax(0, 1fr); gap: 8px; }
 .chip { position: relative; }
 .chip input { position: absolute; opacity: 0; width: 1px; height: 1px; }
-.chip label { display: inline-flex; align-items: center; min-height: 40px; padding: 0 14px; border: 1px solid var(--line-3); color: var(--text-2); font: 500 13.5px var(--sans); cursor: pointer; transition: background-color .2s, color .2s, border-color .2s; }
-.chip label:hover { border-color: var(--text-3); color: var(--text); }
-.chip input:checked + label { background: var(--text); border-color: var(--text); color: var(--bg); }
+/* Each chip is a radio: a ring that fills with the signal colour when chosen. */
+.chip label { display: flex; align-items: center; gap: 10px; min-height: 42px; padding: 0 15px 0 13px; border: 1px solid var(--line-2); background: var(--bg); color: var(--text-2); font: 500 13.5px var(--sans); cursor: pointer; transition: background-color .2s, color .2s, border-color .2s; }
+.chip label::before { content: ""; flex: none; width: 13px; height: 13px; border: 1.5px solid var(--text-4); border-radius: 50%; transition: border-color .2s, background-color .2s; }
+.chip label:hover { border-color: var(--line-3); color: var(--text); }
+.chip label:hover::before { border-color: var(--text-3); }
+.chip input:checked + label { border-color: var(--accent-line); background: var(--accent-soft); color: var(--text); }
+.chip input:checked + label::before { border-color: var(--accent-fill); background: radial-gradient(circle, var(--accent-fill) 0 3px, transparent 3.5px); }
 .chip input:focus-visible + label { outline: 2px solid var(--accent); outline-offset: 3px; }
-.fields { display: grid; gap: 16px; }
-.field { display: grid; gap: 7px; }
-.field label { font: 500 11px/1.4 var(--mono); letter-spacing: .06em; text-transform: uppercase; color: var(--text-4); }
-.field label span { text-transform: none; letter-spacing: 0; color: var(--text-4); }
-.field input, .field textarea { width: 100%; min-height: 48px; padding: 12px 14px; border: 1px solid var(--line-2); border-radius: 0; background: var(--bg); color: var(--text); font: 400 16px/1.5 var(--sans); transition: border-color .2s; -webkit-appearance: none; appearance: none; }
+.fields { display: grid; gap: 18px; }
+.field { display: grid; gap: 8px; }
+.field label { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; font: 500 11px/1.4 var(--mono); letter-spacing: .06em; text-transform: uppercase; color: var(--text-3); }
+.field label span { font-size: 11px; letter-spacing: 0; text-transform: none; text-align: right; color: var(--text-4); }
+.field input, .field textarea { width: 100%; min-height: 48px; padding: 12px 14px; border: 1px solid var(--line-2); border-radius: 0; background: var(--bg); color: var(--text); font: 400 16px/1.5 var(--sans); transition: border-color .2s, box-shadow .2s; -webkit-appearance: none; appearance: none; }
 .field textarea { min-height: 150px; resize: vertical; }
 .field input::placeholder, .field textarea::placeholder { color: var(--placeholder); }
 .field input:hover, .field textarea:hover { border-color: var(--line-3); }
-.field input:focus, .field textarea:focus { border-color: var(--accent); outline: none; }
+.field input:focus, .field textarea:focus { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); outline: none; }
 .field [aria-invalid="true"] { border-color: var(--danger); }
 .field-error { display: flex; align-items: center; gap: 6px; font-size: 13.5px; color: var(--danger); }
 .field-error .icon { width: 15px; height: 15px; flex: none; }
-.form-foot { display: grid; gap: 16px; }
-.privacy { font-size: 13px; line-height: 1.5; color: var(--text-4); }
-.form-status { display: flex; align-items: flex-start; gap: 8px; min-height: 22px; font: 400 13px/1.5 var(--mono); color: var(--text-3); }
+.form-foot { display: grid; gap: 16px; padding-top: 20px; border-top: 1px solid var(--line); }
+.privacy { max-width: 62ch; font-size: 13px; line-height: 1.55; color: var(--text-4); }
+.form-status { display: flex; align-items: flex-start; gap: 8px; min-height: 22px; font: 400 12.5px/1.5 var(--mono); color: var(--text-3); }
 .status-icons { display: contents; }
 .status-icons .icon { display: none; width: 16px; height: 16px; flex: none; margin-top: 1px; }
 [data-contact-state="received"] .form-status { color: var(--ok); }
@@ -778,37 +898,43 @@ code { font-family: var(--mono); font-size: .86em; padding: .08em .36em; backgro
 [data-contact-state="error"] .form-status { color: var(--danger); }
 [data-contact-state="error"] .status-icons .icon-error { display: block; }
 .form-actions { display: flex; flex-wrap: wrap; gap: 10px; }
-.form-actions .icon { width: 17px; height: 17px; }
+.form-actions .btn { min-height: 48px; padding-inline: 22px; }
+.form-actions .icon { width: 17px; height: 17px; flex: none; }
 .turnstile:empty { display: none; }
+@media (max-width: 639px) { .form-actions .btn { flex: 1 1 100%; } }
+@media (min-width: 400px) { .chips { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
 @media (min-width: 640px) { .fields { grid-template-columns: repeat(2, minmax(0, 1fr)); } .field-message { grid-column: 1 / -1; } }
 @media (min-width: 1100px) {
   .contact-grid { grid-template-columns: minmax(0, 5fr) minmax(0, 7fr); gap: clamp(40px, 5vw, 96px); }
-  .form-foot { grid-template-columns: minmax(0, 1fr) auto; align-items: center; }
+  .form-foot { grid-template-columns: minmax(0, 1fr) auto; align-items: center; column-gap: 28px; }
   .form-foot .form-status { grid-column: 1 / -1; }
 }
 
-/* ---------- Footer ---------- */
+/* ---------- Footer ----------
+   One quiet line; pages without a contact section add three icon links. */
 .site-footer { border-top: 1px solid var(--line); background: var(--bg); }
-.footer-strip { display: grid; grid-template-columns: minmax(0, 1fr); }
-.fs-cell { display: grid; align-content: center; gap: 3px; padding: 16px 0; border-bottom: 1px solid var(--line); font-size: 13px; line-height: 1.4; color: var(--text-3); min-width: 0; }
-.fs-cell strong { font-weight: 500; color: var(--text); }
-.fs-email { display: flex; align-items: center; flex-wrap: wrap; gap: 10px; }
-.fs-mail { font: 600 16px var(--sans); color: var(--text); text-decoration: none; overflow-wrap: anywhere; }
-.fs-links { display: flex; flex-wrap: wrap; gap: 6px 20px; font: 500 12px var(--mono); }
-.fs-link { display: inline-flex; align-items: center; min-height: 40px; text-decoration: none; color: var(--text-2); }
-.footer-base { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 8px 24px; padding-block: 18px 28px; font: 400 12px/1.5 var(--mono); color: var(--text-4); }
+.footer-base { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 28px; padding-block: 16px 22px; font: 400 12px/1.5 var(--mono); color: var(--text-4); }
 .footer-base a { color: var(--text-3); text-decoration: none; }
-@media (min-width: 760px) {
-  .footer-strip { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-  .fs-cell:nth-child(even) { padding-left: 22px; border-left: 1px solid var(--line); }
+.footer-note { flex: 1 1 auto; }
+.footer-links { list-style: none; padding: 0; display: flex; gap: 6px; }
+.footer-links a { display: grid; place-items: center; width: 36px; height: 36px; border: 1px solid var(--line-2); color: var(--text-3); transition: color .2s, border-color .2s; }
+.footer-links a:hover { color: var(--accent); border-color: var(--accent-line); }
+.footer-links .icon { width: 17px; height: 17px; }
+.footer-top { display: inline-flex; align-items: center; gap: 6px; min-height: 36px; }
+.footer-top:hover { color: var(--text); }
+/* Homepage: the footer line stays on the contact ground, under an ink rule. */
+.site-footer.is-end { border-top: 0; }
+.site-footer.is-end .footer-base { border-top: 1px solid var(--line); color: var(--text-2); }
+.is-end .footer-base a { color: var(--text-2); }
+.is-end .footer-top:hover { text-decoration: underline; text-underline-offset: 4px; }
+@media (max-width: 759px) {
+  /* Phones: © and Back to top share the first line; links and the note follow. */
+  .footer-base { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 8px 16px; }
+  .footer-top { grid-column: 2; grid-row: 1; }
+  .footer-links { grid-column: 1 / -1; grid-row: 2; }
+  .footer-note { grid-column: 1 / -1; }
 }
-@media (min-width: 1280px) {
-  .footer-strip { grid-template-columns: minmax(280px, 1.25fr) repeat(3, minmax(0, 1fr)) auto; min-height: 64px; }
-  .fs-cell { padding: 10px 22px; border-bottom: 0; border-left: 1px solid var(--line); }
-  .fs-cell:first-child { padding-left: 0; border-left: 0; }
-  .fs-cell:last-child { padding-right: 0; }
-  .fs-links { flex-wrap: nowrap; justify-content: flex-end; }
-}
+@media (min-width: 760px) { .footer-note { text-align: center; } }
 
 /* ==========================================================================
    Case studies
@@ -1194,4 +1320,12 @@ code { font-family: var(--mono); font-size: .86em; padding: .08em .36em; backgro
   .hero-grid, .case-layout, .cut-grid { display: block; min-height: 0; }
   a { text-decoration: underline; }
   .case-section, .system-file { break-inside: avoid-page; }
+  .reach-links { display: grid; gap: 4px; margin: 0; }
+  .reach-icon { display: flex; gap: 8px; width: auto; height: auto; border: 0; background: none; color: #111; }
+  .reach-face { width: auto; height: auto; background: none; box-shadow: none; }
+  .reach-tip { position: static; color: #111; opacity: 1; translate: none; }
+  .reach-tip .sr-only { position: static; width: auto; height: auto; margin: 0; clip: auto; }
+  .contact, .site-footer.is-end { background: none; }
+  .contact-copy, .is-end .footer-base { --text: #111; --text-2: #222; --text-3: #333; --text-4: #555; --line: #ccc; --line-2: #ccc; --accent: #b14d06; }
+  .reach-cv { border-color: #ccc; background: none; color: #111; }
 }
