@@ -33,7 +33,7 @@ Dark (graphite) and light (drafting film). A first visit follows the system sett
 
 ## Fallbacks
 
-Without JavaScript the workbench is a plain list of every system with its full case file. Reduced-motion preferences disable the load sequence, the ambient drift and the request packet. The 3D stack is decorative and hidden from assistive technology; the same information is in the index and the layer files.
+Without JavaScript the workbench is a plain list of every system with its full case file. Reduced-motion preferences disable the load sequence, the ambient drift, and the request/response trace and release pipeline in the hero figure, which then rests in its final state. The 3D stack is decorative and hidden from assistive technology; the same information is in the index and the layer files.
 
 ## Assets
 

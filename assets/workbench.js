@@ -172,17 +172,37 @@
     openFile(link.dataset.wbAlso, link);
   }));
 
-  /* Layer rows in the file, the layer switch, and hero plates all set the layer. */
+  /* Layer rows in the file, the layer switch, and hero plates all set the layer.
+     Hover only previews a layer once the pointer has really moved since the last
+     explicit choice: a hero plate link scrolls the page, and the row or plane that
+     slides under a still cursor must not replace the layer that was just chosen. */
+  let heldAt = null;
+  const holdLayer = event => { heldAt = { x: event.clientX, y: event.clientY }; };
+  const hoverLayer = index => { if (finePointer.matches && !heldAt) setLayer(index); };
+  // Enter/over fire before the move that releases the hold, so preview what is under
+  // the pointer at that moment.
+  window.addEventListener("pointermove", event => {
+    if (!heldAt || Math.abs(event.clientX - heldAt.x) + Math.abs(event.clientY - heldAt.y) <= 4) return;
+    heldAt = null;
+    const target = event.target instanceof Element ? event.target : null;
+    const row = target?.closest(".lc-row");
+    const plane = target?.closest("[data-plane]");
+    if (row && filesWrap.contains(row)) hoverLayer(Number(row.dataset.layer));
+    else if (plane) hoverLayer([...planes].indexOf(plane));
+  }, { passive: true });
   filesWrap.addEventListener("pointerover", event => {
     const row = event.target instanceof Element ? event.target.closest(".lc-row") : null;
-    if (row && finePointer.matches) setLayer(Number(row.dataset.layer));
+    if (row) hoverLayer(Number(row.dataset.layer));
   });
   filesWrap.addEventListener("click", event => {
     const row = event.target instanceof Element ? event.target.closest(".lc-row") : null;
     if (row) setLayer(Number(row.dataset.layer));
   });
   layerButtons.forEach((button, index) => button.addEventListener("click", () => setLayer(index)));
-  document.querySelectorAll("[data-layer-link]").forEach(link => link.addEventListener("click", () => setLayer(Number(link.dataset.layerLink))));
+  document.querySelectorAll("[data-layer-link]").forEach(link => link.addEventListener("click", event => {
+    setLayer(Number(link.dataset.layerLink));
+    holdLayer(event);
+  }));
 
   explodeButton?.addEventListener("click", () => {
     state.exploded = !state.exploded;
@@ -201,7 +221,7 @@
     let drag = null;
     let dragged = false;
     planes.forEach((plane, index) => {
-      plane.addEventListener("pointerenter", () => { if (finePointer.matches && !drag) setLayer(index); });
+      plane.addEventListener("pointerenter", () => { if (!drag) hoverLayer(index); });
       plane.addEventListener("click", event => {
         if (dragged) return;
         const socket = event.target instanceof Element ? event.target.closest("[data-socket]") : null;

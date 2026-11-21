@@ -103,20 +103,25 @@ for (const [file, html] of htmlByFile) {
 const home = htmlByFile.get("index.html");
 if (!home.includes(">Full-stack developer and software engineer building for real operational needs.</h1>")) fail("homepage: full-stack hero statement is missing");
 // Separators are bound to the preceding word with no-break spaces, so normalise them.
-if (!home.replace(/&nbsp;| /g, " ").includes("React · JavaScript · TypeScript · Node.js · SQL · C#/.NET")) fail("homepage: primary technology line is missing");
+if (!home.replace(/&nbsp;| /g, " ").includes("React · JavaScript · TypeScript · Node.js · Java · SQL · C#/.NET")) fail("homepage: primary technology line is missing");
 if (!home.includes('id="capabilities"') || home.includes('id="workflow"') || home.includes('id="skills"')) fail("homepage: capabilities must remain consolidated into one section");
 // Previously shared links point at these anchors; the redesign must keep them resolvable.
 for (const anchor of ["top", "work", "experience", "about", "capabilities", "contact"]) {
   if (!home.includes(`id="${anchor}"`)) fail(`homepage: legacy anchor #${anchor} is missing`);
 }
 if (!home.includes("Used in daily internal operations")) fail("homepage: approved ERP usage wording is missing");
-// FIG. 00: one plate per configured layer, each a named link into the workbench, with the
-// request wire decorative only.
+// FIG. 00: one plate per configured layer, each a named link into the workbench. The
+// request/response trace is decorative only and runs from the interface down to the data
+// layer; delivery is the base it ships on, so it has no lanes.
 const heroFigure = home.match(/<figure class="hero-figure"[^>]*>\s*<figcaption class="fig-cap">[\s\S]*?<\/figure>/)?.[0] || "";
 if (!heroFigure) fail("homepage: FIG. 00 must be a figure with a caption");
 const heroLayerLinks = [...heroFigure.matchAll(/<a class="plate-link" href="#work" data-layer-link="(\d)">[^<]+<span class="sr-only">[^<]+<\/span><\/a>/g)].map((match) => match[1]).join("");
 if (heroLayerLinks !== siteConfig.layers.map((_, i) => i).join("")) fail(`homepage: FIG. 00 needs one named layer link per configured layer, found [${heroLayerLinks}]`);
-if ((heroFigure.match(/<span class="plate-wire" aria-hidden="true">/g) || []).length !== siteConfig.layers.length) fail("homepage: every FIG. 00 plate needs its decorative request wire");
+if ((heroFigure.match(/<span class="plate-wire" aria-hidden="true">/g) || []).length !== siteConfig.layers.length) fail("homepage: every FIG. 00 plate needs its decorative, aria-hidden wire layer");
+for (const lane of ["req", "res"]) {
+  const count = (heroFigure.match(new RegExp(`<span class="lane lane-${lane}"></span>`, "g")) || []).length;
+  if (count !== siteConfig.layers.length - 1) fail(`homepage: FIG. 00 needs one ${lane} lane per hop from the interface to the data layer, found ${count}`);
+}
 
 // Workbench order has one source of truth: siteConfig.projects[].order, and .archive for
 // the "Also" files. The index, the case files and the stack must all agree with it.

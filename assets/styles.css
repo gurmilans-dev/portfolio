@@ -317,18 +317,29 @@ code { font-family: var(--mono); font-size: .86em; padding: .08em .36em; backgro
 .hero-lead { max-width: 33ch; font-size: clamp(1.12rem, min(1.6vw, 3vh), 1.5rem); line-height: 1.5; color: var(--text-2); }
 .hero-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; }
 
-/* FIG. 00 — the capability stack as one connected system. A request enters at the
-   top and travels down a single wire: visible in each gap, hidden while it passes
-   through a plate, lighting the port where it enters the next layer. The caption,
-   request node and wires sit in the same tilted plane as the plates.
+/* FIG. 00 — the stack drawn as a request trace. A request leaves the client and descends
+   through interface, application and data on the orange lane; the response climbs back
+   on the dashed lane and lands as 200 OK. Each gap is labelled with what crosses that
+   boundary. Delivery is the base the other layers ship from, so it has no lanes: its
+   chips read as a release pipeline that runs once the response has landed. Caption,
+   client, lanes and labels all sit in the same tilted plane as the plates.
    The resting pose (--tilt-*) is a gentle three-quarter view: a close perspective keeps
    the depth while labels stay nearly level. workbench.js only adds the pointer lean. */
 .hero-visual { container-type: inline-size; perspective: 1500px; display: grid; justify-items: center; padding-block: 8px 18px; }
-.hero-figure { --tilt-x: 15deg; --tilt-y: -16deg; --tilt-z: -1deg; --beam-x: 72%; --gap: clamp(16px, 2.8vh, 26px); --lead: clamp(30px, 5vh, 46px); position: relative; width: min(720px, 100%); margin: 0; transform-style: preserve-3d; transform: rotateX(calc(var(--tilt-x) + var(--lean-x, 0deg))) rotateY(calc(var(--tilt-y) + var(--lean-y, 0deg))) rotateZ(var(--tilt-z)); transition: transform .55s var(--ease); }
-.fig-cap { display: grid; gap: 3px; max-width: 64%; font: 500 11px/1.4 var(--mono); letter-spacing: .08em; text-transform: uppercase; color: var(--text-4); }
-.fig-cap span:first-child { color: var(--accent); }
+.hero-figure { --tilt-x: 15deg; --tilt-y: -16deg; --tilt-z: -1deg; --req-x: 64%; --res-x: calc(var(--req-x) + min(32px, 9%)); --t0: 1.9s; --hop: .7s; --gap: clamp(16px, 2.8vh, 26px); --lead: clamp(42px, 6vh, 58px); position: relative; width: min(720px, 100%); margin: 0; transform-style: preserve-3d; transform: rotateX(calc(var(--tilt-x) + var(--lean-x, 0deg))) rotateY(calc(var(--tilt-y) + var(--lean-y, 0deg))) rotateZ(var(--tilt-z)); transition: transform .55s var(--ease); }
+.fig-cap { display: grid; gap: 6px; max-width: 64%; font: 500 11px/1.4 var(--mono); letter-spacing: .08em; text-transform: uppercase; color: var(--text-4); }
+.fig-cap > span:first-child { color: var(--accent); }
+/* The legend uses the same marks as the drawing. */
+.fig-key { display: flex; flex-wrap: wrap; gap: 3px 14px; }
+.fig-key > span { display: inline-flex; align-items: center; gap: 7px; }
+.fig-key > span::before { content: ""; flex: none; width: 14px; height: 2px; }
+.fig-key .key-req::before { background: var(--accent-fill); }
+.fig-key .key-res::before { background: repeating-linear-gradient(90deg, var(--text-4) 0 3px, transparent 3px 5px); }
+.fig-key .key-rel::before { content: "›"; width: auto; height: auto; font-size: 13px; line-height: 1; }
 .hero-stack { list-style: none; padding: 0; margin: var(--lead) 0 0; display: flex; flex-direction: column; gap: var(--gap); transform-style: preserve-3d; }
-.plate { --i: 0; position: relative; display: grid; gap: clamp(5px, .9vh, 9px); padding: clamp(10px, 1.5vh, 15px) 16px; border: 1px solid var(--line-3); background: var(--bg-1); box-shadow: 12px 14px 0 var(--plate-shadow); transition: transform .45s var(--ease), border-color .25s, background-color .25s, box-shadow .45s var(--ease); }
+/* translateZ(1px): plates and the stack would otherwise share one plane, and the 3D hit
+   test can then pick the stack instead of the plate under the pointer. */
+.plate { --i: 0; position: relative; display: grid; gap: clamp(5px, .9vh, 9px); padding: clamp(10px, 1.5vh, 15px) 16px; border: 1px solid var(--line-3); background: var(--bg-1); box-shadow: 12px 14px 0 var(--plate-shadow); transform: translateZ(1px); transition: transform .45s var(--ease), border-color .25s, background-color .25s, box-shadow .45s var(--ease); }
 .plate:nth-child(2) { --i: 1; }
 .plate:nth-child(3) { --i: 2; }
 .plate:nth-child(4) { --i: 3; }
@@ -353,23 +364,41 @@ code { font-family: var(--mono); font-size: .86em; padding: .08em .36em; backgro
 @container (max-width: 540px) { .plate-chips { flex-wrap: wrap; } .plate-chips li { flex: 1 1 calc(50% - 3px); } }
 @container (max-width: 340px) { .plate-chips li { padding-inline: 4px; font-size: 10.5px; } }
 @container (max-width: 300px) { .plate { padding-inline: 10px; } .plate-chips { gap: 4px; } .plate-chips li { padding-inline: 3px; } }
+/* Delivery reads as a pipeline: source, checks, release, and the host it runs on. */
+.plate-chips.is-pipeline { gap: 6px 16px; }
+.is-pipeline li { position: relative; overflow: visible; }
+.is-pipeline li:nth-child(2) { --n: 1; }
+.is-pipeline li:nth-child(3) { --n: 2; }
+.is-pipeline li:nth-child(4) { --n: 3; }
+.is-pipeline li + li::before { content: "›"; position: absolute; right: 100%; top: 50%; width: 16px; translate: 0 -50%; text-align: center; font: 500 13px/1 var(--mono); color: var(--text-4); }
+@container (max-width: 540px) { .is-pipeline li { flex-basis: calc(50% - 8px); } .is-pipeline li:nth-child(3)::before { content: none; } }
 /* Short laptop screens: tighten the stack so it sits above the fold beside the headline. */
 @media (min-width: 1024px) and (max-height: 860px) {
-  .hero-figure { --gap: 14px; --lead: 28px; }
+  .hero-figure { --gap: 16px; --lead: 40px; }
   .plate { gap: 5px; padding: 8px 14px; }
   .plate-chips li { padding-block: 3px; }
 }
 
-/* The wire layer sits exactly over its plate: its edge lights while the request is
-   inside the layer, ::before is the segment in the gap above, ::after the port where
-   the segment enters, <i> the packet, and the first plate carries the request node. */
+/* Each plate's wire layer sits exactly over it, and its edge lights while the request is
+   inside the layer. Lanes, ports and the boundary label live in the gap above the plate:
+   the lane is the line, ::after the port on the plate's edge, ::before the packet. */
 .plate-wire { --wire-h: var(--gap); position: absolute; inset: -1px; z-index: 2; border: 1px solid transparent; pointer-events: none; }
-.plate:first-child .plate-wire { --wire-h: calc(var(--lead) - 8px); }
-.plate-wire::before { content: ""; position: absolute; left: var(--beam-x); bottom: 100%; width: 2px; height: var(--wire-h); margin-left: -1px; background: linear-gradient(rgb(var(--accent-rgb) / .35), var(--accent-fill)); }
-.plate-wire::after { content: ""; position: absolute; left: var(--beam-x); top: -5px; width: 9px; height: 9px; margin-left: -4.5px; border: 1.5px solid var(--accent-fill); border-radius: 50%; background: var(--bg-1); }
-.plate-wire i { position: absolute; left: var(--beam-x); top: calc(-1px - var(--wire-h)); width: 7px; height: 7px; margin: -3.5px 0 0 -3.5px; border-radius: 50%; background: var(--packet); box-shadow: 0 0 10px 2px var(--accent-fill); opacity: 0; }
-.wire-node { position: absolute; left: var(--beam-x); top: calc(-13px - var(--wire-h)); display: flex; align-items: center; gap: 9px; margin-left: -6px; font: 500 10px/1 var(--mono); letter-spacing: .1em; text-transform: uppercase; color: var(--text-4); white-space: nowrap; }
-.wire-node::before { content: ""; width: 9px; height: 9px; border: 1.5px solid var(--accent-fill); background: var(--bg); rotate: 45deg; }
+.plate:first-child .plate-wire { --wire-h: calc(var(--lead) - 18px); }
+.lane { position: absolute; bottom: 100%; width: 2px; height: var(--wire-h); margin-left: -1px; }
+.lane-req { left: var(--req-x); background: linear-gradient(rgb(var(--accent-rgb) / .35), var(--accent-fill)); }
+.lane-res { left: var(--res-x); background: repeating-linear-gradient(var(--text-4) 0 3px, transparent 3px 6px); }
+.lane::after { content: ""; position: absolute; left: 50%; top: 100%; width: 9px; height: 9px; margin: -4.5px 0 0 -4.5px; border: 1.5px solid var(--accent-fill); border-radius: 50%; background: var(--bg-1); }
+.lane-res::after { border-color: var(--text-4); }
+.lane::before { content: ""; position: absolute; left: 50%; top: 0; width: 7px; height: 7px; margin: -3.5px 0 0 -3.5px; border-radius: 50%; background: var(--packet); box-shadow: 0 0 10px 2px var(--accent-fill); opacity: 0; }
+.lane-res::before { top: 100%; box-shadow: 0 0 10px 2px var(--ok); }
+.wire-tag { position: absolute; right: calc(100% - var(--req-x) + 12px); bottom: calc(100% + var(--wire-h) / 2); translate: 0 50%; font: 500 10px/1 var(--mono); letter-spacing: .1em; text-transform: uppercase; color: var(--text-3); white-space: nowrap; }
+/* The client spans both lanes: the request leaves it, the response lands back on it. */
+.wire-client { position: absolute; z-index: 1; left: calc(var(--req-x) - 6px); top: calc(-5.5px - var(--wire-h)); width: calc(var(--res-x) - var(--req-x) + 12px); height: 11px; border: 1.5px solid var(--accent-fill); background: var(--bg); font: 500 10px/1 var(--mono); letter-spacing: .1em; text-transform: uppercase; color: var(--text-3); }
+.wire-client span, .wire-client em { position: absolute; top: 50%; translate: 0 -50%; white-space: nowrap; }
+.wire-client span { right: calc(100% + 9px); }
+.wire-client em { left: calc(100% + 9px); font-style: normal; color: var(--ok); opacity: 0; }
+.wire-client::before, .wire-client::after { content: ""; position: absolute; inset: -1.5px; }
+.wire-client::after { background: var(--ok); opacity: 0; }
 
 @media (hover: hover) and (pointer: fine) {
   .plate:hover { transform: translateZ(64px) translateX(-10px); border-color: var(--accent); background: var(--plate-lift); box-shadow: 18px 22px 0 rgb(var(--accent-rgb) / .22); }
@@ -378,17 +407,32 @@ code { font-family: var(--mono); font-size: .86em; padding: .08em .36em; backgro
 .plate:focus-within { border-color: var(--accent); }
 .plate:focus-within .plate-go { color: var(--accent); }
 
-/* One request every 6.4s: 0.8s per layer, then a rest. Each segment carries the packet
-   across its own gap, so the motion stays aligned however tall the plates render. */
-@keyframes wire-packet { 0% { opacity: 0; transform: translateY(0); } 1.5% { opacity: 1; } 7% { opacity: 1; transform: translateY(var(--wire-h)); } 8%, 100% { opacity: 0; transform: translateY(var(--wire-h)); } }
-@keyframes wire-port { 0%, 6.5% { background: var(--bg-1); box-shadow: none; } 8% { background: var(--accent-fill); box-shadow: 0 0 0 4px rgb(var(--accent-rgb) / .22), 0 0 14px var(--accent-fill); } 22%, 100% { background: var(--bg-1); box-shadow: none; } }
-@keyframes plate-pass { 0%, 6.5% { border-color: transparent; box-shadow: none; } 8.5%, 13% { border-color: var(--accent-line); box-shadow: 0 0 22px rgb(var(--accent-rgb) / .14); } 24%, 100% { border-color: transparent; box-shadow: none; } }
-@keyframes node-ping { 0% { box-shadow: 0 0 0 0 rgb(var(--accent-rgb) / .5); background: var(--accent-fill); } 10% { box-shadow: 0 0 0 7px rgb(var(--accent-rgb) / 0); } 16%, 100% { box-shadow: none; background: var(--bg); } }
-.plate-wire i { animation: wire-packet 6.4s linear infinite; animation-delay: calc(1.9s + var(--i) * .8s); }
-.plate-wire::after { animation: wire-port 6.4s var(--ease) infinite; animation-delay: calc(1.9s + var(--i) * .8s); }
-.plate-wire { animation: plate-pass 6.4s ease-in-out infinite; animation-delay: calc(1.9s + var(--i) * .8s); }
-.wire-node::before { animation: node-ping 6.4s var(--ease) 1.75s infinite; }
-.is-paused .plate-wire, .is-paused .plate-wire i, .is-paused .plate-wire::after, .is-paused .wire-node::before { animation-play-state: paused; }
+/* One round trip every 7.2s, on one clock. The request leaves the client at --t0 and
+   takes --hop per layer; the data layer answers 0.4s after it arrives; the response
+   climbs back at the same pace and lands 4.2s after --t0; then the release pipeline
+   runs and the stack rests. Every packet crosses only its own gap (0.45s, 6.25%), so
+   the motion stays aligned however tall the plates render. Every keyframe ends at rest,
+   which is also the state reduced motion shows. */
+@keyframes lane-down { 0% { opacity: 0; transform: translateY(0); } 1% { opacity: 1; } 6.25% { opacity: 1; transform: translateY(var(--wire-h)); } 7%, 100% { opacity: 0; transform: translateY(var(--wire-h)); } }
+@keyframes lane-up { 0% { opacity: 0; transform: translateY(0); } 1% { opacity: 1; } 6.25% { opacity: 1; transform: translateY(calc(var(--wire-h) * -1)); } 7%, 100% { opacity: 0; transform: translateY(calc(var(--wire-h) * -1)); } }
+@keyframes port-in { 0%, 6% { background: var(--bg-1); box-shadow: none; } 7% { background: var(--accent-fill); box-shadow: 0 0 0 4px rgb(var(--accent-rgb) / .22), 0 0 14px var(--accent-fill); } 20%, 100% { background: var(--bg-1); box-shadow: none; } }
+@keyframes port-out { 0% { background: var(--ok); border-color: var(--ok); box-shadow: 0 0 12px var(--ok); } 12%, 100% { background: var(--bg-1); border-color: var(--text-4); box-shadow: none; } }
+@keyframes plate-pass { 0%, 6.5% { border-color: transparent; box-shadow: none; } 7.5%, 12% { border-color: var(--accent-line); box-shadow: 0 0 22px rgb(var(--accent-rgb) / .14); } 21%, 100% { border-color: transparent; box-shadow: none; } }
+@keyframes client-send { 0% { background: rgb(var(--accent-rgb) / .9); box-shadow: 0 0 0 0 rgb(var(--accent-rgb) / .5); } 9% { box-shadow: 0 0 0 7px rgb(var(--accent-rgb) / 0); } 14%, 100% { background: transparent; box-shadow: none; } }
+@keyframes client-ok { 0% { opacity: 0; } 1.5%, 6% { opacity: .75; } 12%, 100% { opacity: 0; } }
+@keyframes status-ok { 0% { opacity: 0; translate: -4px -50%; } 2%, 20% { opacity: 1; translate: 0 -50%; } 25%, 100% { opacity: 0; translate: 0 -50%; } }
+@keyframes chip-pass { 0% { border-color: var(--line-2); color: var(--text-2); } 2%, 5% { border-color: var(--accent-line); color: var(--text); } 12%, 100% { border-color: var(--line-2); color: var(--text-2); } }
+.wire-client::before { animation: client-send 7.2s var(--ease) infinite; animation-delay: calc(var(--t0) - .15s); }
+.lane-req::before { animation: lane-down 7.2s linear infinite; animation-delay: calc(var(--t0) + .1s + var(--i) * var(--hop)); }
+.lane-req::after { animation: port-in 7.2s var(--ease) infinite; animation-delay: calc(var(--t0) + .1s + var(--i) * var(--hop)); }
+.plate-wire { animation: plate-pass 7.2s ease-in-out infinite; animation-delay: calc(var(--t0) + .1s + var(--i) * var(--hop)); }
+.lane-res::before { animation: lane-up 7.2s linear infinite; animation-delay: calc(var(--t0) + 2.35s + (2 - var(--i)) * var(--hop)); }
+.lane-res::after { animation: port-out 7.2s var(--ease) infinite; animation-delay: calc(var(--t0) + 2.35s + (2 - var(--i)) * var(--hop)); }
+.wire-client::after { animation: client-ok 7.2s var(--ease) infinite; animation-delay: calc(var(--t0) + 4.2s); }
+.wire-client em { animation: status-ok 7.2s var(--ease) infinite; animation-delay: calc(var(--t0) + 4.2s); }
+.plate-base .plate-wire { animation-delay: calc(var(--t0) + 4.1s); }
+.is-pipeline li { animation: chip-pass 7.2s var(--ease) infinite; animation-delay: calc(var(--t0) + 4.5s + var(--n, 0) * .18s); }
+.is-paused .plate-wire, .is-paused .lane::before, .is-paused .lane::after, .is-paused .wire-client::before, .is-paused .wire-client::after, .is-paused .wire-client em, .is-paused .is-pipeline li { animation-play-state: paused; }
 
 .proof { display: grid; grid-template-columns: minmax(0, 1fr); border-top: 1px solid var(--line-2); }
 .proof > div { display: grid; gap: 4px; padding: 14px 0; border-bottom: 1px solid var(--line); }
@@ -431,7 +475,7 @@ code { font-family: var(--mono); font-size: .86em; padding: .08em .36em; backgro
 .hero-head > :nth-child(3) { animation-delay: .12s; }
 .hero-copy > * { animation-delay: .32s; }
 .hero-copy > :nth-child(2) { animation-delay: .4s; }
-.fig-cap, .plate:first-child .wire-node { animation: rise .6s var(--ease) .45s both; }
+.fig-cap, .wire-client { animation: rise .6s var(--ease) .45s both; }
 .plate { animation: assemble .9s var(--ease) both; animation-delay: calc(.5s + var(--i) * .11s); }
 
 /* ---------- Sections ---------- */

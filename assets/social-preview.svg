@@ -10,7 +10,7 @@
   <text x="68" y="330" font-family="'Segoe UI', Arial, Helvetica, sans-serif" font-weight="700" font-size="86" letter-spacing="-3" fill="#ecebe6">Gurmilan Singh</text>
   <text x="72" y="392" font-family="'Segoe UI', Arial, Helvetica, sans-serif" font-size="27" fill="#c3c2bc">Software for real operational needs.</text>
   <line x1="72" y1="448" x2="700" y2="448" stroke="#2c2d31" stroke-width="2"/>
-  <text x="72" y="500" font-family="Consolas, 'Courier New', monospace" font-size="21" fill="#a3a29c">React · TypeScript · Node.js · SQL · C#/.NET</text>
+  <text x="72" y="500" font-family="Consolas, 'Courier New', monospace" font-size="21" fill="#a3a29c">React · TypeScript · Node.js · Java · SQL · C#/.NET</text>
   <text x="72" y="560" font-family="Consolas, 'Courier New', monospace" font-size="18" fill="#8b8a85">6 systems × 4 layers · Modena, Italy</text>
   <g fill="none" stroke-width="2">
     <polygon points="930,96 1090,166 930,236 770,166" stroke="#fa8a3c" fill="#fa8a3c" fill-opacity=".14"/>
