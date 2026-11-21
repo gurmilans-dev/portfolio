@@ -29,8 +29,8 @@
           <p class="case-eyebrow"><span class="case-index">05 / Opssemble</span><span>Active development · core workflow implemented</span></p>
           <h1 id="case-title">What isn’t ready, and what just went wrong.</h1>
           <p class="case-lead">Opssemble is a university final project for coordinating event areas, tasks, exceptions, and readiness. The core workflow is implemented, with a dashboard screenshot published below; tests and public documentation are still being prepared.</p>
-          <dl class="case-facts"><div><dt>Context</dt><dd>University final project</dd></div><div><dt>Role</dt><dd>End-to-end developer</dd></div><div><dt>Authorization</dt><dd>Server-side event roles</dd></div><div><dt>Status</dt><dd><span class="badge badge-academic">{{projects.opssemble.status}}</span></dd></div></dl>
-          {{#if projects.opssemble.repository}}<a class="text-action" href="{{projects.opssemble.repository}}" target="_blank" rel="noopener noreferrer">View repository ↗</a>{{/if}}{{#if projects.opssemble.demo}}<a class="text-action" href="{{projects.opssemble.demo}}" target="_blank" rel="noopener noreferrer">Watch demo ↗</a>{{/if}}
+          <dl class="case-facts"><div><dt>Context</dt><dd>University final project</dd></div><div><dt>Role</dt><dd>End-to-end developer</dd></div><div><dt>Authorization</dt><dd>Server-side event roles</dd></div><div><dt>Status</dt><dd><span class="badge badge-academic">{{projects.opssemble.status}}</span>{{> github-link opssemble}}</dd></div></dl>
+          {{#if projects.opssemble.demo}}<a class="text-action" href="{{projects.opssemble.demo}}" target="_blank" rel="noopener noreferrer">Watch demo ↗</a>{{/if}}
         </div>
       </section>
 

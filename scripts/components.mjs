@@ -55,8 +55,16 @@ export function status(project) {
 }
 
 const NEW_TAB = '<span class="sr-only"> (opens in a new tab)</span>';
-function externalLink(href, label, className) {
-  return `<a class="${className}" href="${esc(href)}" target="_blank" rel="noopener noreferrer">${label}${NEW_TAB}<span class="arrow" aria-hidden="true">↗</span></a>`;
+
+/* The GitHub action, wherever a project links to its source: the contact section's tile
+   and glyph, the label, and a quiet outward arrow. It renders nothing unless the project
+   has a public repository (private ones keep `repository: ""`), and the build fails if a
+   repository is not on GitHub, so the label can never be wrong. The accessible name
+   starts with the visible label and says which project it belongs to. */
+export function githubLink(project) {
+  if (!project?.repository) return "";
+  if (!/^https:\/\/github\.com\/[\w.-]+\/[\w.-]+\/?$/.test(project.repository)) throw new Error(`${project.shortTitle}: repository is not a GitHub repository URL: ${project.repository}`);
+  return `<a class="gh-link" href="${esc(project.repository)}" target="_blank" rel="noopener noreferrer"><span class="gh-tile" aria-hidden="true">${icons.github}</span><span>GitHub</span><span class="sr-only"> repository for ${esc(project.shortTitle)} (opens in a new tab)</span>${icons.external}</a>`;
 }
 
 export function picture(project, slot = "primary", { loading = "lazy", sizes = "" } = {}) {
@@ -170,7 +178,7 @@ function systemFile(project, featured) {
   const actions = [
     `<button class="btn btn-primary" type="button" data-open-file="${project.key}" hidden>Open case file<span aria-hidden="true">→</span></button>`,
     project.caseStudy ? `<a class="btn btn-line" href="${project.caseStudy}">Read the case study<span aria-hidden="true">→</span></a>` : "",
-    project.repository ? externalLink(project.repository, "Source on GitHub", "btn btn-line") : ""
+    githubLink(project)
   ].join("");
   return `<article id="work-${project.key}" class="system-file${featured ? "" : " is-also"}" data-system="${project.key}" aria-labelledby="work-${project.key}-title">
           <header class="sf-head">
@@ -278,7 +286,12 @@ const PARTIALS = {
   "wb-files": () => workbenchFiles(),
   drawer: () => drawer(),
   "case-cut": (arg) => caseCut(arg),
-  "case-end": (arg) => caseEnd(arg)
+  "case-end": (arg) => caseEnd(arg),
+  "github-link": (key) => {
+    const project = siteConfig.projects[key];
+    if (!project) throw new Error(`github-link: unknown project ${key}`);
+    return githubLink(project);
+  }
 };
 
 export function renderPartials(source, file) {

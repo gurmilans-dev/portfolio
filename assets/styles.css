@@ -235,6 +235,17 @@ code { font-family: var(--mono); font-size: .86em; padding: .08em .36em; backgro
 .btn-text { min-height: 46px; padding: 0 4px; border: 0; border-bottom: 1px solid var(--text); background: none; color: var(--text); font: 600 15px var(--sans); text-decoration: none; display: inline-flex; align-items: center; gap: .5em; }
 .btn-text:hover { color: var(--accent); border-color: var(--accent); }
 .btn[disabled] { opacity: .55; cursor: progress; }
+/* GitHub action (project files and case pages): the contact section's 30px tile with the
+   16px glyph, the label, and a quiet outward arrow. No frame of its own, so it stays
+   secondary to "Read the case study"; on hover the tile inverts, as the contact tiles do. */
+.gh-link { display: inline-flex; align-items: center; gap: 10px; min-height: 44px; padding-right: 4px; color: var(--text-2); font: 600 14px/1.1 var(--sans); text-decoration: none; transition: color .2s; }
+.gh-tile { display: grid; place-items: center; flex: none; width: 30px; height: 30px; border: 1px solid var(--line-3); background: var(--bg-3); color: var(--text); transition: background-color .2s, border-color .2s, color .2s; }
+.gh-tile .icon { width: 16px; height: 16px; }
+.gh-link > .icon-external { width: 13px; height: 13px; flex: none; color: var(--text-4); transition: color .2s, translate .2s var(--ease); }
+.gh-link:hover { color: var(--text); }
+.gh-link:hover .gh-tile { border-color: var(--text); background: var(--text); color: var(--bg); }
+.gh-link:hover > .icon-external { color: var(--text); translate: 1px -1px; }
+.gh-link:active .gh-tile { translate: 0 1px; }
 .arrow { margin-left: .2em; }
 
 .status { display: inline-flex; align-items: center; gap: 7px; font: 500 11px/1.2 var(--mono); letter-spacing: .02em; color: var(--text-3); white-space: nowrap; }
@@ -819,8 +830,9 @@ code { font-family: var(--mono); font-size: .86em; padding: .08em .36em; backgro
 .reach-icon:focus-visible .reach-face { outline: 2px solid var(--ink); outline-offset: 3px; }
 /* Copy is a narrow tab fixed to the email tile's right edge: the email face sits at the
    end of its touch area, the copy face at the start of its own (still 44px tall). */
+.reach-mail { margin-right: -1px; }
 .reach-mail > a.reach-icon { width: 33px; justify-items: end; }
-.reach-mail > .copy-btn { width: 23px; justify-items: start; }
+.reach-mail > .copy-btn { width: 24px; justify-items: start; }
 .reach-mail > .copy-btn .reach-face { width: 20px; border-left: 1px solid rgb(255 255 255 / .18); }
 .reach-mail > .copy-btn .reach-face .icon { width: 12px; height: 12px; }
 .copy-btn .icon-success { display: none; }
@@ -958,8 +970,6 @@ code { font-family: var(--mono); font-size: .86em; padding: .08em .36em; backgro
 .badge::before { content: ""; width: 6px; height: 6px; border-radius: 50%; background: var(--muted); }
 .badge-public::before, .badge-deployed::before, .badge-production::before { background: var(--ok); }
 .badge-academic::before { background: var(--warn); }
-.repo-link { display: inline-flex; align-items: center; min-height: 32px; font: 500 12px var(--mono); color: var(--accent); text-decoration: none; }
-.repo-link:hover { color: var(--accent-hi); text-decoration: underline; }
 @keyframes case-rise { from { opacity: 0; translate: 0 14px; } }
 .case-hero-inner > * { animation: case-rise .7s var(--ease) both; }
 .case-hero-inner > :nth-child(3) { animation-delay: .05s; }

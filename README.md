@@ -18,7 +18,7 @@ The root HTML files are source templates. Essential values and repeated markup a
 ## How the pages are built
 
 - `site.config.mjs` — profile, contact form, the four layers, and every project: copy, status, evidence, what is *not* claimed, layer summaries, architecture, decision record and images. This is the single source of truth for the workbench order and the case files.
-- `scripts/components.mjs` — build-time partials (`{{> header home}}`, `{{> footer}}`, `{{> wb-index}}`, `{{> wb-stage}}`, `{{> wb-files}}`, `{{> drawer}}`, `{{> case-cut key}}`, `{{> case-end key}}`) rendered from the config.
+- `scripts/components.mjs` — build-time partials (`{{> header home}}`, `{{> footer}}`, `{{> wb-index}}`, `{{> wb-stage}}`, `{{> wb-files}}`, `{{> drawer}}`, `{{> case-cut key}}`, `{{> case-end key}}`, `{{> github-link key}}`) rendered from the config. `github-link` renders nothing unless the project has a public GitHub repository.
 - `build.mjs` — partial and token resolution, conservative CSS/JS minification, comment removal, sitemap and robots generation, static and media copy.
 - `validate.mjs` — run by `npm test`: metadata, links and fragments, unique ids, accessibility contracts, workbench order against the config, and the claim checks that keep every case study honest (no invented usage, deployment or technology).
 
