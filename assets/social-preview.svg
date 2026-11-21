@@ -1,10 +1,27 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630" viewBox="0 0 1200 630">
-  <rect width="1200" height="630" fill="#f4f1ea"/>
-  <rect x="72" y="72" width="64" height="64" fill="#181917"/>
-  <text x="104" y="113" text-anchor="middle" font-family="Arial, sans-serif" font-weight="700" font-size="19" fill="#fffdf8">GS</text>
-  <text x="72" y="242" font-family="Arial, sans-serif" font-size="22" font-weight="700" letter-spacing="2" fill="#1f53c5">FULL-STACK WEB DEVELOPER</text>
-  <text x="72" y="345" font-family="Georgia, serif" font-size="82" fill="#181917">Gurmilan Singh</text>
-  <line x1="72" y1="432" x2="1128" y2="432" stroke="#c9c5bb"/>
-  <text x="72" y="494" font-family="Arial, sans-serif" font-size="25" fill="#555851">React · JavaScript · Node.js · APIs · SQL · C#/.NET</text>
-  <circle cx="1108" cy="552" r="9" fill="#1f53c5"/>
+  <defs>
+    <radialGradient id="glow" cx="76%" cy="52%" r="55%"><stop offset="0" stop-color="#18191d"/><stop offset="1" stop-color="#0c0d0f"/></radialGradient>
+  </defs>
+  <rect width="1200" height="630" fill="url(#glow)"/>
+  <rect x="72" y="72" width="44" height="44" fill="#fa8a3c"/>
+  <text x="94" y="101" text-anchor="middle" font-family="Consolas, 'Courier New', monospace" font-weight="700" font-size="17" fill="#0c0d0f">GS</text>
+  <text x="132" y="101" font-family="Consolas, 'Courier New', monospace" font-size="20" fill="#ecebe6">gurmilansingh.com</text>
+  <text x="72" y="236" font-family="Consolas, 'Courier New', monospace" font-size="20" letter-spacing="2" fill="#fa8a3c">FULL-STACK DEVELOPER · SOFTWARE ENGINEER</text>
+  <text x="68" y="330" font-family="'Segoe UI', Arial, Helvetica, sans-serif" font-weight="700" font-size="86" letter-spacing="-3" fill="#ecebe6">Gurmilan Singh</text>
+  <text x="72" y="392" font-family="'Segoe UI', Arial, Helvetica, sans-serif" font-size="27" fill="#c3c2bc">Software for real operational needs.</text>
+  <line x1="72" y1="448" x2="700" y2="448" stroke="#2c2d31" stroke-width="2"/>
+  <text x="72" y="500" font-family="Consolas, 'Courier New', monospace" font-size="21" fill="#a3a29c">React · TypeScript · Node.js · SQL · C#/.NET</text>
+  <text x="72" y="560" font-family="Consolas, 'Courier New', monospace" font-size="18" fill="#8b8a85">6 systems × 4 layers · Modena, Italy</text>
+  <g fill="none" stroke-width="2">
+    <polygon points="930,96 1090,166 930,236 770,166" stroke="#fa8a3c" fill="#fa8a3c" fill-opacity=".14"/>
+    <polygon points="930,166 1090,236 930,306 770,236" stroke="#ecebe6" stroke-opacity=".34"/>
+    <polygon points="930,236 1090,306 930,376 770,306" stroke="#ecebe6" stroke-opacity=".34"/>
+    <polygon points="930,306 1090,376 930,446 770,376" stroke="#ecebe6" stroke-opacity=".34"/>
+  </g>
+  <line x1="884" y1="160" x2="884" y2="370" stroke="#fa8a3c" stroke-width="4"/>
+  <g fill="#fa8a3c"><circle cx="884" cy="160" r="9"/><circle cx="884" cy="230" r="6"/><circle cx="884" cy="300" r="6"/><circle cx="884" cy="370" r="9"/></g>
+  <text x="1104" y="170" font-family="Consolas, 'Courier New', monospace" font-size="15" fill="#fa8a3c">L4</text>
+  <text x="1104" y="240" font-family="Consolas, 'Courier New', monospace" font-size="15" fill="#8b8a85">L3</text>
+  <text x="1104" y="310" font-family="Consolas, 'Courier New', monospace" font-size="15" fill="#8b8a85">L2</text>
+  <text x="1104" y="380" font-family="Consolas, 'Courier New', monospace" font-size="15" fill="#8b8a85">L1</text>
 </svg>

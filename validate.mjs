@@ -1,7 +1,7 @@
 import { promises as fs } from "node:fs";
 import path from "node:path";
 import { createHash } from "node:crypto";
-import { siteConfig, featuredProjects } from "./site.config.mjs";
+import { siteConfig, featuredProjects, archiveProjects, caseStudyProjects } from "./site.config.mjs";
 import { countHtmlWords } from "./scripts/html.mjs";
 
 const root = path.resolve("dist");
@@ -101,35 +101,59 @@ for (const [file, html] of htmlByFile) {
 }
 
 const home = htmlByFile.get("index.html");
-if (!home.includes('aria-label="Full-stack developer and software engineer building for real operational needs."')) fail("homepage: full-stack hero statement is missing");
-if (!home.includes("React · JavaScript · TypeScript · Node.js · SQL · C#/.NET")) fail("homepage: primary technology line is missing");
+if (!home.includes(">Full-stack developer and software engineer building for real operational needs.</h1>")) fail("homepage: full-stack hero statement is missing");
+// Separators are bound to the preceding word with no-break spaces, so normalise them.
+if (!home.replace(/&nbsp;| /g, " ").includes("React · JavaScript · TypeScript · Node.js · SQL · C#/.NET")) fail("homepage: primary technology line is missing");
 if (!home.includes('id="capabilities"') || home.includes('id="workflow"') || home.includes('id="skills"')) fail("homepage: capabilities must remain consolidated into one section");
+// Previously shared links point at these anchors; the redesign must keep them resolvable.
+for (const anchor of ["top", "work", "experience", "about", "capabilities", "contact"]) {
+  if (!home.includes(`id="${anchor}"`)) fail(`homepage: legacy anchor #${anchor} is missing`);
+}
 if (!home.includes("Used in daily internal operations")) fail("homepage: approved ERP usage wording is missing");
-// Featured order has one source of truth: siteConfig.projects[].order. Re-ranking the
-// section is a config edit, and the homepage must agree with it.
+// FIG. 00: one plate per configured layer, each a named link into the workbench, with the
+// request wire decorative only.
+const heroFigure = home.match(/<figure class="hero-figure"[^>]*>\s*<figcaption class="fig-cap">[\s\S]*?<\/figure>/)?.[0] || "";
+if (!heroFigure) fail("homepage: FIG. 00 must be a figure with a caption");
+const heroLayerLinks = [...heroFigure.matchAll(/<a class="plate-link" href="#work" data-layer-link="(\d)">[^<]+<span class="sr-only">[^<]+<\/span><\/a>/g)].map((match) => match[1]).join("");
+if (heroLayerLinks !== siteConfig.layers.map((_, i) => i).join("")) fail(`homepage: FIG. 00 needs one named layer link per configured layer, found [${heroLayerLinks}]`);
+if ((heroFigure.match(/<span class="plate-wire" aria-hidden="true">/g) || []).length !== siteConfig.layers.length) fail("homepage: every FIG. 00 plate needs its decorative request wire");
+
+// Workbench order has one source of truth: siteConfig.projects[].order, and .archive for
+// the "Also" files. The index, the case files and the stack must all agree with it.
 const configuredKeys = featuredProjects.map((project) => project.key).join(",");
-const renderedPanelKeys = [...home.matchAll(/data-work-panel="([^"]+)"/g)].map((match) => match[1]).join(",");
-const renderedIndexKeys = [...home.matchAll(/href="#work-([^"]+)" data-work-index-link/g)].map((match) => match[1]).join(",");
-if (renderedPanelKeys !== configuredKeys) fail(`homepage: panel order is [${renderedPanelKeys}], config order is [${configuredKeys}]`);
-if (renderedIndexKeys !== configuredKeys) fail(`homepage: index order is [${renderedIndexKeys}], config order is [${configuredKeys}]`);
-for (const project of featuredProjects) {
-  if (!home.includes(`>${project.title}<`)) fail(`homepage: featured project title missing: ${project.title}`);
-}
-// Sticky-split contract: an index entry and a panel for every featured project, each
-// index href resolving to its panel, and a case study reachable from each panel.
-if ((home.match(/data-work-panel="/g) || []).length !== featuredProjects.length) fail(`homepage: expected ${featuredProjects.length} work panels`);
-if ((home.match(/data-work-index-link/g) || []).length !== featuredProjects.length) fail(`homepage: expected ${featuredProjects.length} project index links`);
-if (home.includes("data-work-track") || home.includes("data-rail-stage")) fail("homepage: the removed pinned rail markup is still present");
-for (const project of featuredProjects) {
-  if (!new RegExp(`<a href="#work-${project.key}" data-work-index-link`).test(home)) fail(`homepage: index link missing for ${project.key}`);
-  if (!new RegExp(`id="work-${project.key}"[^>]*data-work-panel="${project.key}"`).test(home)) fail(`homepage: panel missing for ${project.key}`);
-  // A featured project must be inspectable: either a case study on this site, or a
-  // public repository. Which one is a judgement call per project; having neither is not.
+const archiveKeys = archiveProjects.map((project) => project.key).join(",");
+const tabKeys = [...home.matchAll(/data-wb-tab="([^"]+)"/g)].map((match) => match[1]).join(",");
+const alsoKeys = [...home.matchAll(/data-wb-also="([^"]+)"/g)].map((match) => match[1]).join(",");
+const fileKeys = [...home.matchAll(/<article id="work-([^"]+)" class="system-file[^"]*" data-system="([^"]+)"/g)]
+  .map((match) => (match[1] === match[2] ? match[1] : `MISMATCH:${match[1]}`)).join(",");
+if (tabKeys !== configuredKeys) fail(`homepage: index order is [${tabKeys}], config order is [${configuredKeys}]`);
+if (alsoKeys !== archiveKeys) fail(`homepage: "Also" order is [${alsoKeys}], config order is [${archiveKeys}]`);
+if (fileKeys !== `${configuredKeys},${archiveKeys}`) fail(`homepage: case files are [${fileKeys}], expected [${configuredKeys},${archiveKeys}]`);
+for (const project of [...featuredProjects, ...archiveProjects]) {
+  if (!home.includes(`>${project.shortTitle}<`)) fail(`homepage: project title missing: ${project.shortTitle}`);
+  if (!home.includes(`data-open-file="${project.key}" hidden`)) fail(`homepage: ${project.key} lacks a progressive "Open case file" control`);
+  // Every case file is inspectable: a case study on this site, a public repository, or —
+  // for confidential and private work only — an explicit reason nothing more is shown.
   const evidenceHref = project.caseStudy || project.repository;
-  if (!evidenceHref) fail(`${project.key}: featured project offers neither a case study nor a repository`);
-  else if (!home.includes(`href="${evidenceHref}"`)) fail(`homepage: ${project.key} panel does not link to its case study or repository`);
+  if (evidenceHref && !home.includes(`href="${evidenceHref}"`)) fail(`homepage: ${project.key} does not link to its case study or repository`);
+  if (!evidenceHref && !project.system?.noImageReason) fail(`${project.key}: offers neither a case study, a repository, nor a stated reason`);
   if (project.caseStudy && !pages.includes(project.caseStudy)) fail(`${project.key}: case study ${project.caseStudy} is not a registered page`);
+  if (!project.system?.evidence || !project.system?.boundary) fail(`${project.key}: a case file must state its evidence and what it does not claim`);
 }
+for (const project of featuredProjects) {
+  if (!home.includes(`<a class="wb-item" href="#work-${project.key}" id="tab-${project.key}" data-wb-tab="${project.key}"`)) fail(`homepage: index link missing for ${project.key}`);
+  const layers = project.system?.layers || [];
+  if (layers.length !== siteConfig.layers.length || layers.some(([tag, text]) => !tag || !text)) fail(`${project.key}: needs one tag and one sentence for each of the ${siteConfig.layers.length} layers`);
+}
+const layerRows = (home.match(/class="lc-row"/g) || []).length;
+if (layerRows !== featuredProjects.length * siteConfig.layers.length) fail(`homepage: expected ${featuredProjects.length * siteConfig.layers.length} layer rows, found ${layerRows}`);
+if ((home.match(/data-wb-stage/g) || []).length !== 1) fail("homepage: expected exactly one workbench stage");
+if ((home.match(/data-plane="/g) || []).length !== siteConfig.layers.length) fail("homepage: stage plane count does not match the configured layers");
+if ((home.match(/data-socket="/g) || []).length !== siteConfig.layers.length * featuredProjects.length) fail("homepage: every plane needs one socket per featured system");
+if ((home.match(/<dialog class="drawer" data-drawer/g) || []).length !== 1) fail("homepage: expected one case-file drawer");
+if (!home.includes('<div class="stage-scene" aria-hidden="true"')) fail("homepage: the decorative stack must be hidden from assistive technology");
+if (/live demo|public demo available|production-ready|enterprise-grade|battle-tested|% ?uptime|99\.\d|\d+[,\d]* (active )?users|customers|downloads/i.test(home)) fail("homepage: unsupported usage, availability or maturity claim");
+
 const validContactModes = new Set(["endpoint", "mailto", "disabled"]);
 const configuredContactMode = siteConfig.contactForm?.mode;
 const configuredContactEndpoint = siteConfig.contactForm?.endpoint?.trim() || "";
@@ -137,8 +161,8 @@ if (!validContactModes.has(configuredContactMode)) fail(`contact form: invalid m
 if (configuredContactEndpoint && /(?:example\.com|your-|todo|placeholder)/i.test(configuredContactEndpoint)) fail("contact form: placeholder endpoint configured");
 if (configuredContactMode === "endpoint" && !configuredContactEndpoint) fail("contact form: endpoint mode requires a configured endpoint");
 if (configuredContactMode !== "endpoint" && home.includes('data-contact-mode="endpoint"')) fail("contact form: rendered endpoint mode does not match configuration");
-if (!home.includes('data-contact-form')) fail("homepage: contact form missing");
-if (!home.includes('data-contact-status') || !home.includes('aria-live="polite"')) fail("homepage: contact form status live region missing");
+if (!home.includes("data-contact-form")) fail("homepage: contact form missing");
+if (!home.includes("data-contact-status") || !home.includes('aria-live="polite"')) fail("homepage: contact form status live region missing");
 if ((home.match(/aria-live="polite"/g) || []).length !== 1) fail("homepage: expected one polite live region for contact status");
 for (const [field, type] of [["contact-name", "text"], ["contact-email", "email"], ["contact-message", "textarea"]]) {
   if (!new RegExp(`<label\\b[^>]*for=["']${field}["']`, "i").test(home)) fail(`homepage: label missing for ${field}`);
@@ -147,7 +171,11 @@ for (const [field, type] of [["contact-name", "text"], ["contact-email", "email"
     : new RegExp(`<input\\b[^>]*id=["']${field}["'][^>]*type=["']${type}["'][^>]*required`, "i");
   if (!controlPattern.test(home)) fail(`homepage: required contact field missing or misconfigured: ${field}`);
 }
-if (!/<select\b[^>]*id=["']contact-enquiry-type["'][^>]*name=["']enquiryType["']/i.test(home)) fail("homepage: optional enquiry type field missing");
+if ((home.match(/<input type="radio" id="enquiry-[a-z]+" name="enquiryType" value="[^"]+"/g) || []).length !== 4) fail("homepage: optional enquiry type options missing");
+if (!/<fieldset class="enquiry">\s*<legend\b/.test(home)) fail("homepage: enquiry type options need a fieldset and legend");
+for (const match of home.matchAll(/<input type="radio" id="([^"]+)"/g)) {
+  if (!home.includes(`<label for="${match[1]}">`)) fail(`homepage: enquiry option ${match[1]} has no label`);
+}
 for (const [file, html] of htmlByFile) {
   for (const match of html.matchAll(/<a\b(?=[^>]*class=["'][^"']*link-with-icon)[^>]*>([\s\S]*?)<\/a>/gi)) {
     if (!/<span\b[^>]*>[^<]+<\/span>/i.test(match[1])) fail(`${file}: icon link lacks accessible text`);
@@ -202,8 +230,6 @@ if (/ollama|local (model|AI|assistance|LLM)/i.test(gurmat)) fail("gurmat-saanj.h
 if (/TypeScript/i.test(gurmat)) fail("gurmat-saanj.html: TypeScript contradicts the confirmed JavaScript stack");
 if ((gurmat.match(/data-media-open/g) || []).length !== 4) fail("gurmat-saanj.html: expected four inspectable authentic screenshots");
 if ((gurmat.match(/loading="lazy"/g) || []).length < 5) fail("gurmat-saanj.html: evidence images must lazy-load below the fold");
-if ((home.match(/class="archive-entry"/g) || []).length !== 2) fail("homepage: expected two expandable additional-engineering entries");
-if ((home.match(/<details class="archive-entry">\s*<summary>/g) || []).length !== 2) fail("homepage: additional-engineering entries must be native details/summary disclosures");
 if (/WebSockets?|Socket\.IO|SignalR|server-sent events|peer-to-peer|WebRTC|event sourcing|distributed locking|message queues?|OAuth|JWT|session persistence|persistent accounts/i.test(gurmat)) fail("gurmat-saanj.html: unsupported networking or account technology is named");
 // MaintOps: the source is public but nothing is hosted. Nothing may imply otherwise.
 const maintops = htmlByFile.get("maintops.html");
@@ -275,11 +301,45 @@ for (const [file, expectedHash] of Object.entries({
 
 const productionCss = await fs.readFile(path.join(root, "assets/styles.css"), "utf8");
 const productionJs = await fs.readFile(path.join(root, "assets/script.js"), "utf8");
-if (/\.js\s+\[data-connector-reveal\]/.test(productionCss)) fail("motion: connector preparation must not depend on the early js class");
-if (!productionCss.includes(".reveal-ready [data-reveal-group]") || !productionJs.includes('classList.add("reveal-ready")')) fail("motion: progressive reveal preparation contract is missing");
+const productionWorkbench = await fs.readFile(path.join(root, "assets/workbench.js"), "utf8");
+if (!productionCss.includes(".reveal-ready [data-reveal]") || !productionJs.includes('classList.add("reveal-ready")')) fail("motion: progressive reveal preparation contract is missing");
 if (!/prefers-reduced-motion\s*:\s*reduce/.test(productionJs) || !/prefers-reduced-motion\s*:\s*reduce/.test(productionCss)) fail("motion: reduced-motion handling is missing");
+if (!/prefers-reduced-motion\s*:\s*reduce/.test(productionWorkbench)) fail("motion: the workbench ignores reduced-motion preferences");
 if (!productionCss.includes(".case-immersive-frame") || !productionJs.includes("[data-case-immersive]")) fail("motion: case-study immersive progress contract is missing");
+// The workbench layout must only replace the plain list once its script is running, so
+// a failed or blocked script still leaves every system readable.
+if (!productionWorkbench.includes('classList.add("wb-ready")') || !productionCss.includes(".wb-ready")) fail("workbench: the interactive layout is not gated on the running script");
+if (/\.js\s+\.wb-files|\.js\s+\.system-file:not/.test(productionCss)) fail("workbench: case files are hidden by the early js class instead of the running script");
+if (await fs.stat(path.join(root, "assets/vendor")).catch(() => null)) fail("performance: unused vendor libraries are shipped");
+for (const [file, html] of htmlByFile) {
+  if (/gsap|three(\.min)?\.js|ScrollTrigger/i.test(html)) fail(`${file}: references a removed animation library`);
+  if (!html.includes('href="assets/styles.css"') || !html.includes('src="assets/script.js"')) fail(`${file}: missing the shared stylesheet or script`);
+  // The theme is resolved before the stylesheet loads, so no page paints in the wrong one.
+  const themeBoot = html.indexOf('localStorage.getItem("portfolio-theme")');
+  if (themeBoot === -1 || themeBoot > html.indexOf('href="assets/styles.css"') || html.indexOf('name="theme-color"') > themeBoot) fail(`${file}: the theme must be applied in <head>, after the theme-color meta and before the stylesheet`);
+  const themeSwitch = html.match(/<div class="theme-switch" role="group" aria-label="[^"]+" data-theme-switch(?:="")? hidden(?:="")?>([\s\S]*?)<\/div>/);
+  const choices = themeSwitch ? [...themeSwitch[1].matchAll(/<button class="ts-btn" type="button" data-theme-choice="(dark|light)" aria-pressed="(true|false)"[^>]*>[\s\S]*?<span class="sr-only">[^<]+<\/span><\/button>/g)].map((match) => match[1]).join(",") : "";
+  if (choices !== "dark,light") fail(`${file}: header theme switch is missing, visible without JavaScript, or lacks named dark/light buttons`);
+}
+// Two themes, one vocabulary: the light theme redefines every colour the dark default
+// declares, and the no-JavaScript copy (system preference) matches the scripted one.
+const declarations = (block) => [...(block || "").matchAll(/(--[\w-]+|color-scheme):([^;}]+)/g)].map((match) => [match[1], match[2].trim()]);
+const darkTokens = declarations(productionCss.match(/:root\{([^}]*)\}/)?.[1]);
+const lightTokens = new Map(declarations(productionCss.match(/:root\[data-theme="light"\]\{([^}]*)\}/)?.[1]));
+const systemLightTokens = new Map(declarations(productionCss.match(/:root:not\(\[data-theme\]\)\{([^}]*)\}/)?.[1]));
+if (!lightTokens.size || lightTokens.get("color-scheme") !== "light") fail("theme: the light token block is missing or does not set color-scheme: light");
+if (JSON.stringify([...lightTokens]) !== JSON.stringify([...systemLightTokens])) fail("theme: the system-preference light block differs from the scripted light theme");
+const untranslated = darkTokens.filter(([name, value]) => /^(#|rgb)|^\d+ \d+ \d+$/.test(value) && !lightTokens.has(name)).map(([name]) => name);
+if (untranslated.length) fail(`theme: colour tokens without a light value: ${untranslated.join(", ")}`);
+if (!productionJs.includes('"portfolio-theme"') || !productionJs.includes("[data-theme-switch]")) fail("theme: script.js does not wire the saved theme and header switch");
+for (const project of caseStudyProjects) {
+  const html = htmlByFile.get(project.caseStudy);
+  if ((html.match(/data-cut/g) || []).length !== 1) fail(`${project.caseStudy}: expected one layer-cut band`);
+  if (!html.includes('class="frame case-pager"')) fail(`${project.caseStudy}: project pagination missing`);
+  if (!html.includes(`>${String(project.order).padStart(2, "0")} / ${project.shortTitle}<`)) fail(`${project.caseStudy}: case index does not match the configured order`);
+}
 if (!/\.media-dialog-hotspot\s*\{[\s\S]*?width:\s*44px;[\s\S]*?height:\s*44px;/m.test(productionCss)) fail("accessibility: dialog hotspot targets must remain at least 44px square");
+if (!/\.media-hotspot\s*\{[\s\S]*?width:\s*44px;[\s\S]*?height:\s*44px;/m.test(productionCss)) fail("accessibility: screenshot hotspot targets must remain at least 44px square");
 
 const resume = await fs.stat(path.join(root, "Gurmilan_Singh_2026_CV.pdf")).catch(() => null);
 if (!resume || resume.size < 1000) fail("public PDF résumé missing or empty"); else pass(`public PDF résumé present (${resume.size} bytes)`);

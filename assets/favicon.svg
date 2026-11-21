@@ -1,4 +1,5 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
-  <rect width="64" height="64" rx="12" fill="#141511"/>
-  <text x="32" y="33" text-anchor="middle" dominant-baseline="central" font-family="'Archivo','Segoe UI',Arial,sans-serif" font-weight="800" font-size="30" letter-spacing="-1.5" fill="#f3efe5">GS</text>
+  <rect width="64" height="64" rx="10" fill="#0c0d0f"/>
+  <rect x="8" y="8" width="48" height="48" rx="4" fill="#fa8a3c"/>
+  <text x="32" y="33" text-anchor="middle" dominant-baseline="central" font-family="'JetBrains Mono',Consolas,'Courier New',monospace" font-weight="700" font-size="22" fill="#0c0d0f">GS</text>
 </svg>

@@ -2,24 +2,11 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <meta name="theme-color" content="#f3efe5" />
-    <script>
-      (() => {
-        document.documentElement.classList.add("js");
-        try {
-          const saved = localStorage.getItem("portfolio-theme");
-          document.documentElement.dataset.theme = saved || (matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light");
-        } catch { document.documentElement.dataset.theme = "light"; }
-      })();
-    </script>
-    <script>
-      (() => {
-        try { if (!matchMedia("(prefers-reduced-motion: reduce)").matches && innerWidth > 768) document.documentElement.classList.add("scene-arm"); } catch { /* Hero renders fully without arming. */ }
-      })();
-    </script>
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="theme-color" content="#0c0d0f" />
+    <script>(function (d) { var t; try { t = localStorage.getItem("portfolio-theme"); } catch (e) {} if (t !== "light" && t !== "dark") t = matchMedia("(prefers-color-scheme: light)").matches ? "light" : "dark"; d.dataset.theme = t; d.classList.add("js"); if (t === "light") document.querySelector('meta[name="theme-color"]').content = "#f4f4f1"; })(document.documentElement);</script>
     <title>{{profile.name}} - Full-Stack Web Developer &amp; Software Engineer</title>
-    <meta name="description" content="Full-stack web developer building responsive React interfaces, Node.js APIs, relational data workflows, and production business software." />
+    <meta name="description" content="Full-stack web developer building responsive React interfaces, Node.js APIs, relational data workflows, and production business software. Six systems, each cut through interface, application, data and delivery." />
     <meta name="author" content="{{profile.name}}" />
     <meta name="robots" content="index, follow" />
     <link rel="canonical" href="{{profile.domain}}/" />
@@ -35,315 +22,208 @@
     <meta name="twitter:title" content="{{profile.name}} - Full-Stack Web Developer &amp; Software Engineer" />
     <meta name="twitter:description" content="Responsive product interfaces, backend APIs, relational data, and software for real operational needs." />
     <meta name="twitter:image" content="{{profile.domain}}/assets/social-preview.png" />
-    <link rel="preload" href="assets/fonts/archivo-var.woff2" as="font" type="font/woff2" crossorigin />
+    <link rel="preload" href="assets/fonts/instrument-sans-latin.woff2" as="font" type="font/woff2" crossorigin />
+    <link rel="preload" href="assets/fonts/jetbrains-mono-latin.woff2" as="font" type="font/woff2" crossorigin />
     <link rel="icon" href="assets/favicon.svg" type="image/svg+xml" />
     <link rel="stylesheet" href="assets/styles.css" />
     <script src="assets/script.js" defer></script>
-    <script src="assets/scene.js" defer></script>
+    <script src="assets/workbench.js" defer></script>
     <script type="application/ld+json">
-      {"@context":"https://schema.org","@type":"Person","name":"{{profile.name}}","url":"{{profile.domain}}/","jobTitle":"{{profile.role}}","description":"{{profile.positioning}}","email":"mailto:{{profile.email}}","address":{"@type":"PostalAddress","addressLocality":"Modena","addressRegion":"MO","addressCountry":"IT"},"alumniOf":{"@type":"CollegeOrUniversity","name":"University of Modena and Reggio Emilia"},"sameAs":["{{profile.linkedin}}","{{profile.github}}"],"knowsLanguage":["Italian","Punjabi","English","Hindi"]}
+      {"@context":"https://schema.org","@type":"Person","name":"{{profile.name}}","url":"{{profile.domain}}/","jobTitle":"{{profile.role}}","description":"{{profile.positioning}}","email":"mailto:{{profile.email}}","worksFor":{"@type":"Organization","name":"{{profile.employer}}"},"address":{"@type":"PostalAddress","addressLocality":"Modena","addressRegion":"MO","addressCountry":"IT"},"alumniOf":{"@type":"CollegeOrUniversity","name":"University of Modena and Reggio Emilia"},"sameAs":["{{profile.linkedin}}","{{profile.github}}"],"knowsLanguage":["Italian","Punjabi","English","Hindi"]}
     </script>
   </head>
-  <body>
+  <body class="page-home">
     <a class="skip-link" href="#main-content">Skip to content</a>
-    <div class="scroll-progress" aria-hidden="true" data-scroll-progress><span data-scroll-progress-bar></span></div>
-    <header class="site-header" data-header>
-      <div class="shell header-inner">
-        <a class="wordmark" href="#top" aria-label="{{profile.name}}, back to top"><span>GS</span><span class="wordmark-name">{{profile.name}}</span></a>
-        <button class="menu-toggle" type="button" aria-expanded="false" aria-controls="site-navigation" data-menu-toggle><span class="sr-only">Toggle navigation</span><span></span><span></span></button>
-        <nav id="site-navigation" class="site-nav" aria-label="Primary navigation" data-nav>
-          <a href="#work" data-section-link>Work</a><a href="#experience" data-section-link>About</a><a href="#capabilities" data-section-link>Capabilities</a>
-          <button class="theme-toggle" type="button" aria-pressed="false" aria-label="Switch to dark mode" data-theme-toggle><span class="theme-toggle-track" aria-hidden="true"></span><span data-theme-label>Dark</span></button>
-          <a class="nav-contact" href="#contact" data-section-link>Contact</a>
-          <a class="nav-cv link-with-icon" href="{{profile.resume}}" target="_blank" rel="noopener noreferrer">{{icons.resume}}<span>Résumé</span>{{icons.external}}</a>
-        </nav>
-      </div>
-    </header>
+    {{> header home}}
 
     <main id="main-content">
-      <section id="top" class="hero shell" aria-labelledby="hero-title" data-operating-model>
-        <div class="hero-status">
-          <p class="hero-kicker"><span class="status-dot" aria-hidden="true"></span>{{profile.location}}</p>
-        </div>
-        <div class="hero-head">
-          <p class="eyebrow">React · JavaScript · TypeScript · Node.js · SQL · C#/.NET</p>
-          <h1 id="hero-title" aria-label="Full-stack developer and software engineer building for real operational needs."><span>Full-stack developer</span><span>and software engineer</span><span>building for real operational needs.</span></h1>
-        </div>
-        <div class="hero-frame">
-          <div class="hero-intro">
-            <p>I work on software people depend on to get something done — internal business platforms, operations tooling, and applications built for one specific community.</p>
+      <section id="top" class="hero" aria-labelledby="hero-title" data-hero>
+        <div class="frame hero-grid">
+          <div class="hero-head">
+            <p class="hero-loc"><span class="pulse" aria-hidden="true"></span>{{profile.location}}</p>
+            <p class="hero-tech">React&nbsp;· JavaScript&nbsp;· TypeScript&nbsp;· Node.js&nbsp;· SQL&nbsp;· C#/.NET</p>
+            <h1 id="hero-title">Full-stack developer and software engineer building for real operational needs.</h1>
+          </div>
+          <div class="hero-copy">
+            <p class="hero-lead">I work on software people depend on to get something done — internal business platforms, operations tooling, and applications built for one specific community.</p>
             <div class="hero-actions">
-              <a class="button button-primary" href="#work">View work</a>
-              <a class="button button-secondary link-with-icon" href="{{profile.resume}}" target="_blank" rel="noopener noreferrer" download>{{icons.resume}}<span>Download CV</span>{{icons.external}}</a>
-              <a class="text-action hero-contact-link" href="#contact">Contact →</a>
+              <a class="btn btn-primary" href="#work">View work<span aria-hidden="true">↓</span></a>
+              <a class="btn btn-line" href="{{profile.resume}}" target="_blank" rel="noopener noreferrer" download>Download CV<span class="sr-only"> (PDF)</span><span aria-hidden="true">↗</span></a>
+              <a class="btn-text" href="#contact">Contact<span aria-hidden="true">→</span></a>
             </div>
           </div>
-          <div class="hero-stage" aria-hidden="true" data-hero-stage>
-            <canvas class="hero-webgl" data-hero-canvas></canvas>
-            <div class="schematic" data-schematic>
-              <p class="schematic-caption"><span>FIG. 01 / Full-stack engineering</span> Interface · Application · Data · Delivery</p>
-              <div class="plate plate-interface" data-plate="interface">
-                <span class="plate-label">01 / Interface</span>
-                <strong class="plate-heading">Responsive product interfaces</strong>
-                <div class="plate-modules"><span>React</span><span>JavaScript</span><span>Responsive UI</span><span>Accessibility</span></div>
-              </div>
-              <div class="plate plate-boundary" data-plate="boundary">
-                <span class="plate-label">02 / Application &amp; APIs</span>
-                <strong class="plate-heading">Backend services and business logic</strong>
-                <div class="plate-modules"><span>Node.js</span><span>Express / Fastify</span><span>REST APIs</span><span>C# / .NET</span></div>
-              </div>
-              <div class="plate plate-core" data-plate="core">
-                <span class="plate-label">03 / Data &amp; delivery</span>
-                <strong class="plate-heading">Relational data and production delivery</strong>
-                <div class="plate-modules"><span>SQL Server</span><span>MySQL</span><span>Linux</span><span>Release &amp; deployment</span></div>
-              </div>
-            </div>
+          <div class="hero-visual" data-hero-visual>
+            <figure class="hero-figure" data-hero-stack>
+              <figcaption class="fig-cap"><span>Fig. 00 / Full-stack engineering</span><span>Interface&nbsp;· Application&nbsp;· Data&nbsp;· Delivery</span></figcaption>
+              <ol class="hero-stack" aria-label="Engineering capabilities, from interface to delivery">
+                <li class="plate">
+                  <span class="plate-wire" aria-hidden="true"><b class="wire-node">Request</b><i></i></span>
+                  <p class="plate-top"><span class="plate-code">L4 / Interface</span><span class="plate-go" aria-hidden="true">→</span></p>
+                  <p class="plate-title"><a class="plate-link" href="#work" data-layer-link="0">Responsive product interfaces<span class="sr-only">: see the interface layer in the work</span></a></p>
+                  <ul class="plate-chips"><li>React</li><li>TypeScript</li><li>Responsive UI</li><li>Accessibility</li></ul>
+                </li>
+                <li class="plate">
+                  <span class="plate-wire" aria-hidden="true"><i></i></span>
+                  <p class="plate-top"><span class="plate-code">L3 / Application</span><span class="plate-go" aria-hidden="true">→</span></p>
+                  <p class="plate-title"><a class="plate-link" href="#work" data-layer-link="1">Backend services and business logic<span class="sr-only">: see the application layer in the work</span></a></p>
+                  <ul class="plate-chips"><li>Node.js</li><li>Express / Fastify</li><li>REST APIs</li><li>C# / .NET</li></ul>
+                </li>
+                <li class="plate">
+                  <span class="plate-wire" aria-hidden="true"><i></i></span>
+                  <p class="plate-top"><span class="plate-code">L2 / Data</span><span class="plate-go" aria-hidden="true">→</span></p>
+                  <p class="plate-title"><a class="plate-link" href="#work" data-layer-link="2">Relational data and its rules<span class="sr-only">: see the data layer in the work</span></a></p>
+                  <ul class="plate-chips"><li>SQL Server</li><li>MySQL</li><li>Prisma</li><li>Migrations</li></ul>
+                </li>
+                <li class="plate">
+                  <span class="plate-wire" aria-hidden="true"><i></i></span>
+                  <p class="plate-top"><span class="plate-code">L1 / Delivery</span><span class="plate-go" aria-hidden="true">→</span></p>
+                  <p class="plate-title"><a class="plate-link" href="#work" data-layer-link="3">Production delivery and support<span class="sr-only">: see the delivery layer in the work</span></a></p>
+                  <ul class="plate-chips"><li>Linux</li><li>Git</li><li>Testing</li><li>Releases</li></ul>
+                </li>
+                </ol>
+            </figure>
           </div>
-        </div>
-        <div class="proof-strip" aria-label="Professional highlights" data-reveal-group>
-          <p><strong>3+ years</strong><span>Commercial software development</span></p>
-          <p><strong>Business platform</strong><span>Used in daily internal operations</span></p>
-          <p><strong>Dec 2026</strong><span>Expected BSc graduation</span></p>
+          <div class="proof" aria-label="Professional highlights">
+            <div><strong>3+ years</strong><span>Commercial software development</span></div>
+            <div><strong>Business platform</strong><span>Used in daily internal operations</span></div>
+            <div><strong>Dec 2026</strong><span>Expected BSc graduation</span></div>
+            <a class="proof-cue" href="#work"><span>Selected work</span><span>Scroll <span aria-hidden="true">↓</span></span></a>
+          </div>
         </div>
       </section>
 
-      <section id="work" class="section section-work" aria-labelledby="work-title">
-        <div class="shell work-intro">
-          <p class="section-number">01 / Selected work</p>
-          <h2 id="work-title">Six systems across production software, operations, language and real-time interaction.</h2>
+      <section id="work" class="work" aria-labelledby="work-title">
+        <div class="workbench" data-workbench>
+          <div class="wb-intro">
+            <p class="label label-accent">Selected work · 6 systems × 4 layers</p>
+            <h2 id="work-title">Six systems across production software, operations, language and real-time interaction.</h2>
+          </div>
+        {{> wb-index}}
+        {{> wb-stage}}
+        {{> wb-files}}
         </div>
-        <div class="shell work-split">
-          <nav class="work-index" aria-label="Project index" data-work-index>
-            <ol>
-              <li><a href="#work-maintops" data-work-index-link><span class="work-index-no">01</span><span class="work-index-name">MaintOps</span><span class="work-index-meta">Maintenance operations</span></a></li>
-              <li><a href="#work-erp" data-work-index-link><span class="work-index-no">02</span><span class="work-index-name">Production Business Platform</span><span class="work-index-meta">Commercial · confidential</span></a></li>
-              <li><a href="#work-gurmat" data-work-index-link><span class="work-index-no">03</span><span class="work-index-name">Gurmat Saanj</span><span class="work-index-meta">Real-time shared reading</span></a></li>
-              <li><a href="#work-alfaaz" data-work-index-link><span class="work-index-no">04</span><span class="work-index-name">Alfaaz</span><span class="work-index-meta">Multilingual writing</span></a></li>
-              <li><a href="#work-opssemble" data-work-index-link><span class="work-index-no">05</span><span class="work-index-name">Opssemble</span><span class="work-index-meta">Event readiness</span></a></li>
-              <li><a href="#work-esamarea" data-work-index-link><span class="work-index-no">06</span><span class="work-index-name">Esamarea</span><span class="work-index-meta">Study planning</span></a></li>
+      </section>
+
+      <section id="experience" class="section profile" aria-labelledby="experience-title">
+        <div class="frame">
+          <header class="section-head" data-reveal>
+            <p class="label label-accent">Profile · building since 2023</p>
+            <h2 id="experience-title">Close to the software and its users.</h2>
+            <p class="section-lead">I build software close to the people who depend on it. Since September 2023 I have been the primary developer of a production business platform, while studying for a degree in Computer Engineering.</p>
+          </header>
+          <div class="profile-grid">
+            <ol class="timeline" aria-label="Experience and education" data-reveal>
+              <li>
+                <p class="tl-when">2023.09 → now</p>
+                <div class="tl-what">
+                  <h3>{{profile.employmentTitle}} · {{profile.employer}}</h3>
+                  <p class="tl-where">{{profile.employerLocation}} · {{profile.employmentPeriod}}</p>
+                  <p>Primary developer of the company's confidential business platform, covering requirements, product interfaces, backend APIs, relational data, permissions, releases, and direct user support.</p>
+                  <p>I also maintain the company's commercial C#/.NET software and its supporting infrastructure.</p>
+                </div>
+              </li>
+              <li>
+                <p class="tl-when">2023 → 2026.12</p>
+                <div class="tl-what">
+                  <h3>BSc in Computer Engineering</h3>
+                  <p class="tl-where">Ingegneria Informatica · University of Modena and Reggio Emilia (UNIMORE) · {{profile.graduation}}</p>
+                </div>
+              </li>
+              <li>
+                <p class="tl-when">2018 → 2023</p>
+                <div class="tl-what">
+                  <h3>Diploma in Computer Science and Telecommunications</h3>
+                  <p class="tl-where">ITIS Enrico Fermi, Modena</p>
+                </div>
+              </li>
             </ol>
-          </nav>
-          <div class="work-panels">
-            <article id="work-maintops" class="work-panel" data-work-panel="maintops">
-              <header class="work-panel-head" data-reveal-group>
-                <p class="work-panel-no"><span class="work-panel-index">01</span><span class="badge {{projects.maintops.statusClass}}">{{projects.maintops.status}}</span></p>
-                <h3><span>{{projects.maintops.title}}</span></h3>
-                <p class="work-panel-category">{{projects.maintops.category}}</p>
-              </header>
-              <p class="work-panel-lead">{{projects.maintops.lead}}</p>
-              <p class="tech-line">{{projects.maintops.tech}}</p>
-              <div class="project-actions"><a class="button button-primary project-action" href="{{projects.maintops.caseStudy}}">Case study</a>{{#if projects.maintops.repository}}<a class="icon-action link-with-icon" href="{{projects.maintops.repository}}" target="_blank" rel="noopener noreferrer" aria-label="MaintOps source on GitHub, opens in a new tab">{{icons.github}}<span class="sr-only">GitHub</span></a>{{/if}}</div>
-              <figure class="work-visual">
-                {{#if projects.maintops.noPrimaryImage}}<ol class="project-system-card work-model maintops-system-card" aria-label="MaintOps request lifecycle from report through triage and tracked work to closure">
-                  <li class="system-step system-input"><span>Report</span><strong>Request</strong><small>Raised against an asset or location</small></li><li class="system-step system-boundary"><span>Triage</span><strong>Priority &amp; assignment</strong><small>Supervisor sets category and owner</small></li><li class="system-step system-state"><span>Track</span><strong>SLA clocks</strong><small>Work-start and resolution targets per cycle</small></li><li class="system-step system-output"><span>Close</span><strong>Resolve &amp; confirm</strong><small>Requester confirms or reopens</small></li>
-                </ol>
-                <figcaption>Implemented request lifecycle. Interface captures are not yet published.</figcaption>{{/if}}
-                {{#if projects.maintops.primaryImage}}<a href="{{projects.maintops.caseStudy}}" aria-label="Read the MaintOps case study"><picture><source srcset="{{projects.maintops.primaryImageAvif}}" type="image/avif" /><source srcset="{{projects.maintops.primaryImageWebp}}" type="image/webp" /><img src="{{projects.maintops.primaryImage}}" width="{{projects.maintops.primaryImageWidth}}" height="{{projects.maintops.primaryImageHeight}}" loading="lazy" alt="{{projects.maintops.primaryImageAlt}}" /></picture></a><figcaption>{{projects.maintops.primaryImageCaption}}</figcaption>{{/if}}
-              </figure>
-              <dl class="work-meta">
-                <div><dt>Role</dt><dd>{{projects.maintops.meta.role}}</dd></div><div><dt>Focus</dt><dd>{{projects.maintops.meta.focus}}</dd></div><div><dt>Evidence</dt><dd>{{projects.maintops.meta.evidence}}</dd></div>
-              </dl>
-            </article>
-
-            <article id="work-erp" class="work-panel" data-work-panel="erp">
-              <header class="work-panel-head" data-reveal-group>
-                <p class="work-panel-no"><span class="work-panel-index">02</span><span class="badge {{projects.erp.statusClass}}">{{projects.erp.status}}</span></p>
-                <h3><span>{{projects.erp.title}}</span></h3>
-                <p class="work-panel-category">{{projects.erp.category}}</p>
-              </header>
-              <p class="work-panel-lead">{{projects.erp.lead}}</p>
-              <p class="tech-line">{{projects.erp.tech}}</p>
-              <div class="project-actions"><a class="button button-primary project-action" href="{{projects.erp.caseStudy}}">Case study</a></div>
-              <figure class="work-visual">
-                <ol class="project-system-card work-model erp-system-card" aria-label="Operational flow from users through permissions and shared data to operations">
-                  <li class="system-step system-input"><span>Enter</span><strong>Users</strong><small>Start daily work</small></li><li class="system-step system-boundary"><span>Permission boundary</span><strong>Permissions</strong><small>Controls access</small></li><li class="system-step system-data"><span>Shared source</span><strong>Relational data</strong><small>One record model</small></li><li class="system-step system-output"><span>Supports</span><strong>Operations</strong><small>Connected workflows</small></li>
-                </ol>
-                <figcaption>Operating model. The source and interface are confidential, so no screenshots are shown.</figcaption>
-              </figure>
-              <dl class="work-meta">
-                <div><dt>Role</dt><dd>{{projects.erp.meta.role}}</dd></div><div><dt>Focus</dt><dd>{{projects.erp.meta.focus}}</dd></div><div><dt>Evidence</dt><dd>{{projects.erp.meta.evidence}}</dd></div>
-              </dl>
-            </article>
-
-            <article id="work-gurmat" class="work-panel" data-work-panel="gurmat">
-              <header class="work-panel-head" data-reveal-group>
-                <p class="work-panel-no"><span class="work-panel-index">03</span><span class="badge {{projects.gurmat.statusClass}}">{{projects.gurmat.status}}</span></p>
-                <h3><span>{{projects.gurmat.title}}</span></h3>
-                <p class="work-panel-category">{{projects.gurmat.category}}</p>
-              </header>
-              <p class="work-panel-lead">{{projects.gurmat.lead}}</p>
-              <p class="tech-line">{{projects.gurmat.tech}}</p>
-              <div class="project-actions"><a class="button button-primary project-action" href="{{projects.gurmat.caseStudy}}">Case study</a>{{#if projects.gurmat.repository}}<a class="icon-action" href="{{projects.gurmat.repository}}" target="_blank" rel="noopener noreferrer" aria-label="Gurmat Saanj source on GitHub, opens in a new tab">{{icons.github}}<span class="sr-only">GitHub</span></a>{{/if}}</div>
-              <figure class="work-visual">
-                {{#if projects.gurmat.primaryImage}}<a href="{{projects.gurmat.caseStudy}}" aria-label="Read the Gurmat Saanj case study"><picture><source srcset="{{projects.gurmat.primaryImageAvif}}" type="image/avif" /><source srcset="{{projects.gurmat.primaryImageWebp}}" type="image/webp" /><img src="{{projects.gurmat.primaryImage}}" width="{{projects.gurmat.primaryImageWidth}}" height="{{projects.gurmat.primaryImageHeight}}" loading="lazy" alt="{{projects.gurmat.primaryImageAlt}}" /></picture></a><figcaption>{{projects.gurmat.primaryImageCaption}}</figcaption>{{/if}}
-              </figure>
-              <dl class="work-meta">
-                <div><dt>Role</dt><dd>{{projects.gurmat.meta.role}}</dd></div><div><dt>Focus</dt><dd>{{projects.gurmat.meta.focus}}</dd></div><div><dt>Evidence</dt><dd>{{projects.gurmat.meta.evidence}}</dd></div>
-              </dl>
-            </article>
-
-            <article id="work-alfaaz" class="work-panel work-panel-alfaaz" data-work-panel="alfaaz">
-              <header class="work-panel-head" data-reveal-group>
-                <p class="work-panel-no"><span class="work-panel-index">04</span><span class="badge {{projects.alfaaz.statusClass}}">{{projects.alfaaz.status}}</span></p>
-                <h3><span>{{projects.alfaaz.title}}</span></h3>
-                <p class="work-panel-category">{{projects.alfaaz.category}}</p>
-              </header>
-              <p class="work-panel-lead">{{projects.alfaaz.lead}}</p>
-              <p class="tech-line">{{projects.alfaaz.tech}}</p>
-              <div class="project-actions"><a class="button button-primary project-action" href="{{projects.alfaaz.caseStudy}}">Case study</a></div>
-              <figure class="work-visual">
-                {{#if projects.alfaaz.noPrimaryImage}}<ol class="project-system-card work-model alfaaz-system-card" aria-label="Alfaaz writing flow from input through autosave and version checking to revision history">
-                  <li class="system-step system-input"><span>Input</span><strong>Roman or native script</strong><small>Transliteration runs in the browser</small></li><li class="system-step"><span>Autosave</span><strong>Debounced write</strong><small>Unsaved text kept on the device</small></li><li class="system-step system-state"><span>Guard</span><strong>Version check</strong><small>A conflicting write is refused</small></li><li class="system-step system-output"><span>History</span><strong>Revisions</strong><small>Restore archives the current text first</small></li>
-                </ol>
-                <figcaption>Editor write path. Interface captures are not yet published.</figcaption>{{/if}}
-                {{#if projects.alfaaz.primaryImage}}<a href="{{projects.alfaaz.caseStudy}}" aria-label="Read the Alfaaz case study"><picture><source srcset="{{projects.alfaaz.primaryImageAvif}}" type="image/avif" /><source srcset="{{projects.alfaaz.primaryImageWebp}}" type="image/webp" /><img src="{{projects.alfaaz.primaryImage}}" width="{{projects.alfaaz.primaryImageWidth}}" height="{{projects.alfaaz.primaryImageHeight}}" loading="lazy" alt="{{projects.alfaaz.primaryImageAlt}}" /></picture></a><figcaption>{{projects.alfaaz.primaryImageCaption}}</figcaption>{{/if}}
-              </figure>
-              <dl class="work-meta">
-                <div><dt>Role</dt><dd>{{projects.alfaaz.meta.role}}</dd></div><div><dt>Focus</dt><dd>{{projects.alfaaz.meta.focus}}</dd></div><div><dt>Evidence</dt><dd>{{projects.alfaaz.meta.evidence}}</dd></div>
-              </dl>
-            </article>
-
-            <article id="work-opssemble" class="work-panel" data-work-panel="opssemble">
-              <header class="work-panel-head" data-reveal-group>
-                <p class="work-panel-no"><span class="work-panel-index">05</span><span class="badge {{projects.opssemble.statusClass}}">{{projects.opssemble.status}}</span></p>
-                <h3><span>{{projects.opssemble.title}}</span></h3>
-                <p class="work-panel-category">{{projects.opssemble.category}}</p>
-              </header>
-              <p class="work-panel-lead">{{projects.opssemble.lead}}</p>
-              <p class="tech-line">{{projects.opssemble.tech}}</p>
-              <div class="project-actions"><a class="button button-primary project-action" href="{{projects.opssemble.caseStudy}}">Case study</a></div>
-              <figure class="work-visual">
-                {{#if projects.opssemble.noPrimaryImage}}<ol class="project-system-card work-model opssemble-system-card" aria-label="Opssemble flow from event structure through exceptions and readiness to scoped QR access">
-                  <li class="system-step system-input"><span>Structure</span><strong>Event &amp; areas</strong><small>Tasks with status and priority</small></li><li class="system-step system-exception"><span>Log</span><strong>Exceptions</strong><small>Severity and resolution trail</small></li><li class="system-step system-state"><span>Score</span><strong>Readiness</strong><small>Blockers decide the score</small></li><li class="system-step system-output"><span>Share</span><strong>QR area access</strong><small>Scoped, revocable tokens</small></li>
-                </ol>
-                <figcaption>Implemented coordination model. Interface captures are not yet published.</figcaption>{{/if}}
-                {{#if projects.opssemble.primaryImage}}<a href="{{projects.opssemble.caseStudy}}" aria-label="Read the Opssemble case study"><picture><source srcset="{{projects.opssemble.primaryImageAvif}}" type="image/avif" /><source srcset="{{projects.opssemble.primaryImageWebp}}" type="image/webp" /><img src="{{projects.opssemble.primaryImage}}" width="{{projects.opssemble.primaryImageWidth}}" height="{{projects.opssemble.primaryImageHeight}}" loading="lazy" alt="{{projects.opssemble.primaryImageAlt}}" /></picture></a><figcaption>{{projects.opssemble.primaryImageCaption}}</figcaption>{{/if}}
-              </figure>
-              <dl class="work-meta">
-                <div><dt>Role</dt><dd>{{projects.opssemble.meta.role}}</dd></div><div><dt>Focus</dt><dd>{{projects.opssemble.meta.focus}}</dd></div><div><dt>Evidence</dt><dd>{{projects.opssemble.meta.evidence}}</dd></div>
-              </dl>
-            </article>
-
-            <article id="work-esamarea" class="work-panel" data-work-panel="esamarea">
-              <header class="work-panel-head" data-reveal-group>
-                <p class="work-panel-no"><span class="work-panel-index">06</span><span class="badge {{projects.esamarea.statusClass}}">{{projects.esamarea.status}}</span></p>
-                <h3><span>{{projects.esamarea.title}}</span></h3>
-                <p class="work-panel-category">{{projects.esamarea.category}}</p>
-              </header>
-              <p class="work-panel-lead">{{projects.esamarea.lead}}</p>
-              <p class="tech-line">{{projects.esamarea.tech}}</p>
-              <div class="project-actions"><a class="button button-primary link-with-icon" href="{{projects.esamarea.repository}}" target="_blank" rel="noopener noreferrer">{{icons.github}}<span>View source</span>{{icons.external}}</a></div>
-              <figure class="work-visual">
-                <a href="{{projects.esamarea.repository}}" target="_blank" rel="noopener noreferrer" aria-label="Esamarea source on GitHub, opens in a new tab"><picture><source srcset="{{projects.esamarea.primaryImageAvif}}" type="image/avif" /><source srcset="{{projects.esamarea.primaryImageWebp}}" type="image/webp" /><img src="{{projects.esamarea.primaryImage}}" width="{{projects.esamarea.primaryImageWidth}}" height="{{projects.esamarea.primaryImageHeight}}" loading="lazy" alt="{{projects.esamarea.primaryImageAlt}}" /></picture></a><figcaption>{{projects.esamarea.primaryImageCaption}}</figcaption>
-              </figure>
-              <dl class="work-meta">
-                <div><dt>Role</dt><dd>{{projects.esamarea.meta.role}}</dd></div><div><dt>Focus</dt><dd>{{projects.esamarea.meta.focus}}</dd></div><div><dt>Evidence</dt><dd>{{projects.esamarea.meta.evidence}}</dd></div>
-              </dl>
-            </article>
+            <aside id="about" class="profile-side" aria-label="Languages and way of working" data-reveal>
+              <div>
+                <p class="label">Languages</p>
+                <dl class="langs"><div><dt>Italian</dt><dd>Native</dd></div><div><dt>Punjabi</dt><dd>Native</dd></div><div><dt>English</dt><dd>C1</dd></div><div><dt>Hindi</dt><dd>Advanced</dd></div></dl>
+              </div>
+              <div class="profile-note">
+                <p class="label">How I take on a change</p>
+                <p>Requirements come directly from the people using the software. I clarify their goal, trace the records and roles involved, implement the smallest coherent change across the stack, and review the result with the people who asked for it.</p>
+              </div>
+            </aside>
+          </div>
+          <div id="capabilities" class="capabilities">
+            <header data-reveal>
+              <p class="label">Capabilities by layer</p>
+              <h3>Engineering across the stack, from the interface to delivery and maintenance.</h3>
+            </header>
+            <ol class="cap-stack" data-reveal>
+              <li class="cap-row"><p class="cap-code"><span>L4</span> Interface</p><p>React, JavaScript, TypeScript, responsive layouts, accessibility, and component-based interfaces.</p></li>
+              <li class="cap-row"><p class="cap-code"><span>L3</span> Application</p><p>Node.js, Express, Fastify, REST APIs, authentication, authorization, and validation.</p></li>
+              <li class="cap-row"><p class="cap-code"><span>L2</span> Data</p><p>SQL Server, MySQL, Prisma, relational modelling, and migrations.</p></li>
+              <li class="cap-row"><p class="cap-code"><span>L1</span> Delivery</p><p>Deployment, Linux, Git, Jest, Vitest, Playwright, releases, and user support.</p></li>
+              <li class="cap-row"><p class="cap-code"><span>+</span> Systems</p><p>C#/.NET software, client-server components, infrastructure support, Java 17, and controlled AI integration.</p></li>
+            </ol>
           </div>
         </div>
-        <div class="shell work-stack">
-          <section class="earlier-work archive-index" aria-labelledby="earlier-work-title" data-archive-index>
-            <div class="earlier-work-intro"><p class="eyebrow">Additional work / 07–08</p><h2 id="earlier-work-title">Additional engineering work</h2><p class="archive-note">Supporting evidence beyond the featured web projects.</p></div>
-            <div class="archive-list">
-              <details class="archive-entry">
-                <summary><span class="archive-no">07</span><span class="archive-title">Client-server licence manager</span><span class="archive-meta">{{projects.licenceManager.context}} · C# / .NET</span><span class="archive-toggle" aria-hidden="true"></span></summary>
-                <div class="archive-body">
-                  <p>C#/.NET client-server component controlling licence activation and concurrent use.</p>
-                  <ol class="protocol-trace connector-flow" data-connector-reveal aria-label="Licence manager protocol trace"><li><span>01</span>Client requests validation</li><li><span>02</span>Server checks activation</li><li><span>03</span>Concurrent-use rule evaluated</li><li><span>04</span>Validation result returned</li></ol>
-                  <p class="tech-line">C# · .NET · Client-server architecture</p>
-                </div>
-              </details>
-              <details class="archive-entry">
-                <summary><span class="archive-no">08</span><span class="archive-title">SIRD Epidemic Simulator</span><span class="archive-meta">Academic · Java 17 · JavaFX</span><span class="archive-toggle" aria-hidden="true"></span></summary>
-                <div class="archive-body">
-                  <p>Agent-based SIRD desktop simulator: a background engine drives moving agents with collision handling, real-time S/I/R/D visualisation, and CSV export, on a model–engine–controller architecture.</p>
-                  <p class="tech-line">Java 17 · JavaFX · Maven · concurrency</p>
-                  {{#if projects.sird.repository}}<div class="archive-links"><a class="icon-action" href="{{projects.sird.repository}}" target="_blank" rel="noopener noreferrer" aria-label="SIRD Epidemic Simulator source on GitHub, opens in a new tab">{{icons.github}}<span class="sr-only">GitHub</span></a></div>{{/if}}
-                </div>
-              </details>
+      </section>
+
+      <section id="contact" class="section contact" aria-labelledby="contact-title">
+        <div class="frame contact-grid">
+          <div class="contact-copy" data-reveal>
+            <p class="label label-accent">Contact · reply within 1–2 business days</p>
+            <h2 id="contact-title">Let’s build useful software together.</h2>
+            <p class="section-lead">Software engineering roles, project collaboration, or a technical conversation. Your message comes straight to me.</p>
+            <ul class="direct">
+              <li><span class="label">Email</span><span class="direct-email"><a href="mailto:{{profile.email}}">{{profile.email}}</a><button class="copy-btn" type="button" data-copy="{{profile.email}}" hidden>{{icons.copy}}<span data-copy-label>Copy</span></button></span></li>
+              <li><span class="label">GitHub</span><a href="{{profile.github}}" target="_blank" rel="noopener noreferrer">gurmilans-dev<span class="sr-only"> on GitHub (opens in a new tab)</span> <span aria-hidden="true">↗</span></a></li>
+              <li><span class="label">LinkedIn</span><a href="{{profile.linkedin}}" target="_blank" rel="noopener noreferrer">{{profile.name}}<span class="sr-only"> on LinkedIn (opens in a new tab)</span> <span aria-hidden="true">↗</span></a></li>
+              <li><span class="label">CV</span><a href="{{profile.resume}}" target="_blank" rel="noopener noreferrer" download>Download PDF<span class="sr-only"> résumé</span> <span aria-hidden="true">↓</span></a></li>
+              <li><span class="label">Based in</span><span>{{profile.location}} · <span data-clock>Central European Time</span></span></li>
+            </ul>
+          </div>
+          <form class="contact-form" action="{{contactForm.action}}" method="{{contactForm.method}}" enctype="{{contactForm.enctype}}" data-contact-form data-contact-mode="{{contactForm.mode}}" data-contact-endpoint="{{contactForm.endpoint}}" data-contact-email="{{profile.email}}" data-contact-timeout="{{contactForm.timeoutMs}}" data-contact-turnstile="{{contactForm.turnstileSiteKey}}" data-reveal>
+            <div class="form-intro">
+              <p class="label">Message directly</p>
+              <p id="contact-form-instructions">Name, email and message are required.</p>
             </div>
-          </section>
+            <fieldset class="enquiry">
+              <legend class="label">Enquiry type <span>(optional)</span></legend>
+              <div class="chips">
+                <div class="chip"><input type="radio" id="enquiry-role" name="enquiryType" value="Software engineering role" /><label for="enquiry-role">Software engineering role</label></div>
+                <div class="chip"><input type="radio" id="enquiry-project" name="enquiryType" value="Project collaboration" /><label for="enquiry-project">Project collaboration</label></div>
+                <div class="chip"><input type="radio" id="enquiry-technical" name="enquiryType" value="Technical discussion" /><label for="enquiry-technical">Technical discussion</label></div>
+                <div class="chip"><input type="radio" id="enquiry-other" name="enquiryType" value="Other" /><label for="enquiry-other">Other</label></div>
+              </div>
+            </fieldset>
+            <div class="fields">
+              <div class="field">
+                <label for="contact-name">Name <span>required</span></label>
+                <input id="contact-name" name="name" type="text" autocomplete="name" required placeholder="Your name" aria-describedby="contact-form-instructions contact-name-error" />
+                <p class="field-error" id="contact-name-error" data-contact-error-for="name" hidden>{{icons.error}}<span data-contact-error-text></span></p>
+              </div>
+              <div class="field">
+                <label for="contact-email">Email <span>required</span></label>
+                <input id="contact-email" name="email" type="email" autocomplete="email" required placeholder="you@example.com" aria-describedby="contact-form-instructions contact-email-error" />
+                <p class="field-error" id="contact-email-error" data-contact-error-for="email" hidden>{{icons.error}}<span data-contact-error-text></span></p>
+              </div>
+              <div class="field field-message">
+                <label for="contact-message">Message <span>required, at least {{contactForm.messageMinLength}} characters</span></label>
+                <textarea id="contact-message" name="message" rows="6" required minlength="{{contactForm.messageMinLength}}" maxlength="{{contactForm.messageMaxLength}}" placeholder="A short note about the role, project, or technical question." aria-describedby="contact-form-instructions contact-message-error"></textarea>
+                <p class="field-error" id="contact-message-error" data-contact-error-for="message" hidden>{{icons.error}}<span data-contact-error-text></span></p>
+              </div>
+            </div>
+            <div class="turnstile" data-contact-turnstile-widget hidden></div>
+            <div class="form-foot">
+              <p class="privacy">Your name, email address and message are processed through Formspree and used only to respond to your enquiry. If sending fails, you can open a pre-filled email draft instead.</p>
+              <div class="form-actions">
+                <button class="btn btn-primary" type="submit" data-contact-submit>{{icons.send}}<span data-contact-submit-text>Send message</span></button>
+                <button class="btn btn-line" type="button" data-contact-mailfallback hidden>Open email draft</button>
+              </div>
+              <p class="form-status" aria-live="polite" data-contact-status><span class="status-icons" aria-hidden="true">{{icons.success}}{{icons.error}}</span><span data-contact-status-text>Ready to send your message.</span></p>
+            </div>
+          </form>
         </div>
       </section>
-
-      <section id="experience" class="section shell" aria-labelledby="experience-title">
-        <div class="section-heading" data-reveal-group><p class="section-number">02 / Profile</p><div><h2 id="experience-title">Close to the software and its users.</h2></div></div>
-        <div class="profile-grid" data-reveal-group>
-          <article class="profile-role">
-            <p class="role-company">Phema S.r.l. · {{profile.employerLocation}}</p>
-            <h3>{{profile.employmentTitle}}</h3>
-            <p class="role-meta">{{profile.employmentPeriod}}</p>
-            <p>Primary developer of the company's confidential business platform, covering requirements, product interfaces, backend APIs, relational data, permissions, releases, and direct user support.</p>
-            <p>I also maintain the company's commercial C#/.NET software and its supporting infrastructure.</p>
-          </article>
-          <aside id="about" class="about-rail profile-rail" aria-label="About, education and languages">
-            <p class="about-lead">I build software close to the people who depend on it.</p>
-            <div><h3>BSc in Computer Engineering</h3><p>Ingegneria Informatica · University of Modena and Reggio Emilia (UNIMORE)</p><p class="about-meta">2023 - Present · {{profile.graduation}}</p></div>
-            <div><p><strong>Diploma in Computer Science and Telecommunications</strong></p><p>ITIS Enrico Fermi, Modena · 2018 - 2023</p></div>
-            <div><p class="eyebrow">Languages</p><p class="languages"><span>Italian · Native</span><span>Punjabi · Native</span><span>English · C1</span><span>Hindi · Advanced</span></p></div>
-          </aside>
-        </div>
-      </section>
-
-      <section id="capabilities" class="section section-ink" aria-labelledby="capabilities-title">
-        <div class="shell section-heading"><p class="section-number">03 / Engineering capabilities</p><div><h2 id="capabilities-title">Engineering across the stack</h2><p>Connected responsibilities from the interface to delivery and maintenance.</p></div></div>
-        <ol class="shell workflow capability-flow" aria-label="Four areas of full-stack engineering capability" data-reveal-group data-connector-reveal><li><span>01</span><div><h3>Product interface</h3><p>React, JavaScript, responsive layouts, accessibility, and component-based interfaces.</p></div></li><li><span>02</span><div><h3>Applications &amp; APIs</h3><p>Node.js, Express, Fastify, REST APIs, authentication, authorization, and validation.</p></div></li><li><span>03</span><div><h3>Data &amp; delivery</h3><p>SQL Server, MySQL, relational modelling, migrations, deployment, Linux, and Git.</p></div></li><li><span>04</span><div><h3>Systems & integrations</h3><p>C#/.NET software, client-server components, infrastructure support, Jest, and controlled AI integration.</p></div></li></ol>
-      </section>
-
     </main>
-    <footer id="contact" class="site-footer contact-footer" aria-labelledby="contact-title">
-      <div class="shell footer-cta" data-reveal-group>
-        <div class="contact-copy">
-          <p class="section-number">04 / Contact</p>
-          <h2 id="contact-title">Let’s build useful software together.</h2>
-          <p class="footer-intro">Full-stack web development for product interfaces, backend services, and data-driven software.</p>
-          <div class="footer-contact">
-            <p class="eyebrow">Direct contact</p>
-            <div class="text-links contact-link-list direct-contact-links"><a class="link-with-icon" href="mailto:{{profile.email}}" aria-label="Email">{{icons.email}}<span class="sr-only">Email</span></a><a class="link-with-icon" href="{{profile.github}}" target="_blank" rel="noopener noreferrer" aria-label="GitHub">{{icons.github}}<span class="sr-only">GitHub</span></a><a class="link-with-icon" href="{{profile.linkedin}}" target="_blank" rel="noopener noreferrer" aria-label="LinkedIn">{{icons.linkedin}}<span class="sr-only">LinkedIn</span></a></div>
-            <p>{{profile.location}}</p>
-          </div>
-        </div>
-        <form class="contact-form" action="{{contactForm.action}}" method="{{contactForm.method}}" enctype="{{contactForm.enctype}}" data-contact-form data-contact-mode="{{contactForm.mode}}" data-contact-endpoint="{{contactForm.endpoint}}" data-contact-email="{{profile.email}}" data-contact-timeout="{{contactForm.timeoutMs}}" data-contact-turnstile="{{contactForm.turnstileSiteKey}}">
-          <div class="contact-form-heading">
-            <p class="eyebrow">Message directly</p>
-            <p id="contact-form-instructions">Your message comes straight to me — I usually reply within 1-2 business days.</p>
-          </div>
-          <div class="form-field">
-            <label for="contact-name">Name <span>(required)</span></label>
-            <input id="contact-name" name="name" type="text" autocomplete="name" required placeholder="Your name" aria-describedby="contact-form-instructions contact-name-error" />
-            <p class="field-error" id="contact-name-error" data-contact-error-for="name" hidden>{{icons.error}}<span data-contact-error-text></span></p>
-          </div>
-          <div class="form-field">
-            <label for="contact-email">Email <span>(required)</span></label>
-            <input id="contact-email" name="email" type="email" autocomplete="email" required placeholder="you@example.com" aria-describedby="contact-form-instructions contact-email-error" />
-            <p class="field-error" id="contact-email-error" data-contact-error-for="email" hidden>{{icons.error}}<span data-contact-error-text></span></p>
-          </div>
-          <div class="form-field">
-            <label for="contact-enquiry-type">Enquiry type <span>(optional)</span></label>
-            <select id="contact-enquiry-type" name="enquiryType" aria-describedby="contact-form-instructions">
-              <option value="">Select a type</option>
-              <option value="Software engineering role">Software engineering role</option>
-              <option value="Project collaboration">Project collaboration</option>
-              <option value="Technical discussion">Technical discussion</option>
-              <option value="Other">Other</option>
-            </select>
-          </div>
-          <div class="form-field form-field-message">
-            <label for="contact-message">Message <span>(required)</span></label>
-            <textarea id="contact-message" name="message" rows="7" required minlength="{{contactForm.messageMinLength}}" maxlength="{{contactForm.messageMaxLength}}" placeholder="A short note about the role, project, or technical discussion." aria-describedby="contact-form-instructions contact-message-error"></textarea>
-            <p class="field-error" id="contact-message-error" data-contact-error-for="message" hidden>{{icons.error}}<span data-contact-error-text></span></p>
-          </div>
-          <p class="contact-privacy">Your name, email address, and message are processed through Formspree and used only to respond to your enquiry. If sending fails, you can open a pre-filled email draft instead.</p>
-          <div class="contact-turnstile" data-contact-turnstile-widget hidden></div>
-          <p class="contact-form-status" aria-live="polite" data-contact-status><span class="contact-status-icons" aria-hidden="true">{{icons.success}}{{icons.error}}</span><span data-contact-status-text>Ready to send your message.</span></p>
-          <div class="contact-actions">
-            <button class="button button-primary contact-submit link-with-icon" type="submit" data-contact-submit>{{icons.send}}<span data-contact-submit-text>Send mail</span></button>
-            <button class="button button-secondary contact-mail-fallback link-with-icon" type="button" data-contact-mailfallback hidden>{{icons.email}}<span>Open mail draft</span></button>
-          </div>
-        </form>
-      </div>
-      <div class="shell footer-inner"><p class="copyright-line"><span class="copyright-symbol">©</span><span data-year>2026</span> {{profile.name}}</p><p>Hand-built static site. No frameworks, no tracking.</p><a href="#top">Back to top ↑</a></div>
-    </footer>
+
+    {{> footer}}
+    {{> drawer}}
   </body>
 </html>
