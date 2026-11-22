@@ -29,5 +29,18 @@
       </section>
     </main>
     {{> footer}}
+    <script>
+      /* Pages are linked at clean URLs (/flowbank-one), as the host serves them. A local
+         preview server that does not map clean URLs to files answers with this page instead,
+         so try the file before showing a 404. The host never sends an existing page here, so
+         in production this costs one HEAD request on a genuine 404 and changes nothing. */
+      (function () {
+        var path = location.pathname.replace(/\/$/, "");
+        if (!path || path.indexOf("/", 1) !== -1 || /\.[a-z0-9]+$/i.test(path)) return;
+        fetch(path + ".html", { method: "HEAD" }).then(function (response) {
+          if (response.ok && !response.redirected) location.replace(path + ".html" + location.search + location.hash);
+        }).catch(function () {});
+      })();
+    </script>
   </body>
 </html>

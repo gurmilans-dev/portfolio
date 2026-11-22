@@ -334,3 +334,20 @@ test("404: served at a nested path with its styles and working links", async () 
   const sitemap = readFileSync(new URL("sitemap.xml", DIST), "utf8");
   assert.ok(!/\.html</.test(sitemap), "the sitemap lists clean URLs");
 });
+
+test("a preview server without clean URLs still reaches every case study", async () => {
+  const plain = await startServer({ port: 0, cleanUrls: false });
+  const origin = `http://127.0.0.1:${plain.address().port}`;
+  try {
+    await withPage({ width: 1440, height: 900 }, async (page) => {
+      await page.goto(`${origin}/flowbank-one`);
+      await page.waitFor(`location.pathname === "/flowbank-one.html" && document.readyState === "complete" && document.getElementById("case-title") !== null`, { timeout: 8000, message: "the 404 page did not forward to the case study" });
+      // A genuine 404 stays a 404.
+      await page.goto(`${origin}/no-such-page`, { settle: 600 });
+      assert.equal(await page.evaluate("location.pathname"), "/no-such-page");
+      assert.ok(await page.evaluate(`document.getElementById("not-found-title") !== null`));
+    });
+  } finally {
+    await new Promise((resolve) => plain.close(resolve));
+  }
+});

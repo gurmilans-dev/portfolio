@@ -29,7 +29,9 @@ const TYPES = {
 
 const readFile = (file) => fs.readFile(file).catch(() => null);
 
-export function startServer({ root = DEFAULT_ROOT, port = 0, host = "127.0.0.1" } = {}) {
+/* cleanUrls: false behaves like a plain static server (files only, 404.html for anything
+   else), which is how some preview servers treat the site; the browser tests use it. */
+export function startServer({ root = DEFAULT_ROOT, port = 0, host = "127.0.0.1", cleanUrls = true } = {}) {
   const base = path.resolve(root);
   const server = createServer(async (req, res) => {
     try {
@@ -45,11 +47,11 @@ export function startServer({ root = DEFAULT_ROOT, port = 0, host = "127.0.0.1" 
       const rule = rules.find(([from]) => from === rel);
       if (rule) { res.writeHead(Number(rule[2]) || 302, { Location: rule[1] }); res.end(); return; }
       // /page.html -> /page, /index.html -> /, keeping the query string.
-      if (rel.endsWith(".html") && rel !== "/404.html") {
+      if (cleanUrls && rel.endsWith(".html") && rel !== "/404.html") {
         const clean = rel === "/index.html" ? "/" : rel.slice(0, -".html".length);
         if (await readFile(path.join(base, rel))) { res.writeHead(307, { Location: `${clean}${url.search}` }); res.end(); return; }
       }
-      const candidates = rel.endsWith("/") ? [`${rel}index.html`] : [rel, `${rel}.html`];
+      const candidates = rel.endsWith("/") ? [`${rel}index.html`] : cleanUrls ? [rel, `${rel}.html`] : [rel];
       for (const candidate of candidates) {
         const file = path.join(base, candidate);
         if (!file.startsWith(base)) break;

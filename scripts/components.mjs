@@ -139,7 +139,7 @@ export function header(mode = "home") {
   return `<header class="site-header" data-header>
       <div class="header-inner">
         <a class="brand" href="${home ? "#top" : "index.html"}"><span class="brand-mark" aria-hidden="true">GS</span><span class="brand-name">${esc(profile.name)}</span><span class="sr-only">, ${home ? "back to top" : "home"}</span></a>
-        <p class="header-hud" aria-hidden="true"><span data-hud>${hud}</span><span class="hud-sep">/</span><span>${featuredProjects.length} systems × ${LAYERS.length} layers</span></p>
+        <p class="header-hud" aria-hidden="true"><span data-hud>${hud}</span></p>
         <nav id="site-navigation" class="site-nav" aria-label="Primary navigation" data-nav>
           ${link("work", "Work")}${link("experience", "Experience")}${link("contact", "Contact")}
           <a class="nav-cv" href="${profile.resume}" target="_blank" rel="noopener noreferrer">${icons.resume}<span>CV</span><span class="sr-only"> (PDF, opens in a new tab)</span>${icons.external}</a>
@@ -277,15 +277,21 @@ export function workbenchIndex() {
 
 /* "Also built": one ruled register below the explorer. Each row says how far the work has
    come and whether its source is public, what it does and what it is made with, and ends in
-   the same actions in the same order: a quick look for every entry (without JavaScript, a
-   jump to its case file), the full case study where there is one, then the Chrome Web Store
-   listing and the GitHub repository, each named in words, as they are in the explorer. */
+   the same actions in the same order, on one line: a quick look for every entry (without
+   JavaScript, a jump to its case file), the full case study where there is one, then the
+   Chrome Web Store and GitHub marks. The marks are named for assistive technology and on
+   hover; the quick look spells them out in words. */
+function iconLink(href, icon, label, project) {
+  return `<a class="ab-icon" href="${esc(href)}" target="_blank" rel="noopener noreferrer" title="${label}">${icon}<span class="sr-only">${label}: ${esc(project.shortTitle)} (opens in a new tab)</span></a>`;
+}
+
 function alsoRow(project) {
+  githubLink(project); storeLink(project); // the same URL checks as every other link to them
   const actions = [
     `<a class="ab-action" href="#work-${project.key}" data-wb-also="${project.key}">Quick look<span class="sr-only">: ${esc(project.shortTitle)}</span></a>`,
     project.caseStudy ? `<a class="ab-action" href="${project.caseStudy}">Full case study<span class="sr-only">: ${esc(project.shortTitle)}</span><span aria-hidden="true">→</span></a>` : "",
-    storeLink(project),
-    githubLink(project)
+    project.store ? iconLink(project.store, icons.store, "Chrome Web Store", project) : "",
+    project.repository ? iconLink(project.repository, icons.github, "GitHub", project) : ""
   ].join("");
   return `<li class="ab-row">
             <p class="ab-status">${status(project)}<span class="ab-source">${sourceShort(project)}</span></p>
@@ -373,11 +379,11 @@ export function caseEnd(key) {
   return `<section class="case-end" aria-labelledby="case-end-title">
         <div class="frame case-end-grid">
           <div class="case-end-copy"><p class="label">Discuss this work</p><h2 id="case-end-title" class="case-end-title">Questions about ${esc(current.shortTitle)}, or a role where this experience fits?</h2></div>
-          <div class="case-end-actions"><a class="btn btn-primary" href="mailto:${profile.email}?subject=${subject}">Email me about ${esc(current.shortTitle)}<span aria-hidden="true">→</span></a><a class="btn btn-line" href="${profile.resume}" target="_blank" rel="noopener noreferrer" download>Download CV<span class="sr-only"> (PDF)</span><span aria-hidden="true">↓</span></a></div>
+          <div class="case-end-actions"><a class="btn btn-primary" href="mailto:${profile.email}?subject=${subject}">Email me about ${esc(current.shortTitle)}<span aria-hidden="true">→</span></a><a class="btn btn-line" href="${profile.resume}" target="_blank" rel="noopener noreferrer" download>Download CV<span class="sr-only"> (PDF)</span>${icons.download}</a></div>
         </div>
         <nav class="frame case-pager" aria-label="Project navigation">
           ${card(prev, "<span aria-hidden=\"true\">←</span> Previous system", "pager-prev")}
-          <a class="pager-card pager-home" href="index.html#work"><span class="pager-dir">All systems</span><strong>Selected work</strong><span>${featuredProjects.length} systems × ${LAYERS.length} layers</span></a>
+          <a class="pager-card pager-home" href="index.html#work"><span class="pager-dir">All systems</span><strong>Selected work</strong><span>Back to the explorer</span></a>
           ${card(next, "Next system <span aria-hidden=\"true\">→</span>", "pager-next")}
         </nav>
       </section>`;

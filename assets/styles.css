@@ -231,6 +231,9 @@ code { font-family: var(--mono); font-size: .86em; padding: .08em .36em; backgro
 .btn { display: inline-flex; align-items: center; justify-content: center; gap: .6em; min-height: 46px; padding: 0 18px; border: 1px solid var(--line-3); background: transparent; color: var(--text); font: 600 15px/1.1 var(--sans); text-decoration: none; text-align: center; transition: background-color .2s, border-color .2s, color .2s; }
 .btn > [aria-hidden="true"] { display: inline-block; transition: transform .25s var(--ease); }
 .btn:hover > [aria-hidden="true"] { transform: translateX(3px); }
+/* A download icon instead of an arrow: it drops, as the file would, rather than sliding on. */
+.btn > .icon-download { width: 17px; height: 17px; flex: none; }
+.btn:hover > .icon.icon-download { transform: translateY(2px); }
 .btn-primary { background: var(--accent-fill); border-color: var(--accent-fill); color: var(--accent-ink); }
 .btn-primary:hover { background: var(--accent-fill-hi); border-color: var(--accent-fill-hi); color: var(--accent-ink); }
 .btn-line:hover { border-color: var(--text); color: var(--text); }
@@ -268,7 +271,6 @@ code { font-family: var(--mono); font-size: .86em; padding: .08em .36em; backgro
 .brand:hover { color: var(--text); }
 .brand:hover .brand-mark { background: var(--accent-fill-hi); }
 .header-hud { display: none; gap: 12px; color: var(--text-4); white-space: nowrap; }
-.hud-sep { color: var(--text-5); }
 .menu-toggle { display: none; }
 .site-nav { display: flex; align-items: center; gap: 4px; flex-wrap: wrap; }
 .site-nav > a { display: inline-flex; align-items: center; gap: 6px; min-height: 36px; padding: 0 12px; border: 1px solid transparent; color: var(--text-4); text-decoration: none; }
@@ -397,7 +399,7 @@ code { font-family: var(--mono); font-size: .86em; padding: .08em .36em; backgro
 @container plate (max-width: 285px) { .plate-chips li { padding-inline: 4px; font-size: 10.5px; } }
 @container (max-width: 300px) { .plate { padding-inline: 10px; } }
 @container plate (max-width: 260px) { .plate-chips { gap: 4px; } .plate-chips li { padding-inline: 3px; } }
-/* Delivery reads as a pipeline: source, checks, release, and the host it runs on. */
+/* Delivery reads as a pipeline: source, checks, release, and the support after it. */
 .plate-chips.is-pipeline { gap: 6px 16px; }
 .is-pipeline li { position: relative; overflow: visible; }
 .is-pipeline li:nth-child(2) { --n: 1; }
@@ -755,7 +757,7 @@ code { font-family: var(--mono); font-size: .86em; padding: .08em .36em; backgro
    what it is made with, and the same actions in the same order on every row. It is
    supporting evidence for the six above, so it keeps the hairlines and mono labels of the
    case files rather than becoming cards. */
-.also-built { width: min(100% - 2 * var(--pad), var(--frame-max)); margin-inline: auto; padding-block: clamp(44px, 6vw, 80px) clamp(56px, 8vw, 104px); scroll-margin-top: calc(var(--header-h) + 8px); }
+.also-built { width: min(100% - 2 * var(--pad), var(--frame-max)); margin-inline: auto; padding-block: clamp(44px, 6vw, 80px) clamp(36px, 4vw, 56px); scroll-margin-top: calc(var(--header-h) + 8px); }
 .ab-head { margin-bottom: clamp(14px, 2vw, 22px); }
 .ab-title { display: flex; align-items: baseline; gap: 12px; font: 600 clamp(1.45rem, 2.4vw, 1.9rem)/1.1 var(--sans); letter-spacing: -.025em; }
 .ab-count { font: 500 12px var(--mono); letter-spacing: .06em; color: var(--accent); }
@@ -768,10 +770,13 @@ code { font-family: var(--mono); font-size: .86em; padding: .08em .36em; backgro
 .ab-name { font: 600 19px/1.25 var(--sans); letter-spacing: -.015em; }
 .ab-summary { max-width: 62ch; font-size: 15px; line-height: 1.5; color: var(--text-2); }
 .ab-tech { font: 500 12.5px/1.55 var(--mono); color: var(--text-3); }
-.ab-links { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 16px; padding-top: 4px; }
-/* In-site actions are framed; the links that leave the site are the same tile-and-label
-   actions as in the explorer (GitHub, Chrome Web Store), named in words. */
-.ab-links .gh-link { min-height: 36px; font-size: 13.5px; }
+.ab-links { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; padding-top: 4px; }
+/* In-site actions are framed words; the links that leave the site are the Chrome Web Store
+   and GitHub marks, as tiles the height of the actions beside them. */
+.ab-icon { display: grid; place-items: center; flex: none; width: 36px; height: 36px; border: 1px solid var(--line-3); background: var(--bg-3); color: var(--text); transition: background-color .2s, border-color .2s, color .2s; }
+.ab-icon .icon { width: 18px; height: 18px; }
+.ab-icon:hover { border-color: var(--text); background: var(--text); color: var(--bg); }
+.ab-icon:active { translate: 0 1px; }
 .ab-action { display: inline-flex; align-items: center; gap: .6em; min-height: 36px; padding: 0 12px; border: 1px solid var(--line-2); color: var(--text-2); font: 500 12.5px/1 var(--mono); letter-spacing: .01em; text-decoration: none; white-space: nowrap; transition: color .2s, border-color .2s, background-color .2s; }
 .ab-action > [aria-hidden="true"] { transition: translate .25s var(--ease); }
 .ab-action:hover { border-color: var(--accent); color: var(--accent); }
@@ -791,8 +796,6 @@ code { font-family: var(--mono); font-size: .86em; padding: .08em .36em; backgro
    actions start on the same line in every row, so "Quick look" reads as a column. */
 @media (min-width: 1180px) {
   .ab-list { grid-template-columns: max-content minmax(0, 1.55fr) minmax(0, 1fr) max-content; column-gap: 36px; }
-  /* A row with three actions (Azlune) wraps its last one rather than widening the column. */
-  .ab-links { max-width: 340px; }
   .ab-row { grid-template-areas: "status main tech links"; align-items: center; padding-block: 18px; }
   .ab-status { padding-top: 0; }
   .ab-links { padding-top: 0; }
@@ -893,7 +896,8 @@ code { font-family: var(--mono); font-size: .86em; padding: .08em .36em; backgro
    on a quieter surface. Phones stack the parts; tablets put the background in two
    columns under the job; from 1100px the sheet splits into two columns. */
 /* The framed sheet already closes the section, so less space is needed before Contact. */
-.section.profile { padding-bottom: clamp(48px, 6vw, 80px); }
+/* Work already ends on the register's last rule, so Experience starts closer to it. */
+.section.profile { padding-top: clamp(44px, 5.5vw, 76px); padding-bottom: clamp(48px, 6vw, 80px); }
 .xp { display: grid; }
 .xp-head { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 8px 24px; padding-bottom: 14px; border-bottom: 1px solid var(--line-2); }
 .xp-k { font: 500 10.5px/1.4 var(--mono); letter-spacing: .08em; text-transform: uppercase; color: var(--text-4); }
