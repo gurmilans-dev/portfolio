@@ -25,10 +25,10 @@
       <section id="top" class="case-hero" aria-labelledby="case-title">
         <div class="frame case-hero-inner">
           <nav class="breadcrumbs" aria-label="Breadcrumb"><a href="index.html">Home</a><span aria-hidden="true">/</span><a href="index.html#work">Work</a><span aria-hidden="true">/</span><span aria-current="page">Confidential Business Platform</span></nav>
-          <p class="case-eyebrow"><span class="case-index">02 / Business Platform</span><span>In-house · {{profile.employmentPeriod}}</span></p>
+          <p class="case-eyebrow">{{> case-index erp}}<span>In-house · {{profile.employmentPeriod}}</span></p>
           <h1 id="case-title">Full-stack software for the work behind the business.</h1>
           <p class="case-lead">I am the primary developer of a full-stack system used in daily internal operations. It replaced disconnected legacy tools.</p>
-          <dl class="case-facts"><div><dt>Context</dt><dd>Internal business software</dd></div><div><dt>Role</dt><dd>Primary developer</dd></div><div><dt>Usage</dt><dd>Used in daily internal operations</dd></div><div><dt>Focus</dt><dd>Full-stack application ownership</dd></div><div><dt>Status</dt><dd><span class="badge badge-production">{{projects.erp.status}}</span></dd></div></dl>
+          <dl class="case-facts"><div><dt>Context</dt><dd>Internal business software</dd></div><div><dt>Role</dt><dd>Primary developer</dd></div><div><dt>Usage</dt><dd>Used in daily internal operations</dd></div><div><dt>Focus</dt><dd>Full-stack application ownership</dd></div><div><dt>Status</dt><dd>{{> case-status erp}}</dd></div></dl>
           <aside class="public-evidence-note"><p class="annotation-label">confidentiality</p><p>Screenshots, datasets, specific internal workflows, and operational figures are omitted; this case study focuses on my responsibilities and engineering decisions.</p></aside>
         </div>
       </section>

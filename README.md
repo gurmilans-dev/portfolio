@@ -2,7 +2,7 @@
 
 A framework-free static portfolio for a full-stack software engineer, with no runtime npm dependencies and no tracking.
 
-The design treats every project as a cut through four layers — **L4 Interface, L3 Application, L2 Data, L1 Delivery**. On the homepage the six featured systems sit in an interactive CSS-3D stack: selecting a system draws a beam through its socket on every plane, and its layer-by-layer file opens in a case-file drawer. Each case study opens with the same cut for that one system.
+The design treats every project as a cut through four layers — **L4 Interface, L3 Application, L2 Data, L1 Delivery**. On the homepage the six featured systems sit in an interactive CSS-3D stack: selecting a system draws a beam through its socket on every plane and shows its layer-by-layer file beside the stack. Each system then offers two ways in, named for what they are: a **Quick look** (a drawer, previewed by the project's own screenshot, holding that screenshot, the architecture, the key decision and the evidence) and the **Full case study** (its own page, which opens with the same cut for that one system). Work that does not have those four layers, or is smaller, earlier or still moving, is listed below the explorer in the **Also built** register, each entry marked for what it is (published, open source, in development, experimental, commercial, academic) and described with an architecture chain and a flow instead of invented layers. Every row ends in the same actions in the same order: Quick look, the full case study where there is one, then the GitHub and Chrome Web Store marks.
 
 ## Run locally on Windows
 
@@ -18,14 +18,23 @@ The root HTML files are source templates. Essential values and repeated markup a
 ## How the pages are built
 
 - `site.config.mjs` — profile, contact form, the four layers, and every project: copy, status, evidence, what is *not* claimed, layer summaries, architecture, decision record and images. This is the single source of truth for the workbench order and the case files.
-- `scripts/components.mjs` — build-time partials (`{{> header home}}`, `{{> footer}}`, `{{> wb-index}}`, `{{> wb-stage}}`, `{{> wb-files}}`, `{{> drawer}}`, `{{> case-cut key}}`, `{{> case-end key}}`, `{{> github-link key}}`) rendered from the config. `github-link` renders nothing unless the project has a public GitHub repository.
+- `scripts/components.mjs` — build-time partials (`{{> header home}}`, `{{> footer}}`, `{{> wb-index}}`, `{{> wb-stage}}`, `{{> wb-files}}`, `{{> also-built}}`, `{{> drawer}}`, `{{> case-cut key}}`, `{{> case-end key}}`, `{{> case-index key}}`, `{{> case-status key}}`, `{{> case-source key}}`, `{{> github-link key}}`) rendered from the config. `github-link` renders nothing unless the project has a public GitHub repository; `case-source` shows that link once it exists and the words "Private repository" until then.
 - `build.mjs` — partial and token resolution, conservative CSS/JS minification, comment removal, sitemap and robots generation, static and media copy.
 - `validate.mjs` — run by `npm test`: metadata, links and fragments, unique ids, accessibility contracts, workbench order against the config, and the claim checks that keep every case study honest (no invented usage, deployment or technology).
+
+## Publishing a private repository
+
+FlowBank One, ProcBeacon, Orbit, Opssemble and Alfaaz have private repositories, so their `repository` field in `site.config.mjs` is empty and no GitHub action is rendered for them. When one becomes public:
+
+1. Paste its `https://github.com/...` URL into that project's `repository` field.
+2. Run `npm run build` and `npm test`.
+
+The GitHub action then appears in its homepage file and quick look, in its case study's facts and on its "Also built" row, and every "Private repository" source line switches to "Public on GitHub". No markup changes are needed. `validate.mjs` refuses any GitHub link on the site that is not a configured `repository`, so a private URL cannot be published by accident — which is also why private URLs must never be written into the config.
 
 ## Client scripts
 
 - `assets/script.js` (every page): colour theme switch, navigation sheet, section awareness, reveal-on-scroll, case-study sequences, screenshot hotspots and lightbox, contact form, copy-to-clipboard, the Modena clock.
-- `assets/workbench.js` (homepage): hero tilt, the systems tablist, the stack (orbit, explode, layer highlighting) and the case-file drawer.
+- `assets/workbench.js` (homepage): hero tilt, the systems tablist, the stack (orbit, explode, layer highlighting) and the quick-look drawer.
 
 ## Themes
 

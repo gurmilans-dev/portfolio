@@ -2,7 +2,7 @@
  * workbench.js — homepage only.
  * Turns the static list of systems into the workbench: an index of tabs, a CSS-3D
  * stack with a cut through the selected system, a layer-by-layer file, and a
- * case-file drawer. Without this script every system and its full case file is
+ * quick-look drawer. Without this script every system and its full case file is
  * still on the page as plain, linked content.
  */
 (() => {
@@ -51,7 +51,8 @@
 
   const list = bench.querySelector("[data-wb-list]");
   const tabs = [...bench.querySelectorAll("[data-wb-tab]")];
-  const alsoLinks = [...bench.querySelectorAll("[data-wb-also]")];
+  // "Also built" sits below the explorer, outside the bench; its files still live in it.
+  const alsoLinks = [...document.querySelectorAll("[data-wb-also]")];
   const filesWrap = bench.querySelector("[data-wb-files]");
   const files = new Map([...bench.querySelectorAll("[data-system]")].map(file => [file.dataset.system, file]));
   const featured = tabs.map(tab => tab.dataset.wbTab);
@@ -115,7 +116,7 @@
     new ResizeObserver(() => requestAnimationFrame(fitBand)).observe(controls);
   }
   if (hint) hint.textContent = finePointer.matches
-    ? "Drag to orbit · hover to explode · click a layer to open its case file"
+    ? "Drag to orbit · hover to explode · click a layer for a quick look"
     : "Swipe sideways to orbit · tap a layer to highlight it";
 
   function syncRows() {
@@ -232,7 +233,7 @@
     applyView();
   });
 
-  /* Stage: hover picks a layer, a socket picks a system, a click opens the case file,
+  /* Stage: hover picks a layer, a socket picks a system, a click opens its quick look,
      and a drag orbits. On touch, vertical swipes keep scrolling the page. */
   if (scene && stack) {
     let drag = null;
@@ -283,7 +284,8 @@
     }
   }
 
-  /* ---------- Case-file drawer ---------- */
+  /* ---------- Quick-look drawer ----------
+     The drawer shows the system file itself, moved in from the explorer and put back on close. */
   let openKey = null;
   let placeholder = null;
   let returnFocus = null;
@@ -310,7 +312,7 @@
     drawerBody.scrollTop = 0;
     openKey = key;
     const index = order.indexOf(key);
-    if (drawerCrumb) drawerCrumb.innerHTML = `Case file ${String(index + 1).padStart(2, "0")} / ${String(order.length).padStart(2, "0")}<span class="crumb-extra"> · ← → to move</span>`;
+    if (drawerCrumb) drawerCrumb.innerHTML = `Quick look ${String(index + 1).padStart(2, "0")} / ${String(order.length).padStart(2, "0")}<span class="crumb-extra"> · ← → to move</span>`;
     const title = file.querySelector(".sf-title");
     if (title) {
       drawer.setAttribute("aria-labelledby", title.id);
@@ -383,7 +385,7 @@
       else if (event.key === "ArrowRight") { event.preventDefault(); step(1); }
     });
     // Only a page restored from the back/forward cache: pageshow also fires on every normal
-    // load, and closing then would undo a #work-<archive file> deep link the moment it opened.
+    // load, and closing then would undo a #work-<"Also built" file> deep link the moment it opened.
     addEventListener("pageshow", event => { if (event.persisted && drawer.open) finishClose(); });
   }
 

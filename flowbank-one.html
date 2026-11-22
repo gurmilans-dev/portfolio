@@ -1,0 +1,126 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="theme-color" content="#0c0d0f" />
+    <script>(function (d) { var t; try { t = localStorage.getItem("portfolio-theme"); } catch (e) {} if (t !== "light" && t !== "dark") t = matchMedia("(prefers-color-scheme: light)").matches ? "light" : "dark"; d.dataset.theme = t; d.classList.add("js"); if (t === "light") document.querySelector('meta[name="theme-color"]').content = "#f4f4f1"; })(document.documentElement);</script>
+    <title>FlowBank One case study - {{profile.name}}</title>
+    <meta name="description" content="A simulated bank in Java and Spring Boot: double-entry ledger, idempotent transfers, ordered locking, rotating sessions, and load tests that recheck the books." />
+    <meta name="robots" content="index, follow" />
+    <link rel="canonical" href="{{profile.domain}}/flowbank-one.html" />
+    <meta property="og:type" content="article" /><meta property="og:url" content="{{profile.domain}}/flowbank-one.html" /><meta property="og:title" content="FlowBank One case study - {{profile.name}}" /><meta property="og:description" content="A simulated bank built to learn transactional systems: double-entry ledger, transfers that cannot apply twice, and load tests that audit the books." /><meta property="og:image" content="{{profile.domain}}/assets/social-preview.png" />
+    <meta name="twitter:card" content="summary_large_image" /><meta name="twitter:title" content="FlowBank One case study - {{profile.name}}" /><meta name="twitter:description" content="A simulated bank built to learn transactional systems: double-entry ledger, transfers that cannot apply twice, and load tests that audit the books." /><meta name="twitter:image" content="{{profile.domain}}/assets/social-preview.png" />
+    <script type="application/ld+json">{"@context":"https://schema.org","@type":"SoftwareApplication","name":"FlowBank One","applicationCategory":"FinanceApplication","operatingSystem":"Web","description":"A simulated digital banking platform built for learning: accounts, a double-entry ledger, idempotent transfers and rotating sessions, with Java, Spring Boot, PostgreSQL and React. No real money."}</script>
+    <link rel="preload" href="assets/fonts/instrument-sans-latin.woff2" as="font" type="font/woff2" crossorigin />
+    <link rel="preload" href="assets/fonts/jetbrains-mono-latin.woff2" as="font" type="font/woff2" crossorigin />
+    <link rel="icon" href="assets/favicon.svg" type="image/svg+xml" />
+    <link rel="stylesheet" href="assets/styles.css" />
+    <script src="assets/script.js" defer></script>
+  </head>
+  <body class="page-flowbank page-case">
+    <a class="skip-link" href="#main-content">Skip to content</a>
+    <div class="scroll-progress" aria-hidden="true" data-scroll-progress><span></span></div>
+    {{> header case:flowbank}}
+    <main id="main-content">
+      <section id="top" class="case-hero" aria-labelledby="case-title">
+        <div class="frame case-hero-inner">
+          <nav class="breadcrumbs" aria-label="Breadcrumb"><a href="index.html">Home</a><span aria-hidden="true">/</span><a href="index.html#work">Work</a><span aria-hidden="true">/</span><span aria-current="page">FlowBank One</span></nav>
+          <p class="case-eyebrow">{{> case-index flowbank}}<span>Simulated banking platform · Java</span></p>
+          <h1 id="case-title">Every euro written twice, and never applied twice.</h1>
+          <p class="case-lead">FlowBank One is a simulated digital bank I built to learn how transactional systems are made correct, not just functional: a double-entry ledger, transfers that survive retries and concurrency, sessions that rotate, and load tests that recheck the books afterwards. No real money, no real bank: every account is fictitious.</p>
+          <dl class="case-facts"><div><dt>Context</dt><dd>Learning project · simulated bank</dd></div><div><dt>Role</dt><dd>Sole developer</dd></div><div><dt>Stack</dt><dd>Java 21 · Spring Boot · PostgreSQL · React</dd></div><div><dt>Status</dt><dd>{{> case-status flowbank}}</dd></div><div><dt>Source</dt><dd>{{> case-source flowbank}}</dd></div></dl>
+        </div>
+      </section>
+
+      {{> case-cut flowbank}}
+
+      <div class="frame case-layout">
+        <aside class="case-aside"><details class="case-toc" open data-toc><summary>On this page</summary><nav aria-label="On this page"><a href="#product">Product</a><a href="#architecture">Architecture</a><a href="#ledger">Ledger &amp; concurrency</a><a href="#security">Sessions &amp; security</a><a href="#testing">Testing &amp; load</a><a href="#boundaries">Boundaries</a></nav></details></aside>
+        <article class="case-content">
+
+          <section id="product" class="case-section" aria-labelledby="product-title">
+            <p class="case-section-no">01 / Product</p>
+            <h2 id="product-title">A bank with nothing real in it except the rules.</h2>
+            <p>I wanted a project where being wrong has a precise meaning: money appears, disappears or moves twice. FlowBank One simulates a retail bank end to end, and its demo users have months of history generated through the same posting path as every transfer, so the screens show what the ledger actually holds.</p>
+            <div role="group" class="operational-scope" data-reveal aria-label="What the product does"><p class="artifact-label">what it does</p><ul><li><strong>Accounts</strong><span>Checking and savings accounts, amounts in minor units, account numbers with a mod-97 check</span></li><li><strong>Statement</strong><span>The ledger itself, newest first, filtered by direction and by Italian calendar days</span></li><li><strong>Transfers</strong><span>Four steps: details, payee check by masked name, confirmation, receipt</span></li><li><strong>Analysis</strong><span>Spending by category and six months of money in and out, from an event-fed projection</span></li></ul></div>
+            <div class="shot-pair" data-reveal>
+              <figure class="evidence-media"><picture><source srcset="{{projects.flowbank.primaryImageAvif}}" type="image/avif" /><source srcset="{{projects.flowbank.primaryImageWebp}}" type="image/webp" /><img src="{{projects.flowbank.primaryImage}}" width="{{projects.flowbank.primaryImageWidth}}" height="{{projects.flowbank.primaryImageHeight}}" loading="lazy" decoding="async" alt="{{projects.flowbank.primaryImageAlt}}" /></picture><figcaption>{{projects.flowbank.primaryImageCaption}}</figcaption></figure>
+              <figure class="evidence-media"><picture><source srcset="{{projects.flowbank.mobileImageAvif}}" type="image/avif" /><source srcset="{{projects.flowbank.mobileImageWebp}}" type="image/webp" /><img src="{{projects.flowbank.mobileImage}}" width="{{projects.flowbank.mobileImageWidth}}" height="{{projects.flowbank.mobileImageHeight}}" loading="lazy" decoding="async" alt="{{projects.flowbank.mobileImageAlt}}" /></picture><figcaption>{{projects.flowbank.mobileImageCaption}}</figcaption></figure>
+            </div>
+            <p>The interface and the design documents are Italian; the code and its comments are English. The sidebar says what the product is on every screen: a simulated bank for demonstration, with no real money.</p>
+          </section>
+
+          <section id="architecture" class="case-section" aria-labelledby="architecture-title">
+            <p class="case-section-no">02 / Architecture</p>
+            <h2 id="architecture-title">One process, eight modules, and walls between them.</h2>
+            <div class="architecture" data-reveal role="img" aria-label="A React single-page application calls one Spring Boot application of eight modules, which stores each module's data in its own PostgreSQL schema."><div><span>01</span><strong>React SPA</strong><small>Token in memory · 4-step transfer</small></div><i aria-hidden="true">→</i><div><span>02</span><strong>Spring Boot</strong><small>8 modules · idempotency · ordered locks</small></div><i aria-hidden="true">→</i><div><span>03</span><strong>PostgreSQL</strong><small>One schema per module</small></div></div>
+            <p>It is a modular monolith on purpose: one deployable, but eight modules — ledger, identity, audit, analytics, notifications, simulation, platform and shared — whose allowed dependencies are declared in each package and enforced by a test that fails the build when one module reaches into another. Each module owns its own PostgreSQL schema, with no foreign keys across schemas.</p>
+            <p>When the ledger needs something only identity knows, such as the masked name of an account holder or a user's current security version, the platform module declares a small interface and identity implements it. The dependency points the right way, and the ledger never imports identity.</p>
+            <div role="group" class="operational-scope" data-reveal aria-label="Decisions on record"><p class="artifact-label">14 architecture decision records, among them</p><ul><li><strong>Runtime</strong><span>Spring MVC on Java 21 virtual threads, rather than a reactive stack</span></li><li><strong>Persistence</strong><span>JPA for the domain, native SQL for analysis, hand-written Flyway migrations; Hibernate only validates the schema</span></li><li><strong>One data store</strong><span>PostgreSQL for ledger, sessions, audit, outbox and analytics alike</span></li><li><strong>Real database in tests</strong><span>Integration tests run against PostgreSQL in a container, never a substitute</span></li></ul></div>
+            <p>The spending analysis is a projection, not a query over the ledger. A transfer writes its event in its own transaction (a transactional outbox); a worker delivers each event with <code>FOR UPDATE SKIP LOCKED</code>, at least once, and the projection is keyed by ledger entry, so applying an event twice changes nothing.</p>
+            <figure class="evidence-media" data-reveal><picture><source srcset="{{projects.flowbank.analyticsImageAvif}}" type="image/avif" /><source srcset="{{projects.flowbank.analyticsImageWebp}}" type="image/webp" /><img src="{{projects.flowbank.analyticsImage}}" width="{{projects.flowbank.analyticsImageWidth}}" height="{{projects.flowbank.analyticsImageHeight}}" loading="lazy" decoding="async" alt="{{projects.flowbank.analyticsImageAlt}}" /></picture><figcaption>{{projects.flowbank.analyticsImageCaption}}</figcaption></figure>
+          </section>
+
+          <section id="ledger" class="case-section" aria-labelledby="ledger-title">
+            <p class="case-section-no">03 / Ledger &amp; concurrency</p>
+            <h2 id="ledger-title">Double-entry, enforced by the database as well as the code.</h2>
+            <p>Every transfer writes two ledger entries, a debit and a credit, in one transaction. Amounts are integers in minor units with overflow-checked arithmetic, so nothing is ever rounded. The database is the last line of defence rather than an afterthought:</p>
+            <dl class="constraint-ledger" data-reveal><div><dt>Balanced</dt><dd>A deferred constraint trigger, checked at commit, rejects any transfer whose debits and credits differ.</dd></div><div><dt>Append-only</dt><dd>The application's database role can insert ledger rows but never update or delete them; on accounts it may update only the balance, sequence and status columns.</dd></div><div><dt>Sequenced</dt><dd>Each entry carries its account's next sequence number, unique per account, and the balance after it. The statement reads both directly.</dd></div><div><dt>Shaped</dt><dd>Check constraints cover amounts, currencies, account-number format, minimum balances and closed accounts; composite keys tie each entry to its account's currency.</dd></div></dl>
+            <div role="group" class="case-flow" data-reveal aria-label="One transfer from the click to the commit">
+              <p class="artifact-label">technical artefact · one transfer, from click to commit</p>
+              <ol class="case-flow-track">
+                <li><span class="case-flow-no">01</span><strong>Details</strong><em>The amount is parsed without floating point; the account number is checked before sending</em></li>
+                <li><span class="case-flow-no">02</span><strong>Key</strong><em>The browser creates an idempotency key and keeps it until it knows the outcome</em></li>
+                <li><span class="case-flow-no">03</span><strong>Queue on the key</strong><em>A transaction-scoped advisory lock on user and key: identical requests wait for each other</em></li>
+                <li><span class="case-flow-no">04</span><strong>Lock in order</strong><em>Both accounts are locked FOR UPDATE, always in the same order</em></li>
+                <li><span class="case-flow-no">05</span><strong>Post</strong><em>Debit and credit written; balances and sequence numbers updated</em></li>
+                <li><span class="case-flow-no">06</span><strong>Same transaction</strong><em>The audit entry and the outbox event commit with the transfer, or not at all</em></li>
+                <li class="case-flow-gate"><span class="case-flow-no">07</span><strong>Commit</strong><em>The deferred trigger checks that the transfer balances</em></li>
+                <li><span class="case-flow-no">08</span><strong>Replay</strong><em>A retry with the same key gets the stored response; the same key with a different body is refused</em></li>
+              </ol>
+            </div>
+            <figure class="evidence-media" data-reveal><picture><source srcset="{{projects.flowbank.statementImageAvif}}" type="image/avif" /><source srcset="{{projects.flowbank.statementImageWebp}}" type="image/webp" /><img src="{{projects.flowbank.statementImage}}" width="{{projects.flowbank.statementImageWidth}}" height="{{projects.flowbank.statementImageHeight}}" loading="lazy" decoding="async" alt="{{projects.flowbank.statementImageAlt}}" /></picture><figcaption>{{projects.flowbank.statementImageCaption}}</figcaption></figure>
+            <article class="decision-record" aria-labelledby="flowbank-decision-title" data-reveal>
+              <p class="decision-id">decision 01</p>
+              <h3 id="flowbank-decision-title">Lock accounts in one global order</h3>
+              <dl><div><dt>Constraint</dt><dd>Two transfers between the same accounts in opposite directions each lock one account and then wait for the other: a deadlock.</dd></div><div><dt>Decision</dt><dd>One component decides the lock order for every code path that locks more than one account, and SQL never decides it with an ORDER BY.</dd></div><div><dt>Result</dt><dd>1,800 crossed transfers between two accounts in the load test, with no deadlock.</dd></div><div><dt>Trade-off</dt><dd>Writers to one busy account queue behind each other, and while they wait they hold database connections.</dd></div></dl>
+            </article>
+            <p>That trade-off is the main open issue the load test found: transactions queuing on a hot account's lock keep their connections, so a burst on one account slows unrelated ones. A larger pool made it worse. A limit on concurrent writes is the chosen direction; it is designed, not implemented.</p>
+          </section>
+
+          <section id="security" class="case-section" aria-labelledby="security-title">
+            <p class="case-section-no">04 / Sessions &amp; security</p>
+            <h2 id="security-title">Money moves only on a session the server still trusts.</h2>
+            <p>Access tokens are short-lived and held only in memory; the refresh token lives in an HttpOnly cookie and rotates on every use. Presenting a refresh token that has already been used is treated as a stolen token: the whole session family is revoked, and the revocation is audited in the same transaction.</p>
+            <dl class="constraint-ledger" data-reveal><div><dt>Passwords</dt><dd>Argon2id with OWASP-recommended parameters. Five failed sign-ins lock the account, counted in one atomic update.</dd></div><div><dt>Current authorization</dt><dd>A token issued before a password, role or status change can still read for up to ten minutes, but it can no longer move money.</dd></div><div><dt>Endpoint matrix</dt><dd>Every registered endpoint must be classified in a test. An unclassified one fails the build, and every write requires current authorization.</dd></div><div><dt>Audit</dt><dd>Written in the same transaction as the action it records, in a table that is append-only by privilege.</dd></div><div><dt>Masked absence</dt><dd>Someone else's account and a missing one get the same 404, the same work and the same audit entry.</dd></div><div><dt>Payee check</dt><dd>The payee is confirmed by first name and initial only, before anything is sent.</dd></div></dl>
+            <figure class="evidence-media" data-reveal><picture><source srcset="{{projects.flowbank.transferImageAvif}}" type="image/avif" /><source srcset="{{projects.flowbank.transferImageWebp}}" type="image/webp" /><img src="{{projects.flowbank.transferImage}}" width="{{projects.flowbank.transferImageWidth}}" height="{{projects.flowbank.transferImageHeight}}" loading="lazy" decoding="async" alt="{{projects.flowbank.transferImageAlt}}" /></picture><figcaption>{{projects.flowbank.transferImageCaption}}</figcaption></figure>
+            <p>Two details came from testing the interface in a real browser. A double click on the confirmation sends exactly one request, because the guard runs before React re-renders. And when no attempt gets an answer, the page asks the bank for the outcome of that key and shows the saved receipt: it never reports a failure it cannot know, and it never sends twice.</p>
+          </section>
+
+          <section id="testing" class="case-section" aria-labelledby="testing-title">
+            <p class="case-section-no">05 / Testing &amp; load</p>
+            <h2 id="testing-title">Tests that force the race, and load tests that audit the books.</h2>
+            <p>The backend suite runs 144 unit tests and 211 integration tests with <code>./mvnw verify</code>, the integration tests against a real PostgreSQL container. Concurrency tests do not hope for a race: they hold a lock, wait until the database shows the other transaction blocked, and only then release, so each interleaving is forced. The frontend has 38 Vitest tests and end-to-end scenarios in Playwright with Chromium.</p>
+            <p>Load tests use k6 in an open model, against a separate database that refuses to run unless it is marked for performance testing. After every scenario, twelve accounting checks run in one snapshot, the k6 counts are compared with the database, and the application's reconciliation has to pass. A Prometheus and Grafana profile reads the backend's metrics from a separate management port, with dashboards generated from code rather than edited by hand, and when the connection pool runs dry the API answers 503 with Retry-After instead of failing with a 500.</p>
+            <dl class="constraint-ledger" data-reveal><div><dt>Double spend</dt><dd>600 concurrent €1 withdrawals from an account holding €100: exactly 100 accepted, the rest refused for insufficient funds.</dd></div><div><dt>Idempotency</dt><dd>1,045 keys, each sent nine times, eight of them in parallel: 1,045 transfers in the database.</dd></div><div><dt>Deadlocks</dt><dd>1,800 crossed transfers between two accounts: none.</dd></div><div><dt>Latency</dt><dd>p95 of 264 ms for a transfer with 50 virtual users in a closed loop, at about 271 transfers per second.</dd></div><div><dt>Volume</dt><dd>All twelve accounting checks at zero on 5.08 million ledger entries.</dd></div></dl>
+            <div role="group" class="technical-artifact permission-artifact" data-reveal aria-label="Measurement conditions">
+              <p class="artifact-label">conditions · read every figure above with these</p>
+              <ol><li><span>Machine</span><strong>One laptop: AMD Ryzen AI 7 350, 31 GB RAM</strong></li><li><span>Shared</span><strong>k6, the JVM and PostgreSQL 18 in Docker Desktop on the same CPU</strong></li><li><span>Runs</span><strong>One run per configuration, so variance is not estimated</strong></li><li><span>Meaning</span><strong>Correctness under contention and relative behaviour, not production capacity</strong></li></ol>
+            </div>
+          </section>
+
+          <section id="boundaries" class="case-section" aria-labelledby="boundaries-title">
+            <p class="case-section-no">06 / Boundaries</p>
+            <h2 id="boundaries-title">What this project does not claim.</h2>
+            <dl class="constraint-ledger" data-reveal><div><dt>Money</dt><dd>None. A simulated bank built for learning: no real accounts, no payment network, no regulated service.</dd></div><div><dt>Deployment</dt><dd>Runs locally with Docker Compose. There is no hosted instance.</dd></div><div><dt>Performance</dt><dd>Figures from one laptop and one run each: they are not production capacity.</dd></div><div><dt>Open issues</dt><dd>A hot account can exhaust the connection pool, and the analytics backfill rereads the whole ledger at start-up: about 71 minutes at 5 million entries.</dd></div></dl>
+            <div class="outcome-summary" data-reveal><div><p class="artifact-label">what it demonstrates</p><p>Transactional design in Java and Spring Boot: a ledger the database itself keeps balanced, idempotency and lock ordering that hold under concurrency, rotating sessions with reuse detection, and measurement used to find the next problem to solve.</p></div><div><p class="artifact-label">what it is tested with</p><p>JUnit unit and integration tests against a real PostgreSQL container, an architecture test for module boundaries, Vitest and Playwright on the frontend, and k6 load scenarios followed by accounting checks.</p></div></div>
+          </section>
+        </article>
+      </div>
+
+      {{> case-end flowbank}}
+    </main>
+    {{> footer}}
+  </body>
+</html>

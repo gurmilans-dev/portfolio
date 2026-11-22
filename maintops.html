@@ -26,10 +26,10 @@
       <section id="top" class="case-hero" aria-labelledby="case-title">
         <div class="frame case-hero-inner">
           <nav class="breadcrumbs" aria-label="Breadcrumb"><a href="index.html">Home</a><span aria-hidden="true">/</span><a href="index.html#work">Work</a><span aria-hidden="true">/</span><span aria-current="page">MaintOps</span></nav>
-          <p class="case-eyebrow"><span class="case-index">01 / MaintOps</span><span>Maintenance operations platform</span></p>
+          <p class="case-eyebrow">{{> case-index maintops}}<span>Maintenance operations platform</span></p>
           <h1 id="case-title">Who owns this fault, and is it late?</h1>
           <p class="case-lead">MaintOps handles maintenance work for a single organization: a requester reports a fault, a supervisor triages and assigns it, a technician does the work, and SLA cycles record whether the targets were met. The source is public; there is no hosted instance.</p>
-          <dl class="case-facts"><div><dt>Context</dt><dd>Single organization</dd></div><div><dt>Role</dt><dd>End-to-end developer</dd></div><div><dt>Stack</dt><dd>React · Fastify · MySQL</dd></div><div><dt>Status</dt><dd><span class="badge badge-public">{{projects.maintops.status}}</span>{{> github-link maintops}}</dd></div></dl>
+          <dl class="case-facts"><div><dt>Context</dt><dd>Single organization</dd></div><div><dt>Role</dt><dd>End-to-end developer</dd></div><div><dt>Stack</dt><dd>React · Fastify · MySQL</dd></div><div><dt>Status</dt><dd>{{> case-status maintops}}</dd></div></dl>
         </div>
       </section>
 

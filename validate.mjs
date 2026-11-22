@@ -1,7 +1,7 @@
 import { promises as fs } from "node:fs";
 import path from "node:path";
 import { createHash } from "node:crypto";
-import { siteConfig, featuredProjects, archiveProjects, caseStudyProjects } from "./site.config.mjs";
+import { siteConfig, featuredProjects, alsoProjects, caseStudyProjects } from "./site.config.mjs";
 import { countHtmlWords } from "./scripts/html.mjs";
 
 const root = path.resolve("dist");
@@ -127,25 +127,33 @@ for (const lane of ["req", "res"]) {
   if (count !== siteConfig.layers.length - 1) fail(`homepage: FIG. 00 needs one ${lane} lane per hop from the interface to the data layer, found ${count}`);
 }
 
-// Workbench order has one source of truth: siteConfig.projects[].order, and .archive for
-// the "Also" files. The index, the case files and the stack must all agree with it.
+// Workbench order has one source of truth: siteConfig.projects[].order, and .also for the
+// "Also built" register. The index, the register, the case files and the stack must agree.
 const configuredKeys = featuredProjects.map((project) => project.key).join(",");
-const archiveKeys = archiveProjects.map((project) => project.key).join(",");
+const alsoConfigKeys = alsoProjects.map((project) => project.key).join(",");
 const tabKeys = [...home.matchAll(/data-wb-tab="([^"]+)"/g)].map((match) => match[1]).join(",");
 const alsoKeys = [...home.matchAll(/data-wb-also="([^"]+)"/g)].map((match) => match[1]).join(",");
 const fileKeys = [...home.matchAll(/<section id="work-([^"]+)" class="system-file[^"]*" data-system="([^"]+)"/g)]
   .map((match) => (match[1] === match[2] ? match[1] : `MISMATCH:${match[1]}`)).join(",");
 if (tabKeys !== configuredKeys) fail(`homepage: index order is [${tabKeys}], config order is [${configuredKeys}]`);
-if (alsoKeys !== archiveKeys) fail(`homepage: "Also" order is [${alsoKeys}], config order is [${archiveKeys}]`);
-if (fileKeys !== `${configuredKeys},${archiveKeys}`) fail(`homepage: case files are [${fileKeys}], expected [${configuredKeys},${archiveKeys}]`);
-for (const project of [...featuredProjects, ...archiveProjects]) {
+if (alsoKeys !== alsoConfigKeys) fail(`homepage: "Also built" order is [${alsoKeys}], config order is [${alsoConfigKeys}]`);
+if (!home.includes('<section id="also-built" class="also-built"')) fail("homepage: the Also built register is missing");
+// "Open case file" and "Read the case study" read as the same thing; the two ways in are named for what they are.
+if (/Open case file|Read the case study/.test(home.slice(home.indexOf('<section id="work"'), home.indexOf('<section id="experience"')))) fail("homepage: an action still uses the old case file / case study labels");
+if (fileKeys !== `${configuredKeys},${alsoConfigKeys}`) fail(`homepage: case files are [${fileKeys}], expected [${configuredKeys},${alsoConfigKeys}]`);
+for (const project of [...featuredProjects, ...alsoProjects]) {
   if (!home.includes(`>${project.shortTitle}<`)) fail(`homepage: project title missing: ${project.shortTitle}`);
-  if (!home.includes(`data-open-file="${project.key}" hidden`)) fail(`homepage: ${project.key} lacks a progressive "Open case file" control`);
-  // Every case file is inspectable: a case study on this site, a public repository, or —
-  // for confidential and private work only — a "Not claimed" line that says it is private.
-  const evidenceHref = project.caseStudy || project.repository;
-  if (evidenceHref && !home.includes(`href="${evidenceHref}"`)) fail(`homepage: ${project.key} does not link to its case study or repository`);
-  if (!evidenceHref && !/private|confidential/i.test(project.system?.boundary || "")) fail(`${project.key}: offers neither a case study, a repository, nor a stated reason`);
+  // A quick look for every system: the six from the explorer panel, the rest from their register row.
+  const quickLook = project.order ? `data-open-file="${project.key}" hidden` : `href="#work-${project.key}" data-wb-also="${project.key}">Quick look`;
+  if (!home.includes(quickLook)) fail(`homepage: ${project.key} lacks a progressive "Quick look" control`);
+  // Every case file is inspectable: a case study on this site, a public repository or store
+  // listing, or — for private and confidential work — a source line that says so.
+  for (const href of [project.caseStudy, project.repository, project.store].filter(Boolean)) {
+    if (!home.includes(`href="${href.replaceAll("&", "&amp;")}"`) && !home.includes(`href="${href}"`)) fail(`homepage: ${project.key} does not link to ${href}`);
+  }
+  const source = project.repository ? "Public on GitHub" : project.sourceNote || "Private repository";
+  if (!home.includes(`<dt>Source</dt><dd>${source}</dd>`)) fail(`homepage: ${project.key} does not state its source (${source})`);
+  if (!project.caseStudy && !project.repository && !project.store && !/^(Private|Confidential)/.test(source)) fail(`${project.key}: offers neither a case study, a public link, nor a stated reason`);
   if (project.caseStudy && !pages.includes(project.caseStudy)) fail(`${project.key}: case study ${project.caseStudy} is not a registered page`);
   if (!project.system?.evidence || !project.system?.boundary) fail(`${project.key}: a case file must state its evidence and what it does not claim`);
 }
@@ -216,13 +224,34 @@ if ((opssemble.match(/class="technical-artifact\b/g) || []).length !== 1) fail("
 for (const required of [
   "Server-side role boundary", "owner, coordinator, operator, viewer", "SHA-256", "HttpOnly",
   "no critical blockers", "university final project", "AI assistance", "revocable",
-  "Active development", "core workflow implemented"
+  "controlled pilot", "Server-Sent Events", "Not launched publicly"
 ]) {
   if (!opssemble.includes(required)) fail(`opssemble.html: missing implemented-behaviour evidence: ${required}`);
 }
-// Tesina framing must stay honest: no production/scale theatre.
-if (/production-ready|enterprise-grade|battle-tested|% ?uptime|99\.\d/i.test(opssemble)) fail("opssemble.html: unsupported production or scale claim");
-if (!opssemble.includes("not a commercial production SaaS")) fail("opssemble.html: missing explicit tesina scope statement");
+// A product being prepared for a pilot, not a launched service: no production or scale theatre.
+if (/production-ready|enterprise-grade|battle-tested|% ?uptime|99\.\d|\d+[,\d]* (active )?users|customers/i.test(opssemble)) fail("opssemble.html: unsupported production, scale or usage claim");
+
+// FlowBank One: a simulated bank. It must say so, and its load figures must carry their conditions.
+const flowbank = htmlByFile.get("flowbank-one.html");
+for (const required of ["No real money", "simulated", "not production capacity", "one laptop", "./mvnw verify", "PostgreSQL container", "exactly 100", "1,045", "open issue"]) {
+  if (!flowbank.includes(required)) fail(`flowbank-one.html: missing verified evidence or its conditions: ${required}`);
+}
+if (/licensed bank|regulated bank|production-ready|in production use|real customers/i.test(flowbank)) fail("flowbank-one.html: implies a real or production banking service");
+// ProcBeacon: packaged as a local, unsigned preview but not distributed; shown through fixture renders.
+const procbeacon = htmlByFile.get("procbeacon.html");
+for (const required of ["fixture", "438", "Release", "creation time", "not distributed", "unsigned", "IsProcessCritical", "TerminateProcess"]) {
+  if (!procbeacon.includes(required)) fail(`procbeacon.html: missing verified evidence: ${required}`);
+}
+if (/available (on|in) the Microsoft Store|download (it|ProcBeacon)|installer is available/i.test(procbeacon)) fail("procbeacon.html: implies a distributed release that does not exist");
+
+// Only configured public repositories may be linked: a private repository URL can never
+// appear on the site, whatever page it is typed into.
+const publicRepositories = new Set([siteConfig.profile.github, ...Object.values(siteConfig.projects).map((project) => project.repository).filter(Boolean)]);
+for (const [file, html] of htmlByFile) {
+  for (const match of html.matchAll(/href="(https:\/\/github\.com\/[^"]+)"/g)) {
+    if (!publicRepositories.has(match[1].replace(/\/$/, ""))) fail(`${file}: links a GitHub URL that is not a configured public repository: ${match[1]}`);
+  }
+}
 if ((htmlByFile.get("gurmat-saanj.html").match(/data-case-variant="gurmat"/g) || []).length !== 1) fail("gurmat-saanj.html: expected one Gurmat immersive live-system sequence");
 if (htmlByFile.get("gurmat-saanj.html").includes("data-session-model")) fail("gurmat-saanj.html: old interactive state model remains");
 if ((htmlByFile.get("gurmat-saanj.html").match(/class="technical-artifact\b/g) || []).length !== 0) fail("gurmat-saanj.html: redundant technical artefact remains beside the immersive sequence");
@@ -281,13 +310,17 @@ if (!notFound.includes("data-menu-toggle") || !notFound.includes("data-nav") || 
 
 // Every configured PNG is checked against the width/height the HTML declares for it,
 // so a newly captured screenshot cannot ship with the wrong intrinsic size and shift
-// the layout. Derived from config: adding a capture adds its check automatically.
+// the layout. Derived from config: any <slot>Image with its <slot>Image{Avif,Webp,Width,Height}
+// on any project, featured or not, is checked automatically.
 const declaredImages = [];
-for (const project of featuredProjects) {
-  for (const slot of ["primary", "secondary", "mobile", "transfer"]) {
-    const file = project[`${slot}Image`];
-    if (!file) continue;
+for (const project of [...featuredProjects, ...alsoProjects]) {
+  for (const [field, file] of Object.entries(project)) {
+    const slot = /^([a-z]+)Image$/.exec(field)?.[1];
+    if (!slot || !file) continue;
     declaredImages.push([file, project[`${slot}ImageWidth`], project[`${slot}ImageHeight`], `${project.key}.${slot}`]);
+    for (const variant of ["Avif", "Webp"]) if (!project[`${slot}Image${variant}`]) fail(`${project.key}.${slot}: ${variant} variant is not configured`);
+    // Gurmat Saanj writes its secondary alt texts in the page beside their hotspots.
+    if (project.key !== "gurmat" && !project[`${slot}ImageAlt`]) fail(`${project.key}.${slot}: no alt text is configured`);
   }
 }
 if (!declaredImages.length) fail("config: no project imagery is configured at all");
@@ -345,7 +378,8 @@ for (const project of caseStudyProjects) {
   const html = htmlByFile.get(project.caseStudy);
   if ((html.match(/data-cut/g) || []).length !== 1) fail(`${project.caseStudy}: expected one layer-cut band`);
   if (!html.includes('class="frame case-pager"')) fail(`${project.caseStudy}: project pagination missing`);
-  if (!html.includes(`>${String(project.order).padStart(2, "0")} / ${project.shortTitle}<`)) fail(`${project.caseStudy}: case index does not match the configured order`);
+  const index = typeof project.order === "number" ? `${String(project.order).padStart(2, "0")} / ${project.shortTitle}` : `Also built / ${project.shortTitle}`;
+  if (!html.includes(`>${index}<`)) fail(`${project.caseStudy}: case index does not match the configured order (${index})`);
 }
 if (!/\.media-dialog-hotspot\s*\{[\s\S]*?width:\s*44px;[\s\S]*?height:\s*44px;/m.test(productionCss)) fail("accessibility: dialog hotspot targets must remain at least 44px square");
 if (!/\.media-hotspot\s*\{[\s\S]*?width:\s*44px;[\s\S]*?height:\s*44px;/m.test(productionCss)) fail("accessibility: screenshot hotspot targets must remain at least 44px square");

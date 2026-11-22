@@ -8,7 +8,7 @@ const ROOT = path.resolve(".");
 const OUT = path.join(ROOT, "dist");
 const HTML_FILES = siteConfig.pages.map((page) => page.file);
 
-/* Project records carry ~20 fields each across eight projects, so the projects branch
+/* Project records carry ~20 fields each across thirteen projects, so the projects branch
    — and only that branch — is flattened into dotted template keys. Repeated markup
    (site chrome, the workbench, case files, layer cuts, pagination) is rendered by the
    partials in scripts/components.mjs from the same config, so it cannot drift from it.

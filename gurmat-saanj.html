@@ -26,10 +26,10 @@
       <section id="top" class="case-hero" aria-labelledby="case-title">
         <div class="frame case-hero-inner">
           <nav class="breadcrumbs" aria-label="Breadcrumb"><a href="index.html">Home</a><span aria-hidden="true">/</span><a href="index.html#work">Work</a><span aria-hidden="true">/</span><span aria-current="page">Gurmat Saanj</span></nav>
-          <p class="case-eyebrow"><span class="case-index">03 / Gurmat Saanj</span><span>Deployed community web application</span></p>
+          <p class="case-eyebrow">{{> case-index gurmat}}<span>Deployed community web application</span></p>
           <h1 id="case-title">Following live Gurbani recitation, line by line.</h1>
           <p class="case-lead">Built for live use at a local Gurdwara, Gurmat Saanj follows Punjabi recitation while one editor coordinates the projector and Sangat viewers read on their own devices—behaviour ordinary presentation software could not provide.</p>
-          <dl class="case-facts"><div><dt>Context</dt><dd>Community application</dd></div><div><dt>Role</dt><dd>End-to-end developer</dd></div><div><dt>Access</dt><dd>QR code or session code</dd></div><div><dt>Devices</dt><dd>Multiple viewers · one editor</dd></div><div><dt>Source</dt><dd>BaniDB</dd></div><div><dt>Status</dt><dd><span class="badge badge-deployed">{{projects.gurmat.status}}</span>{{> github-link gurmat}}</dd></div></dl>
+          <dl class="case-facts"><div><dt>Context</dt><dd>Community application</dd></div><div><dt>Role</dt><dd>End-to-end developer</dd></div><div><dt>Access</dt><dd>QR code or session code</dd></div><div><dt>Devices</dt><dd>Multiple viewers · one editor</dd></div><div><dt>Source</dt><dd>BaniDB</dd></div><div><dt>Status</dt><dd>{{> case-status gurmat}}</dd></div></dl>
           {{#if projects.gurmat.demo}}<div class="text-links"><a class="text-action" href="{{projects.gurmat.demo}}" target="_blank" rel="noopener noreferrer">Watch demo ↗</a></div>{{/if}}
         </div>
       </section>
@@ -37,12 +37,13 @@
       {{> case-cut gurmat}}
 
       <div class="frame case-layout">
-        <aside class="case-aside"><details class="case-toc" open data-toc><summary>On this page</summary><nav aria-label="On this page"><a href="#overview">Product</a><a href="#pipeline">Live system</a><a href="#decisions">Application decision</a><a href="#boundaries">Limitations</a><a href="#constraints">Evaluation</a><a href="#lessons">Outcome</a></nav></details></aside>
+        <aside class="case-aside"><details class="case-toc" open data-toc><summary>On this page</summary><nav aria-label="On this page"><a href="#overview">Product</a><a href="#pipeline">Live system</a><a href="#decisions">Application decision</a><a href="#pairing">Pairing &amp; control</a><a href="#boundaries">Limitations</a><a href="#constraints">Evaluation</a><a href="#lessons">Outcome</a></nav></details></aside>
         <article class="case-content">
           <section id="overview" class="case-section" aria-labelledby="overview-title">
             <p class="case-section-no">01 / Product</p>
             <h2 id="overview-title">One live line, read across the room.</h2>
             <p>I built the React and JavaScript interface, Node.js and Express API, matching flow, and multi-device session. Participants join by QR or session code; phones follow the projector without becoming extra control surfaces.</p>
+            <p>Two live modes share one tracker. Kirtan follows a sung Shabad line by line; Katha follows a speaker across nearby Shabads or a whole Ang, and holds while they explain. Away from the microphone, a Shabad can be found by first letters, Ang number or meaning, with a multilingual embedding model running in the browser over a bundled index. Bani mode, the daily Hukamnama and offline session packs sit beside the readers.</p>
             {{#if projects.gurmat.primaryImage}}<figure class="annotated-media evidence-media evidence-media-projector" data-reveal data-hotspot-media>
               <div class="media-annotated-frame">
               <a class="media-open" href="{{projects.gurmat.primaryImage}}" target="_blank" rel="noopener noreferrer" aria-label="View projector evidence: projector output screenshot" data-media-open data-media-src="{{projects.gurmat.primaryImage}}" data-media-caption="Authentic projector output: the shared line, transliteration, and English translation remain legible across the room.">
@@ -96,18 +97,25 @@
             </article>
           </section>
 
+          <section id="pairing" class="case-section" aria-labelledby="pairing-title">
+            <p class="case-section-no">04 / Pairing &amp; control</p>
+            <h2 id="pairing-title">A phone controls the projector only with a credential the server issued to it.</h2>
+            <p>The remote controller, Sangat View and the laptop presenter view were hardened together. Each way of joining grants exactly one level of access, and every command from a phone carries a token the server minted for that device.</p>
+            <dl class="constraint-ledger" data-reveal><div><dt>Trusted device</dt><dd>Scanning the host's QR code enrolls a trusted device; the link expires after five minutes. The first trusted device takes control when it is free, and later ones request a handoff.</dd></div><div><dt>Typed code</dt><dd>A four-digit code enrolls a view-only device. Codes are random, expire, rotate on their own and are throttled per source; control waits for the host or current controller to allow it.</dd></div><div><dt>Device token</dt><dd>Each paired phone authenticates with its own token, so a rotating code never disconnects it.</dd></div><div><dt>Host stream</dt><dd>The host's command stream opens with a single-use ticket valid for 30 seconds, so the host token never appears in a URL.</dd></div><div><dt>Revocation</dt><dd>New code revokes every paired device and Sangat View link, and open Sangat View pages say that their link has expired.</dd></div><div><dt>Presenter view</dt><dd>The laptop keeps the full reader while a separate output window fills the projector. It is placed on that display where the browser allows it, and reused across readers.</dd></div></dl>
+          </section>
+
           <section id="boundaries" class="case-section" aria-labelledby="boundaries-title">
-            <p class="case-section-no">04 / Limitations</p><h2 id="boundaries-title">What the current implementation cannot guarantee</h2>
-            <dl class="constraint-ledger" data-reveal><div><dt>Browser dependency</dt><dd>Speech recognition availability and behaviour are platform-dependent.</dd></div><div><dt>Room conditions</dt><dd>Noise, overlapping speech, and pronunciation weaken transcripts.</dd></div><div><dt>Matching limit</dt><dd>Similar lines and language variation remain ambiguous; a score is not proof.</dd></div><div><dt>Display control</dt><dd>One approved editor operates the projector; viewers cannot override it.</dd></div></dl><aside class="public-evidence-note"><p class="annotation-label">API controls</p><p>Helmet, CORS, rate limiting, and input validation are implemented controls, not a security guarantee.</p></aside>
+            <p class="case-section-no">05 / Limitations</p><h2 id="boundaries-title">What the current implementation cannot guarantee</h2>
+            <dl class="constraint-ledger" data-reveal><div><dt>Browser dependency</dt><dd>Speech recognition availability and behaviour are platform-dependent.</dd></div><div><dt>Room conditions</dt><dd>Noise, overlapping speech, and pronunciation weaken transcripts.</dd></div><div><dt>Matching limit</dt><dd>Similar lines and language variation remain ambiguous; a score is not proof.</dd></div><div><dt>Display control</dt><dd>One approved editor operates the projector; viewers cannot override it.</dd></div><div><dt>Pairing state</dt><dd>Pairing lives in the server's memory: a restart ends it and invalidates Sangat View links.</dd></div><div><dt>Operating context</dt><dd>A working setup spans microphone permissions, browser support, the Node service, BaniDB, projector output, and connected devices.</dd></div></dl><aside class="public-evidence-note"><p class="annotation-label">API controls</p><p>Helmet, CORS, rate limiting, input validation, and authenticated remote commands are implemented controls, not a security guarantee.</p></aside>
           </section>
 
           <section id="constraints" class="case-section" aria-labelledby="constraints-title">
-            <p class="case-section-no">05 / Evaluation</p><h2 id="constraints-title">What has not been measured yet</h2>
-            <div class="evidence-next-step" data-reveal><div><p class="artifact-label">evaluation</p><p>No accuracy, latency, threshold, or scalability figure is published without controlled measurement. A reproducible set across speakers, devices, room conditions, and similar lines would make changes comparable.</p></div><div><p class="artifact-label">operating context</p><p>A working setup spans microphone permissions, browser support, the Node service, BaniDB, projector output, and connected devices.</p></div></div>
+            <p class="case-section-no">06 / Evaluation</p><h2 id="constraints-title">What is tested, and what is not measured yet</h2>
+            <div class="evidence-next-step" data-reveal><div><p class="artifact-label">recognition accuracy</p><p>Still unmeasured: no authentic recording has yet been scored against independently verified, synchronized labels. The tooling for it exists — opt-in traces of matching and navigation decisions, audio-and-trace capture bundles, a local review page, and an evaluator that scores a trace against reviewed labels. Synthetic scores check that tooling, not live accuracy.</p></div><div><p class="artifact-label">automated tests</p><p>447 tests pass (22 November 2026): 125 backend tests, including remote authentication, stream tickets, Sangat View revocation, device enrollment and suggestion ranking, all run without calling BaniDB, and 322 frontend tests covering recognition, tracking, capture, evaluation and replay.</p></div></div>
           </section>
 
           <section id="lessons" class="case-section" aria-labelledby="lessons-title">
-            <p class="case-section-no">06 / Outcome</p><h2 id="lessons-title">Built for live use, not a demo</h2>
+            <p class="case-section-no">07 / Outcome</p><h2 id="lessons-title">Built for live use, not a demo</h2>
             <div class="outcome-summary outcome-summary-blue" data-reveal><div><p class="artifact-label">live outcome</p><p>Gurmat Saanj is in active use at a local Gurdwara, coordinating a shared projector with connected personal reading.</p></div><div><p class="artifact-label">product lesson</p><p>Probabilistic recognition narrows ambiguity; known text, shared state, personal presentation, and editor approval remain explicit application behaviour.</p></div></div>
           </section>
         </article>

@@ -5,22 +5,22 @@
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
     <meta name="theme-color" content="#0c0d0f" />
     <script>(function (d) { var t; try { t = localStorage.getItem("portfolio-theme"); } catch (e) {} if (t !== "light" && t !== "dark") t = matchMedia("(prefers-color-scheme: light)").matches ? "light" : "dark"; d.dataset.theme = t; d.classList.add("js"); if (t === "light") document.querySelector('meta[name="theme-color"]').content = "#f4f4f1"; })(document.documentElement);</script>
-    <title>{{profile.name}} - Full-Stack Web Developer &amp; Software Engineer</title>
-    <meta name="description" content="Full-stack developer in Modena, Italy, building React interfaces, Node.js APIs, relational data and production business software. Six systems, four layers." />
+    <title>{{profile.name}} - Software Engineer &amp; Full-Stack Developer</title>
+    <meta name="description" content="Software engineer in Modena, Italy: production business software, React and Node.js applications, Java/Spring Boot and C#/.NET systems, and relational data." />
     <meta name="author" content="{{profile.name}}" />
     <meta name="robots" content="index, follow" />
     <link rel="canonical" href="{{profile.domain}}/" />
     <meta property="og:type" content="website" />
     <meta property="og:url" content="{{profile.domain}}/" />
-    <meta property="og:title" content="{{profile.name}} - Full-Stack Web Developer &amp; Software Engineer" />
-    <meta property="og:description" content="Responsive product interfaces, backend APIs, relational data, and software for real operational needs." />
+    <meta property="og:title" content="{{profile.name}} - Software Engineer &amp; Full-Stack Developer" />
+    <meta property="og:description" content="Production business software, full-stack applications, transactional backends and developer tools, each shown with its evidence." />
     <meta property="og:image" content="{{profile.domain}}/assets/social-preview.png" />
     <meta property="og:image:width" content="1200" />
     <meta property="og:image:height" content="630" />
-    <meta property="og:image:alt" content="{{profile.name}} - Full-Stack Web Developer &amp; Software Engineer" />
+    <meta property="og:image:alt" content="{{profile.name}} - Software Engineer &amp; Full-Stack Developer" />
     <meta name="twitter:card" content="summary_large_image" />
-    <meta name="twitter:title" content="{{profile.name}} - Full-Stack Web Developer &amp; Software Engineer" />
-    <meta name="twitter:description" content="Responsive product interfaces, backend APIs, relational data, and software for real operational needs." />
+    <meta name="twitter:title" content="{{profile.name}} - Software Engineer &amp; Full-Stack Developer" />
+    <meta name="twitter:description" content="Production business software, full-stack applications, transactional backends and developer tools, each shown with its evidence." />
     <meta name="twitter:image" content="{{profile.domain}}/assets/social-preview.png" />
     <link rel="preload" href="assets/fonts/instrument-sans-latin.woff2" as="font" type="font/woff2" crossorigin />
     <link rel="preload" href="assets/fonts/jetbrains-mono-latin.woff2" as="font" type="font/woff2" crossorigin />
@@ -45,7 +45,7 @@
             <h1 id="hero-title">Full-stack developer and software engineer building for real operational needs.</h1>
           </div>
           <div class="hero-copy">
-            <p class="hero-lead">I work on software people depend on to get something done — internal business platforms, operations tooling, and applications built for one specific community.</p>
+            <p class="hero-lead">I build software people depend on to get something done — internal business platforms, operations and developer tooling, and applications built for one specific community.</p>
             <div class="hero-actions">
               <a class="btn btn-primary" href="#work">View work<span aria-hidden="true">↓</span></a>
               <a class="btn btn-line" href="{{profile.resume}}" target="_blank" rel="noopener noreferrer" download>Download CV<span class="sr-only"> (PDF)</span><span aria-hidden="true">↓</span></a>
@@ -72,7 +72,7 @@
                   <span class="plate-wire" aria-hidden="true"><span class="wire-tag">SQL</span><span class="lane lane-req"></span><span class="lane lane-res"></span></span>
                   <p class="plate-top"><span class="plate-code">L2 / Data</span><span class="plate-go" aria-hidden="true">→</span></p>
                   <p class="plate-title"><a class="plate-link" href="#work" data-layer-link="2">Relational data and its rules<span class="sr-only">: see the data layer in the work</span></a></p>
-                  <ul class="plate-chips"><li>SQL Server</li><li>MySQL</li><li>Prisma</li><li>Migrations</li></ul>
+                  <ul class="plate-chips"><li>PostgreSQL</li><li>MySQL</li><li>SQL Server</li><li>Migrations</li></ul>
                 </li>
                 <li class="plate plate-base">
                   <span class="plate-wire" aria-hidden="true"><span class="wire-tag">CI&nbsp;/ CD</span></span>
@@ -95,13 +95,14 @@
       <section id="work" class="work" aria-labelledby="work-title">
         <div class="workbench" data-workbench>
           <div class="wb-intro">
-            <p class="label label-accent">Selected work · 6 systems × 4 layers</p>
-            <h2 id="work-title">Six systems across production software, operations, language and real-time interaction.</h2>
+            <p class="label label-accent">Selected work</p>
+            <h2 id="work-title">Six systems, taken apart layer by layer.</h2>
           </div>
         {{> wb-index}}
         {{> wb-stage}}
         {{> wb-files}}
         </div>
+        {{> also-built}}
       </section>
 
       <section id="experience" class="section profile" aria-labelledby="experience-title">

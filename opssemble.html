@@ -26,10 +26,10 @@
       <section id="top" class="case-hero" aria-labelledby="case-title">
         <div class="frame case-hero-inner">
           <nav class="breadcrumbs" aria-label="Breadcrumb"><a href="index.html">Home</a><span aria-hidden="true">/</span><a href="index.html#work">Work</a><span aria-hidden="true">/</span><span aria-current="page">Opssemble</span></nav>
-          <p class="case-eyebrow"><span class="case-index">05 / Opssemble</span><span>Active development · core workflow implemented</span></p>
+          <p class="case-eyebrow">{{> case-index opssemble}}<span>Event operations platform · pilot preparation</span></p>
           <h1 id="case-title">What isn’t ready, and what just went wrong.</h1>
-          <p class="case-lead">Opssemble is a university final project for coordinating event areas, tasks, exceptions, and readiness. The core workflow is implemented and the project is in active development.</p>
-          <dl class="case-facts"><div><dt>Context</dt><dd>University final project</dd></div><div><dt>Role</dt><dd>End-to-end developer</dd></div><div><dt>Authorization</dt><dd>Server-side event roles</dd></div><div><dt>Status</dt><dd><span class="badge badge-academic">{{projects.opssemble.status}}</span>{{> github-link opssemble}}</dd></div></dl>
+          <p class="case-lead">Opssemble began as my university final project and grew into a full-stack product for live events: areas hold tasks, problems become tracked exceptions with severity, and readiness is computed from what is still open. It is being hardened for a controlled pilot and has not been launched.</p>
+          <dl class="case-facts"><div><dt>Context</dt><dd>University project, grown into a product</dd></div><div><dt>Role</dt><dd>End-to-end developer</dd></div><div><dt>Authorization</dt><dd>Server-side event roles</dd></div><div><dt>Status</dt><dd>{{> case-status opssemble}}</dd></div><div><dt>Source</dt><dd>{{> case-source opssemble}}</dd></div></dl>
           {{#if projects.opssemble.demo}}<a class="text-action" href="{{projects.opssemble.demo}}" target="_blank" rel="noopener noreferrer">Watch demo ↗</a>{{/if}}
         </div>
       </section>
@@ -43,7 +43,7 @@
             <p class="case-section-no">01 / Product</p>
             <h2 id="overview-title">Tasks, exceptions, and readiness in one product.</h2>
             <p>Areas hold tasks, problems become tracked exceptions with severity, and readiness is computed from what's still open.</p>
-            <div role="group" class="operational-scope" data-reveal aria-label="Implemented product coverage"><p class="artifact-label">implemented coverage</p><ul><li><strong>Structure</strong><span>Events, typed areas, tasks with status and priority</span></li><li><strong>Exceptions</strong><span>Severity, status, resolution note and resolver</span></li><li><strong>Readiness</strong><span>Per-area and event-wide scores with blockers</span></li><li><strong>Records</strong><span>Reports, CSV &amp; print export, activity log, dashboard</span></li></ul></div>
+            <div role="group" class="operational-scope" data-reveal aria-label="Implemented product coverage"><p class="artifact-label">implemented coverage</p><ul><li><strong>Structure</strong><span>Events, typed areas, tasks with priority, due dates and assignment</span></li><li><strong>Exceptions</strong><span>Severity, a resolution trail and up to five private photo attachments</span></li><li><strong>Readiness</strong><span>Per-area and event-wide scores, blockers and timed checkpoints</span></li><li><strong>On site</strong><span>A My Shift queue, QR area workspaces and temporary guest sessions</span></li></ul></div>
             {{#if projects.opssemble.primaryImage}}<figure class="annotated-media evidence-media" data-reveal><picture><source srcset="{{projects.opssemble.primaryImageAvif}}" type="image/avif" /><source srcset="{{projects.opssemble.primaryImageWebp}}" type="image/webp" /><img src="{{projects.opssemble.primaryImage}}" width="{{projects.opssemble.primaryImageWidth}}" height="{{projects.opssemble.primaryImageHeight}}" loading="lazy" decoding="async" alt="{{projects.opssemble.primaryImageAlt}}" /></picture><figcaption>{{projects.opssemble.primaryImageCaption}}</figcaption></figure>{{/if}}
           </section>
 
@@ -54,9 +54,10 @@
             <div class="architecture" data-reveal role="img" aria-label="The product interface calls the application API, which validates, checks event roles, and reads or writes the relational database."><div><span>01</span><strong>Product interface</strong><small>Feature modules</small></div><i aria-hidden="true">→</i><div><span>02</span><strong>Application API</strong><small>Validation + event-role checks</small></div><i aria-hidden="true">→</i><div><span>03</span><strong>Relational database</strong><small>Migrations · seeds</small></div></div>
             <div role="group" class="ops-module-map" data-reveal aria-label="Implemented API modules">
               <p class="artifact-label">implemented product modules</p>
-              <div class="ops-module-grid"><span>auth</span><span>events</span><span>areas</span><span>tasks</span><span>exceptions</span><span>readiness</span><span>event members</span><span>qr</span><span>reports</span><span>activity</span><span>templates</span><span>dashboard</span><span>settings</span><span>admin</span><span>ai</span><span>mail</span><span>users</span></div>
+              <div class="ops-module-grid"><span>auth</span><span>events</span><span>areas</span><span>tasks</span><span>exceptions</span><span>exception attachments</span><span>evidence</span><span>readiness</span><span>checkpoints</span><span>event members</span><span>invitations</span><span>qr</span><span>guest</span><span>shift</span><span>live</span><span>offline</span><span>notifications</span><span>reports</span><span>activity</span><span>templates</span><span>dashboard</span><span>settings</span><span>admin</span><span>ai</span><span>assistance</span><span>mail</span><span>users</span><span>platform</span><span>system</span><span>contact</span></div>
               <p class="ops-plugin-rail"><span>Cross-cutting plugins</span>db · auth · rate limit · uploads · error handler</p>
             </div>
+            <p>Changes reach every open client through event-scoped Server-Sent Events, with presence for who is viewing, and without adding a runtime dependency. Offline operation is behind a feature flag: an authorized event or guest area can be downloaded into IndexedDB, work continues through a durable outbox, and the server reconciles it with idempotent receipts and visible conflicts. API responses and private files are never put in the service-worker cache.</p>
           </section>
 
           <section id="system-sequence" class="case-section case-immersive case-immersive-opssemble" data-case-immersive data-case-variant="opssemble" aria-labelledby="system-sequence-title">
@@ -89,13 +90,14 @@
                 <article class="immersive-step"><p class="step-label">Area access and records</p><h3>QR access stays scoped and revocable.</h3><p>Only the SHA-256 hash of each area token is stored. Reports, CSV exports, activity records, and the dashboard use the same application data.</p></article>
               </div>
             </div>
+            <figure class="evidence-media" data-reveal><picture><source srcset="{{projects.opssemble.readinessImageAvif}}" type="image/avif" /><source srcset="{{projects.opssemble.readinessImageWebp}}" type="image/webp" /><img src="{{projects.opssemble.readinessImage}}" width="{{projects.opssemble.readinessImageWidth}}" height="{{projects.opssemble.readinessImageHeight}}" loading="lazy" decoding="async" alt="{{projects.opssemble.readinessImageAlt}}" /></picture><figcaption>{{projects.opssemble.readinessImageCaption}}</figcaption></figure>
           </section>
 
           <section id="security" class="case-section" aria-labelledby="security-title">
             <p class="case-section-no">04 / Access &amp; security</p>
             <h2 id="security-title">Account and event access are enforced by the API.</h2>
             <p>These are implemented controls, not a general security guarantee.</p>
-            <dl class="constraint-ledger" data-reveal><div><dt>Sessions</dt><dd>JWT sessions carried in HttpOnly cookies; passwords hashed with bcrypt.</dd></div><div><dt>Sign-in</dt><dd>Email and password with emailed verification codes, Google OAuth 2.0, password reset, and an optional recovery email.</dd></div><div><dt>Enumeration &amp; abuse</dt><dd>Generic login errors, failed-attempt delays, and lockouts.</dd></div><div><dt>Tokens</dt><dd>Verification, reset, and QR area tokens are stored only as SHA-256 hashes.</dd></div></dl>
+            <dl class="constraint-ledger" data-reveal><div><dt>Sessions</dt><dd>JWT sessions carried in HttpOnly cookies; passwords hashed with bcrypt.</dd></div><div><dt>Sign-in</dt><dd>Email and password with emailed verification codes, Google OAuth 2.0, password reset, and an optional recovery email.</dd></div><div><dt>Enumeration &amp; abuse</dt><dd>Generic login errors, failed-attempt delays, and lockouts.</dd></div><div><dt>Tokens</dt><dd>Verification, reset, and QR area tokens are stored only as SHA-256 hashes.</dd></div><div><dt>Guests</dt><dd>A QR code can admit temporary guests: an expiring session scoped to one area, which coordinators can inspect and revoke at once.</dd></div><div><dt>Evidence photos</dt><dd>Decoded and re-encoded to WebP without their metadata, stored outside public uploads, and served only after authorization.</dd></div><div><dt>Administration</dt><dd>Separate support, admin and superadmin tiers; high-impact actions need the current password and an emailed code.</dd></div></dl>
             <article class="decision-record" aria-labelledby="opssemble-decision-title" data-reveal>
               <p class="decision-id">decision 01</p>
               <h3 id="opssemble-decision-title">Authorize every write against the caller’s event role</h3>
@@ -103,8 +105,9 @@
             </article>
             <div role="group" class="technical-artifact permission-artifact" data-reveal aria-label="Area QR token lifecycle">
               <p class="artifact-label">technical artefact · area token lifecycle (revocable at any time)</p>
-              <ol><li><span>Mint</span><strong>Owner or coordinator issues an area token</strong></li><li><span>Store</span><strong>Only the SHA-256 hash persists</strong></li><li><span>Scan</span><strong>Login-gated area context page</strong></li><li><span>Act</span><strong>Actions scoped by the caller’s event role</strong></li></ol>
+              <ol><li><span>Mint</span><strong>Owner or coordinator issues an area token</strong></li><li><span>Store</span><strong>Only the SHA-256 hash persists</strong></li><li><span>Scan</span><strong>A member signs in, or a permitted guest gets an expiring area session</strong></li><li><span>Act</span><strong>Actions scoped by the caller’s event role</strong></li></ol>
             </div>
+            <figure class="evidence-media is-phone" data-reveal><picture><source srcset="{{projects.opssemble.qrImageAvif}}" type="image/avif" /><source srcset="{{projects.opssemble.qrImageWebp}}" type="image/webp" /><img src="{{projects.opssemble.qrImage}}" width="{{projects.opssemble.qrImageWidth}}" height="{{projects.opssemble.qrImageHeight}}" loading="lazy" decoding="async" alt="{{projects.opssemble.qrImageAlt}}" /></picture><figcaption>{{projects.opssemble.qrImageCaption}}</figcaption></figure>
             <div role="group" class="operational-scope" data-reveal aria-label="Backend hardening"><p class="artifact-label">backend hardening, from code</p><ul><li><strong>Query safety</strong><span>Parameterized SQL across repositories</span></li><li><strong>HTTP headers</strong><span>Helmet security headers and a CORS policy</span></li><li><strong>Uploads</strong><span>File validation by magic-byte signature</span></li><li><strong>Rate &amp; email</strong><span>Request rate limiting; transactional email via Nodemailer</span></li></ul></div>
           </section>
 
@@ -122,8 +125,8 @@
           <section id="outcome" class="case-section" aria-labelledby="outcome-title">
             <p class="case-section-no">06 / Current boundaries</p>
             <h2 id="outcome-title">What is implemented, and what is not claimed.</h2>
-            <dl class="constraint-ledger" data-reveal><div><dt>Scope</dt><dd>An active-development university project, not a commercial production SaaS.</dd></div><div><dt>Metrics</dt><dd>No load, uptime, or usage figures are published.</dd></div><div><dt>In progress</dt><dd>Test reporting, setup documentation and a public repository.</dd></div><div><dt>Assistant</dt><dd>Runs only when the optional assistant is configured.</dd></div></dl>
-            <div class="outcome-summary is-single" data-reveal><div><p class="artifact-label">what it demonstrates</p><p>Product interface work, a layered API, relational data, authentication, roles, QR-scoped access, and controlled AI assistance.</p></div></div>
+            <dl class="constraint-ledger" data-reveal><div><dt>Scope</dt><dd>Not launched publicly: a product being prepared for a controlled pilot, after starting as a university final project. It is not a commercial service yet.</dd></div><div><dt>Metrics</dt><dd>No load, uptime, or usage figures exist, because it has not been operated with real events.</dd></div><div><dt>Verification</dt><dd>149 frontend unit tests and 334 backend tests pass on the current code (21 November 2026). A staging validation on 4 October 2026 recorded ten integration tests on real MySQL and 24 critical browser journeys in Chromium and WebKit passing against the packaged release.</dd></div><div><dt>Assistant</dt><dd>Runs only when the optional assistant is configured.</dd></div></dl>
+            <div class="outcome-summary is-single" data-reveal><div><p class="artifact-label">what it demonstrates</p><p>Product work end to end: a layered API with role checks on every write, relational data with hashed tokens, live updates over Server-Sent Events, scoped QR and guest access, offline work with idempotent reconciliation, and AI assistance that never writes on its own.</p></div></div>
           </section>
         </article>
       </div>

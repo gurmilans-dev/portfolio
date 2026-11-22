@@ -255,6 +255,7 @@ code { font-family: var(--mono); font-size: .86em; padding: .08em .36em; backgro
 .tone-ok .dot { background: var(--ok); }
 .tone-warn .dot { background: var(--warn); }
 .tone-muted .dot { background: var(--muted); }
+.tone-accent .dot { background: var(--accent-fill); }
 
 /* ---------- Header ---------- */
 /* The blur lives on a pseudo-element: backdrop-filter on the header itself would make
@@ -566,19 +567,17 @@ code { font-family: var(--mono); font-size: .86em; padding: .08em .36em; backgro
 .wb-intro h2 { max-width: 24ch; font-size: clamp(1.6rem, 3.6vw, 2.3rem); line-height: 1.08; letter-spacing: -.03em; }
 .wb-stage { display: none; }
 .wb-head { display: flex; justify-content: space-between; gap: 12px; padding-bottom: 8px; font: 500 10.5px/1.4 var(--mono); letter-spacing: .08em; text-transform: uppercase; color: var(--text-4); }
-.wb-head-also { margin-top: 22px; }
-.wb-list, .wb-also { list-style: none; padding: 0; border-top: 1px solid var(--line); }
+.wb-list { list-style: none; padding: 0; border-top: 1px solid var(--line); }
 .wb-item { display: grid; grid-template-columns: 30px minmax(0, 1fr) auto; align-items: center; gap: 10px; min-height: 48px; padding: clamp(8px, 1.3vh, 12px) 0; border-bottom: 1px solid var(--line); color: var(--text-4); text-decoration: none; transition: color .2s, padding .3s var(--ease); }
 .wi-no { font: 500 11px var(--mono); color: var(--text-4); }
 .wi-name { font: 600 18px/1.15 var(--sans); letter-spacing: -.015em; }
 .wb-item:hover { color: var(--text); }
 .wb-item[aria-selected="true"] { color: var(--text); padding-left: 4px; }
 .wb-item[aria-selected="true"] .wi-no { color: var(--accent); }
-.wb-also-item { display: flex; justify-content: space-between; align-items: center; gap: 12px; min-height: 40px; color: var(--text-3); text-decoration: none; font: 500 14px var(--sans); }
-.wb-also-item .wi-no { margin-right: 8px; }
-.wb-also-item .wi-name { font: inherit; letter-spacing: 0; flex: 1; }
-.wi-stack { font: 500 10.5px var(--mono); color: var(--text-4); }
-.wb-also-item:hover, .wb-also-item.is-current { color: var(--text); }
+/* A quiet pointer from the six to the register below them. */
+.wb-also-cue { display: flex; justify-content: space-between; gap: 12px; margin-top: 18px; min-height: 44px; align-items: center; font: 500 11px/1.4 var(--mono); letter-spacing: .08em; text-transform: uppercase; color: var(--text-4); text-decoration: none; }
+.wb-also-cue span:last-child { color: var(--accent); }
+.wb-also-cue:hover { color: var(--text); }
 .wb-keys { display: none; }
 
 .wb-files { display: grid; gap: 28px; }
@@ -590,8 +589,23 @@ code { font-family: var(--mono); font-size: .86em; padding: .08em .36em; backgro
 .sf-category { font: 500 11.5px/1.4 var(--mono); letter-spacing: .04em; color: var(--text-4); }
 .sf-claim { margin-top: 4px; font-size: 15px; line-height: 1.5; color: var(--text-2); }
 .sf-tech { font: 500 12px/1.5 var(--mono); color: var(--text-3); }
-.sf-actions { display: flex; flex-wrap: wrap; gap: 10px; }
+.sf-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 16px; }
+.sf-actions:empty { display: none; }
 .sf-actions .btn { min-height: 44px; font-size: 14px; padding: 0 15px; }
+/* Quick look: the project's own screenshot as a preview and what the panel holds, so the
+   screenshots are found from the explorer rather than only inside the drawer. */
+.sf-peek { flex: 1 0 100%; display: grid; grid-template-columns: clamp(92px, 30%, 136px) minmax(0, 1fr) auto; align-items: center; gap: 14px; padding: 8px 16px 8px 8px; border: 1px solid var(--line-2); background: var(--bg-2); color: var(--text); font: inherit; text-align: left; cursor: pointer; transition: border-color .2s, background-color .2s; }
+.peek-media { display: grid; place-items: center; width: 100%; aspect-ratio: 16 / 10; overflow: hidden; border: 1px solid var(--line-2); background: var(--bg); color: var(--text-4); }
+.peek-media picture, .peek-media img { display: block; width: 100%; height: 100%; }
+.peek-media img { object-fit: cover; object-position: 50% 0; transition: transform .5s var(--ease); }
+.peek-media .icon { width: 26px; height: 26px; }
+.peek-copy { display: grid; gap: 5px; min-width: 0; }
+.peek-label { font: 600 15px/1.2 var(--sans); }
+.peek-sub { font: 500 11.5px/1.45 var(--mono); letter-spacing: .02em; color: var(--text-3); }
+.peek-go { font: 500 15px var(--mono); color: var(--text-4); transition: color .2s, translate .25s var(--ease); }
+.sf-peek:hover { border-color: var(--line-3); background: var(--bg-3); }
+.sf-peek:hover .peek-go, .sf-peek:focus-visible .peek-go { color: var(--accent); translate: 3px 0; }
+.sf-peek:hover .peek-media img { transform: scale(1.04); }
 
 .layer-cut { list-style: none; padding: 0; border-top: 1px solid var(--line); }
 .lc-row { display: grid; grid-template-columns: 104px minmax(0, 1fr); gap: 12px; padding: 12px 10px; margin-inline: -10px; border-bottom: 1px solid var(--line); transition: background-color .25s; }
@@ -612,7 +626,6 @@ code { font-family: var(--mono); font-size: .86em; padding: .08em .36em; backgro
 .sf-meta dt, .sf-label { font: 500 10.5px/1.4 var(--mono); letter-spacing: .08em; text-transform: uppercase; color: var(--text-4); }
 .sf-meta dd { font-size: 13.5px; line-height: 1.35; }
 .sf-shot { display: grid; gap: 8px; }
-.sf-shot picture { border: 1px solid var(--line-2); background: var(--bg); overflow: hidden; }
 .sf-shot img { width: 100%; }
 .sf-shot figcaption, .media-caption { font: 400 12px/1.5 var(--mono); color: var(--text-4); }
 .sf-block { display: grid; gap: 12px; }
@@ -648,7 +661,8 @@ code { font-family: var(--mono); font-size: .86em; padding: .08em .36em; backgro
   html:not(.js) .system-file, .workbench:not(.wb-ready) .system-file { grid-template-columns: minmax(0, 1fr) minmax(0, 1.2fr); column-gap: 48px; }
   .workbench:not(.wb-ready) .system-file > .sf-head, .workbench:not(.wb-ready) .system-file > .sf-actions { grid-column: 1; }
   .workbench:not(.wb-ready) .system-file > .layer-cut { grid-column: 2; grid-row: 1 / span 2; }
-  .workbench:not(.wb-ready) .system-file > .sf-dossier { grid-column: 1 / -1; }
+  .workbench:not(.wb-ready) .system-file > .sf-dossier, .workbench:not(.wb-ready) .system-file > .sf-shot { grid-column: 1 / -1; }
+  .workbench:not(.wb-ready) .system-file > .sf-shot { max-width: 960px; }
   .workbench:not(.wb-ready) .system-file.is-also > .sf-actions { grid-row: auto; }
 }
 
@@ -659,7 +673,7 @@ code { font-family: var(--mono); font-size: .86em; padding: .08em .36em; backgro
 .wb-ready .wb-stage { grid-area: stage; display: block; position: relative; height: clamp(380px, 112vw, 560px); border-block: 1px solid var(--line); background: radial-gradient(60% 55% at 50% 60%, var(--glow-2) 0%, var(--bg) 72%); overflow: hidden; }
 .wb-ready .wb-files { grid-area: files; display: block; padding: 28px var(--pad) 48px; }
 .wb-ready .system-file { padding: 0; border: 0; background: none; }
-.wb-ready .system-file:not(.is-current), .wb-ready .wb-files .sf-dossier { display: none; }
+.wb-ready .system-file:not(.is-current), .wb-ready .wb-files .sf-dossier, .wb-ready .wb-files .sf-shot { display: none; }
 .wb-ready .sf-head .sf-title { font-size: clamp(1.9rem, 2.4vw, 2.1rem); }
 
 /* Phones and small tablets: the index is a two-column grid of systems. */
@@ -669,8 +683,6 @@ code { font-family: var(--mono); font-size: .86em; padding: .08em .36em; backgro
   .wb-ready .wb-item .wi-name { font-size: 15px; }
   .wb-ready .wb-item .status { grid-column: 1 / -1; font-size: 10px; }
   .wb-ready .wb-item[aria-selected="true"] { padding-left: 12px; border-color: var(--accent); background: rgb(var(--accent-rgb) / .08); }
-  .wb-ready .wb-also { border-top: 0; display: grid; gap: 6px; }
-  .wb-ready .wb-also-item { padding: 0 12px; border: 1px solid var(--line-2); min-height: 44px; }
 }
 @media (min-width: 900px) {
   .workbench.wb-ready { grid-template-columns: minmax(0, 1fr) minmax(0, 1.12fr); grid-template-rows: auto auto 1fr; grid-template-areas: "intro stage" "index stage" "files stage"; border-bottom: 1px solid var(--line); }
@@ -681,14 +693,70 @@ code { font-family: var(--mono); font-size: .86em; padding: .08em .36em; backgro
   .wb-ready .wb-keys { display: inline; }
 }
 @media (min-width: 1280px) {
-  .workbench.wb-ready { grid-template-columns: clamp(300px, 24vw, 380px) minmax(0, 1fr) clamp(350px, 27vw, 440px); grid-template-rows: auto 1fr; grid-template-areas: "intro stage files" "index stage files"; min-height: calc(100svh - var(--header-h)); }
+  .workbench.wb-ready { grid-template-columns: clamp(280px, 21vw, 360px) minmax(0, 1fr) clamp(400px, 33vw, 540px); grid-template-rows: auto 1fr; grid-template-areas: "intro stage files" "index stage files"; min-height: calc(100svh - var(--header-h)); }
   .wb-ready .wb-intro { padding: clamp(28px, 5vh, 48px) 28px 22px clamp(24px, 2.2vw, 36px); }
   .wb-ready .wb-intro h2 { font-size: clamp(1.35rem, min(1.85vw, 3.6vh), 1.85rem); line-height: 1.12; }
+  /* A narrower index: each status sits under its name, so no name has to wrap. */
+  .wb-ready .wb-item { grid-template-columns: 30px minmax(0, 1fr); row-gap: 4px; }
+  .wb-ready .wb-item .status { grid-column: 2; }
   .wb-ready .wb-index { padding: 0 30px 32px clamp(24px, 2.2vw, 36px); }
   .wb-ready .wb-stage { border-right: 1px solid var(--line); }
   .wb-ready .wb-files { padding: clamp(28px, 5vh, 48px) clamp(24px, 2.2vw, 34px) 48px; }
 }
 @media (min-width: 2001px) { .workbench.wb-ready { border-inline: 1px solid var(--line); } }
+
+/* ---------- Deferred rendering ----------
+   With JavaScript, the thirteen case files are a plain list only until workbench.js hides
+   all but one, so they skip layout and paint until then. Only these, and only with
+   JavaScript: a placeholder height never matches the real one exactly, so deferring
+   anything that stays in the page would shift #experience, #contact or #work-<file> links. */
+.js .workbench:not(.wb-ready) .system-file { content-visibility: auto; contain-intrinsic-size: auto 1400px; }
+
+/* ---------- Also built ----------
+   A ruled register under the explorer: what each piece of work is (status), what it does,
+   what it is made with, and the same actions in the same order on every row. It is
+   supporting evidence for the six above, so it keeps the hairlines and mono labels of the
+   case files rather than becoming cards. */
+.also-built { width: min(100% - 2 * var(--pad), var(--frame-max)); margin-inline: auto; padding-block: clamp(44px, 6vw, 80px) clamp(56px, 8vw, 104px); scroll-margin-top: calc(var(--header-h) + 8px); }
+.ab-head { margin-bottom: clamp(14px, 2vw, 22px); }
+.ab-title { display: flex; align-items: baseline; gap: 12px; font: 600 clamp(1.45rem, 2.4vw, 1.9rem)/1.1 var(--sans); letter-spacing: -.025em; }
+.ab-count { font: 500 12px var(--mono); letter-spacing: .06em; color: var(--accent); }
+.ab-list { list-style: none; padding: 0; border-top: 1px solid var(--line-2); }
+.ab-row { display: grid; grid-template-columns: minmax(0, 1fr); gap: 8px 24px; padding: 18px 0 16px; border-bottom: 1px solid var(--line); }
+.ab-status .status { font-size: 12px; color: var(--text-2); }
+.ab-main { display: grid; gap: 4px; }
+.ab-name { font: 600 19px/1.25 var(--sans); letter-spacing: -.015em; }
+.ab-summary { max-width: 62ch; font-size: 15px; line-height: 1.5; color: var(--text-2); }
+.ab-tech { font: 500 12.5px/1.55 var(--mono); color: var(--text-3); }
+.ab-links { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; padding-top: 4px; }
+/* In-site actions are labelled; leaving the site is the GitHub or Chrome Web Store mark. */
+.ab-action { display: inline-flex; align-items: center; gap: .6em; min-height: 36px; padding: 0 12px; border: 1px solid var(--line-2); color: var(--text-2); font: 500 12.5px/1 var(--mono); letter-spacing: .01em; text-decoration: none; white-space: nowrap; transition: color .2s, border-color .2s, background-color .2s; }
+.ab-action > [aria-hidden="true"] { transition: translate .25s var(--ease); }
+.ab-action:hover { border-color: var(--accent); color: var(--accent); }
+.ab-action:hover > [aria-hidden="true"] { translate: 3px 0; }
+.ab-action.is-current { border-color: var(--accent); color: var(--accent); background: rgb(var(--accent-rgb) / .08); }
+.ab-icon { display: grid; place-items: center; flex: none; width: 36px; height: 36px; border: 1px solid var(--line-3); background: var(--bg-3); color: var(--text); transition: background-color .2s, border-color .2s, color .2s; }
+.ab-icon .icon { width: 18px; height: 18px; }
+.ab-icon:hover { border-color: var(--text); background: var(--text); color: var(--bg); }
+.ab-icon:active { translate: 0 1px; }
+/* Tablets and up: the list is one grid and every row a subgrid of it, so status, name,
+   stack and actions line up down the register whatever each row holds. */
+@media (min-width: 760px) {
+  .ab-list { display: grid; grid-template-columns: max-content minmax(0, 1fr); column-gap: 32px; }
+  .ab-row { grid-column: 1 / -1; grid-template-columns: subgrid; grid-template-areas: "status main" "status tech" "status links"; align-items: start; padding-block: 18px 16px; }
+  .ab-status { grid-area: status; padding-top: 5px; }
+  .ab-main { grid-area: main; }
+  .ab-tech { grid-area: tech; }
+  .ab-links { grid-area: links; }
+}
+/* Wide screens: one line per entry, with the stack and the actions in their own columns. The
+   actions start on the same line in every row, so "Quick look" reads as a column. */
+@media (min-width: 1180px) {
+  .ab-list { grid-template-columns: max-content minmax(0, 1.55fr) minmax(0, 1fr) max-content; column-gap: 36px; }
+  .ab-row { grid-template-areas: "status main tech links"; align-items: center; padding-block: 18px; }
+  .ab-status { padding-top: 0; }
+  .ab-links { padding-top: 0; }
+}
 
 /* ---------- The stack (CSS 3D, shared by the workbench and case studies) ---------- */
 .stage-scene { position: absolute; inset: 0; container-type: size; perspective: 2400px; perspective-origin: 50% 35%; overflow: hidden; touch-action: pan-y; user-select: none; -webkit-user-select: none; }
@@ -769,6 +837,9 @@ code { font-family: var(--mono); font-size: .86em; padding: .08em .36em; backgro
 .drawer-body .system-file { display: grid; gap: 24px; padding: 0; border: 0; background: none; }
 .drawer-body .sf-title { font-size: clamp(2.1rem, 4vw, 2.8rem); }
 .drawer-body .sf-actions [data-open-file] { display: none; }
+.drawer-body .system-file > .sf-head { order: -3; }
+.drawer-body .system-file > .sf-shot { order: -2; }
+.drawer-body .system-file > .sf-actions { order: -1; }
 .drawer-body .sf-dossier { display: grid; }
 @media (max-width: 899px) { .drawer { width: 100%; border-left: 0; } .drawer-btn { padding: 0 10px; } }
 @media (max-width: 420px) { .drawer-crumb .crumb-extra { display: none; } }
@@ -1033,8 +1104,11 @@ code { font-family: var(--mono); font-size: .86em; padding: .08em .36em; backgro
 .case-facts .text-action, .case-hero .text-action { font: 500 12px var(--mono); color: var(--accent); text-decoration: none; }
 .badge { display: inline-flex; align-items: center; gap: 7px; font: 500 11.5px var(--mono); color: var(--text-2); }
 .badge::before { content: ""; width: 6px; height: 6px; border-radius: 50%; background: var(--muted); }
-.badge-public::before, .badge-deployed::before, .badge-production::before { background: var(--ok); }
-.badge-academic::before { background: var(--warn); }
+/* Same grouping as the status tones: shipped or public, still moving, experimental; commercial,
+   academic and private keep the neutral dot. */
+.badge-public::before, .badge-deployed::before, .badge-production::before, .badge-published::before { background: var(--ok); }
+.badge-development::before { background: var(--warn); }
+.badge-experimental::before { background: var(--accent-fill); }
 @keyframes case-rise { from { opacity: 0; translate: 0 14px; } }
 .case-hero-inner > * { animation: case-rise .7s var(--ease) both; }
 .case-hero-inner > :nth-child(3) { animation-delay: .05s; }
@@ -1223,6 +1297,16 @@ code { font-family: var(--mono); font-size: .86em; padding: .08em .36em; backgro
 :root[data-theme="light"] .page-alfaaz { --accent: #a84a28; --accent-hi: #8e3c1f; --accent-line: rgb(168 74 40 / .42); }
 @media (prefers-color-scheme: light) { :root:not([data-theme]) .page-alfaaz { --accent: #a84a28; --accent-hi: #8e3c1f; --accent-line: rgb(168 74 40 / .42); } }
 
+/* ---------- Media: screenshot pairs ----------
+   A desktop capture beside the same screen on a phone, sized so both end at about the same
+   height; stacked on narrow screens. A small capture (a dialog) keeps its own width. */
+.shot-pair { display: grid; gap: 18px; align-items: start; }
+@media (min-width: 760px) { .shot-pair { grid-template-columns: minmax(0, 1fr) minmax(140px, 22%); } }
+.shot-pair > .evidence-media:nth-child(2) { max-width: min(300px, 78%); }
+.evidence-media.is-compact { max-width: 504px; }
+.evidence-media.is-phone { max-width: min(300px, 72%); }
+.evidence-media img { width: 100%; height: auto; }
+
 /* ---------- Media: annotated screenshots, hotspots, lightbox ---------- */
 .annotated-media, .evidence-media { display: grid; gap: 10px; }
 .annotated-media figcaption, .evidence-media figcaption, .gurmat-shot figcaption, .gurmat-transfer-shot figcaption { font: 400 12px/1.5 var(--mono); color: var(--text-4); }
@@ -1390,7 +1474,8 @@ code { font-family: var(--mono); font-size: .86em; padding: .08em .36em; backgro
   :root, :root[data-theme] { color-scheme: light; --bg: #fff; --bg-1: #fff; --bg-2: #f4f4f2; --text: #111; --text-2: #222; --text-3: #333; --text-4: #555; --line: #ccc; --line-2: #ccc; --line-3: #999; --accent: #b14d06; --accent-fill: #b14d06; --accent-ink: #fff; --glow: #fff; --glow-2: #fff; --sink: #fff; }
   body { background: #fff; color: #111; }
   .site-header, .theme-switch, .scroll-progress, .wb-stage, .stage-controls, .hero-visual, .case-cut .cut-visual, .contact-form, .copy-btn, .drawer, .menu-toggle, .media-hotspots, .media-enlarge, .case-aside { display: none !important; }
-  .workbench.wb-ready .system-file, .wb-ready .wb-files .sf-dossier { display: grid !important; }
+  .workbench.wb-ready .system-file, .wb-ready .wb-files .sf-dossier, .wb-ready .wb-files .sf-shot { display: grid !important; }
+  .sf-peek { display: none !important; }
   .hero-grid, .case-layout, .cut-grid { display: block; min-height: 0; }
   a { text-decoration: underline; }
   .case-section, .system-file { break-inside: avoid-page; }
