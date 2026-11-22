@@ -288,6 +288,32 @@
     }
   }
 
+  /* ---------- "Also built": fold and unfold the register ----------
+     Folded, the list is hidden and one line names every entry; links to the register
+     unfold it, and the choice is kept for the next visit. */
+  const register = document.querySelector("[data-ab]");
+  const registerToggle = register?.querySelector("[data-ab-toggle]");
+  const registerList = register?.querySelector("#also-built-list");
+  const registerNames = register?.querySelector("[data-ab-names]");
+  const REGISTER_KEY = "portfolio-also-built";
+  function setRegister(open, { store = true } = {}) {
+    if (!registerToggle || !registerList) return;
+    registerList.hidden = !open;
+    if (registerNames) registerNames.hidden = open;
+    registerToggle.setAttribute("aria-expanded", String(open));
+    const label = registerToggle.querySelector("[data-ab-toggle-label]");
+    if (label) label.textContent = open ? "Hide" : `Show all ${alsoLinks.length}`;
+    if (store) { try { localStorage.setItem(REGISTER_KEY, open ? "open" : "folded"); } catch { /* the choice still applies to this page */ } }
+  }
+  if (registerToggle && registerList) {
+    let saved = null;
+    try { saved = localStorage.getItem(REGISTER_KEY); } catch { /* no storage: start open */ }
+    registerToggle.hidden = false;
+    setRegister(saved !== "folded" || location.hash === "#also-built", { store: false });
+    registerToggle.addEventListener("click", () => setRegister(registerList.hidden));
+    document.querySelectorAll('a[href="#also-built"]').forEach(link => link.addEventListener("click", () => setRegister(true)));
+  }
+
   /* ---------- Quick-look drawer ----------
      The drawer shows the system file itself, moved in from the explorer and put back on close. */
   let openKey = null;
@@ -362,7 +388,9 @@
     const featuredIndex = featured.indexOf(key);
     const fallback = featuredIndex >= 0 ? tabs[featuredIndex] : alsoLinks.find(link => link.dataset.wbAlso === key);
     // The fallback may be off screen (a register row further down), so let focus scroll to it.
+    // A folded register hides its rows, so its toggle stands in for them.
     if (isUsable(fallback)) fallback.focus();
+    else if (featuredIndex < 0 && isUsable(registerToggle)) registerToggle.focus();
   }
 
   function finishClose() {

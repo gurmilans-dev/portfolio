@@ -758,7 +758,13 @@ code { font-family: var(--mono); font-size: .86em; padding: .08em .36em; backgro
    supporting evidence for the six above, so it keeps the hairlines and mono labels of the
    case files rather than becoming cards. */
 .also-built { width: min(100% - 2 * var(--pad), var(--frame-max)); margin-inline: auto; padding-block: clamp(44px, 6vw, 80px) clamp(36px, 4vw, 56px); scroll-margin-top: calc(var(--header-h) + 8px); }
-.ab-head { margin-bottom: clamp(14px, 2vw, 22px); }
+.ab-head { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px 16px; margin-bottom: clamp(14px, 2vw, 22px); }
+/* Fold control: a framed mono label with a chevron that points where the list will go. */
+.ab-toggle { display: inline-flex; align-items: center; gap: 10px; min-height: 36px; padding: 0 12px; border: 1px solid var(--line-2); background: transparent; color: var(--text-2); font: 500 12.5px/1 var(--mono); letter-spacing: .01em; transition: color .2s, border-color .2s; }
+.ab-toggle:hover { border-color: var(--line-3); color: var(--text); }
+.ab-toggle-mark { width: 7px; height: 7px; margin-top: 3px; border-right: 1.5px solid currentColor; border-bottom: 1.5px solid currentColor; rotate: -135deg; transition: rotate .25s var(--ease), margin .25s var(--ease); }
+.ab-toggle[aria-expanded="false"] .ab-toggle-mark { margin-top: -3px; rotate: 45deg; }
+.ab-names { padding: 14px 0 16px; border-top: 1px solid var(--line-2); border-bottom: 1px solid var(--line); font: 500 13px/1.7 var(--mono); color: var(--text-3); }
 .ab-title { display: flex; align-items: baseline; gap: 12px; font: 600 clamp(1.45rem, 2.4vw, 1.9rem)/1.1 var(--sans); letter-spacing: -.025em; }
 .ab-count { font: 500 12px var(--mono); letter-spacing: .06em; color: var(--accent); }
 .ab-list { list-style: none; padding: 0; border-top: 1px solid var(--line-2); }
@@ -1526,7 +1532,8 @@ code { font-family: var(--mono); font-size: .86em; padding: .08em .36em; backgro
   body { background: #fff; color: #111; }
   .site-header, .theme-switch, .scroll-progress, .wb-stage, .stage-controls, .hero-visual, .case-cut .cut-visual, .contact-form, .copy-btn, .drawer, .menu-toggle, .media-hotspots, .media-enlarge, .case-aside { display: none !important; }
   .workbench.wb-ready .system-file, .wb-ready .wb-files .sf-dossier, .wb-ready .wb-files .sf-shot { display: grid !important; }
-  .sf-peek { display: none !important; }
+  .sf-peek, .ab-toggle, .ab-names { display: none !important; }
+  .also-built .ab-list { display: grid !important; }
   .hero-grid, .case-layout, .case-cut { display: block; min-height: 0; }
   a { text-decoration: underline; }
   .case-section, .system-file { break-inside: avoid-page; }

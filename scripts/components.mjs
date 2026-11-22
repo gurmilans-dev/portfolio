@@ -304,12 +304,16 @@ function alsoRow(project) {
           </li>`;
 }
 
+/* The register can be folded away (workbench.js reveals the toggle and remembers the choice).
+   Folded, it still names every entry on one line; without JavaScript it is always open. */
 export function alsoBuilt() {
-  return `<section id="also-built" class="also-built" aria-labelledby="also-built-title">
+  return `<section id="also-built" class="also-built" aria-labelledby="also-built-title" data-ab>
           <header class="ab-head">
             <h3 id="also-built-title" class="ab-title">Also built <span class="ab-count">${alsoProjects.length}</span></h3>
+            <button class="ab-toggle" type="button" aria-expanded="true" aria-controls="also-built-list" data-ab-toggle hidden><span data-ab-toggle-label>Hide</span><span class="ab-toggle-mark" aria-hidden="true"></span></button>
           </header>
-          <ol class="ab-list">
+          <p class="ab-names" data-ab-names hidden>${dotted(alsoProjects.map((project) => project.shortTitle).join(" · "))}</p>
+          <ol id="also-built-list" class="ab-list">
           ${alsoProjects.map(alsoRow).join("\n          ")}
           </ol>
         </section>`;

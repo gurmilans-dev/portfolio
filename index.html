@@ -34,6 +34,7 @@
   </head>
   <body class="page-home">
     <a class="skip-link" href="#main-content">Skip to content</a>
+    <div class="scroll-progress" aria-hidden="true" data-scroll-progress><span></span></div>
     {{> header home}}
 
     <main id="main-content">
@@ -48,7 +49,7 @@
             <p class="hero-lead">I’m the primary developer of a business platform used in daily internal operations. On my own time I build developer tools, a simulated bank and a live reading system for a local Gurdwara.</p>
             <div class="hero-actions">
               <a class="btn btn-primary" href="#work">View work<span aria-hidden="true">↓</span></a>
-              <a class="btn btn-line" href="{{profile.resume}}" target="_blank" rel="noopener noreferrer" download>Download CV<span class="sr-only"> (PDF)</span><span aria-hidden="true">↓</span></a>
+              <a class="btn btn-line" href="{{profile.resume}}" target="_blank" rel="noopener noreferrer" download>Download CV<span class="sr-only"> (PDF)</span>{{icons.download}}</a>
               <a class="btn-text" href="#contact">Contact<span aria-hidden="true">→</span></a>
             </div>
           </div>
@@ -165,7 +166,7 @@
       <section id="contact" class="section contact" aria-labelledby="contact-title">
         <div class="frame contact-grid">
           <div class="contact-copy" data-reveal>
-            <p class="label label-accent">Contact · reply within 1–2 business days</p>
+            <p class="label label-accent">Contact · reply within 24 hours</p>
             <h2 id="contact-title">Tell me what you’re building.</h2>
             <p class="section-lead">A software engineering role, a project, or a technical question. Your message comes straight to me.</p>
             <div class="reach">

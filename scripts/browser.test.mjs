@@ -351,3 +351,31 @@ test("a preview server without clean URLs still reaches every case study", async
     await new Promise((resolve) => plain.close(resolve));
   }
 });
+
+test("Also built folds to one line, remembers it, and unfolds for links and quick looks", async () => {
+  await withPage({ width: 1440, height: 900 }, async (page) => {
+    await page.goto(`${base}/`);
+    await page.waitFor(visible("[data-ab-toggle]"));
+    assert.ok(await page.evaluate(visible("#also-built-list")), "open by default");
+    await page.click("[data-ab-toggle]");
+    assert.equal(await page.evaluate(`document.querySelector("[data-ab-toggle]").getAttribute("aria-expanded")`), "false");
+    assert.ok(!(await page.evaluate(visible("#also-built-list"))), "the list folds");
+    assert.ok(await page.evaluate(`document.querySelector("[data-ab-names]").textContent.includes("ToneQuill")`), "folded, it still names the entries");
+    // Kept across a reload.
+    await page.goto(`${base}/`);
+    assert.ok(!(await page.evaluate(visible("#also-built-list"))), "the folded state is remembered");
+  });
+  // A quick look of an entry from a link (a new tab, so the folded state carries over):
+  // closing it focuses the toggle, not a hidden row.
+  await withPage({ width: 1440, height: 900 }, async (page) => {
+    await page.goto(`${base}/#work-tonequill`);
+    await page.waitFor(`document.querySelector("[data-drawer]").open`);
+    await page.key("Escape");
+    await page.waitFor(`!document.querySelector("[data-drawer]").open`);
+    await page.waitFor(focused("[data-ab-toggle]"), { message: "focus should land on the register toggle while it is folded" });
+    // The pointer from the explorer unfolds it.
+    await page.click(".wb-also-cue");
+    await page.waitFor(visible("#also-built-list"), { message: "the Also built cue should unfold the register" });
+    assert.equal(await page.evaluate(`localStorage.getItem("portfolio-also-built")`), "open");
+  });
+});
