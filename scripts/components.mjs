@@ -54,13 +54,14 @@ if (featuredProjects.length > SOCKETS.length) {
   throw new Error(`The stack has ${SOCKETS.length} sockets but ${featuredProjects.length} featured projects are configured.`);
 }
 
-/* What a status says about maturity, as a tone: shipped or public (ok), still moving
-   (warn), experimental (accent), and settled but not public or not a product (muted). The
-   words carry the meaning; the dot only groups them. */
+/* A status says how far a project has come (its maturity), as a tone: in use or released
+   (ok), still moving (warn), experimental (accent), and settled but not run anywhere or not
+   a product (muted). The words carry the meaning; the dot only groups them. Whether the
+   source can be read is a separate fact, sourceShort() below. */
 const TONES = {
-  "badge-production": "ok", "badge-deployed": "ok", "badge-published": "ok", "badge-public": "ok",
+  "badge-production": "ok", "badge-deployed": "ok", "badge-published": "ok",
   "badge-development": "warn", "badge-experimental": "accent",
-  "badge-commercial": "muted", "badge-academic": "muted", "badge-private": "muted"
+  "badge-local": "muted", "badge-commercial": "muted", "badge-academic": "muted", "badge-private": "muted"
 };
 const tone = (project) => TONES[project.statusClass] || "muted";
 
@@ -72,6 +73,12 @@ export function status(project) {
    one-field change: a public URL turns this into "Public on GitHub" and adds the action. */
 export function sourceLabel(project) {
   return project.repository ? "Public on GitHub" : project.sourceNote || "Private repository";
+}
+
+/* The same fact in two words, shown beside the status in the explorer and the register. */
+export function sourceShort(project) {
+  if (project.repository) return "Public source";
+  return project.sourceNote === "Confidential" ? "Confidential" : "Private source";
 }
 
 const NEW_TAB = '<span class="sr-only"> (opens in a new tab)</span>';
@@ -112,6 +119,16 @@ export function picture(project, slot = "primary", { loading = "lazy", sizes = "
 
 /* ---------- Site chrome ---------- */
 
+/* Runs in <head> before the stylesheet, on every page. It applies the saved or system theme
+   before the first paint, and marks the small-screen navigation as pending: the sheet
+   styling applies at once (no layout jump while scripts load), but the menu only counts as
+   working once script.js has wired it and set .nav-ready. If script.js is blocked, fails to
+   load or throws first, DOMContentLoaded (which waits for deferred scripts) drops the
+   pending state and the plain list of links comes back. */
+export function headBoot() {
+  return `<script>(function (d) { var t; try { t = localStorage.getItem("portfolio-theme"); } catch (e) {} if (t !== "light" && t !== "dark") t = matchMedia("(prefers-color-scheme: light)").matches ? "light" : "dark"; d.dataset.theme = t; if (t === "light") document.querySelector('meta[name="theme-color"]').content = "#f4f4f1"; d.classList.add("js", "nav-pending"); document.addEventListener("DOMContentLoaded", function () { if (!d.classList.contains("nav-ready")) d.classList.remove("nav-pending"); }); })(document.documentElement);</script>`;
+}
+
 export function header(mode = "home") {
   const home = mode === "home";
   const [, caseKey] = mode.split(":");
@@ -124,7 +141,7 @@ export function header(mode = "home") {
         <a class="brand" href="${home ? "#top" : "index.html"}"><span class="brand-mark" aria-hidden="true">GS</span><span class="brand-name">${esc(profile.name)}</span><span class="sr-only">, ${home ? "back to top" : "home"}</span></a>
         <p class="header-hud" aria-hidden="true"><span data-hud>${hud}</span><span class="hud-sep">/</span><span>${featuredProjects.length} systems × ${LAYERS.length} layers</span></p>
         <nav id="site-navigation" class="site-nav" aria-label="Primary navigation" data-nav>
-          ${link("work", "Work")}${link("experience", "Profile")}${link("contact", "Contact")}
+          ${link("work", "Work")}${link("experience", "Experience")}${link("contact", "Contact")}
           <a class="nav-cv" href="${profile.resume}" target="_blank" rel="noopener noreferrer">${icons.resume}<span>CV</span><span class="sr-only"> (PDF, opens in a new tab)</span>${icons.external}</a>
           <p class="nav-meta"><a href="mailto:${profile.email}">${profile.email}</a><span>${esc(profile.location)}</span></p>
         </nav>
@@ -202,9 +219,9 @@ function dossier(project) {
           </div>`;
 }
 
-/* What a quick look holds, in the order it shows it. */
+/* What a quick look adds to the panel it opens from, in the order it shows it. */
 function peekContents(project) {
-  const parts = [project.primaryImage && "screenshot", "architecture", project.system.decision ? "key decision" : "how it works"].filter(Boolean);
+  const parts = [project.primaryImage && "screenshot", project.system.decision ? "key decision" : "how it works", "evidence"].filter(Boolean);
   return parts.join(" · ").replace(/^./, (c) => c.toUpperCase());
 }
 
@@ -237,7 +254,7 @@ function systemFile(project, featured) {
   ].join("");
   return `<section id="work-${project.key}" class="system-file${featured ? "" : " is-also"}" data-system="${project.key}" aria-labelledby="work-${project.key}-title">
           <header class="sf-head">
-            <p class="sf-kicker"><span class="sf-no">${number}</span>${status(project)}</p>
+            <p class="sf-kicker"><span class="sf-no">${number}</span>${status(project)}<span class="sf-source">${sourceShort(project)}</span></p>
             <h3 id="work-${project.key}-title" class="sf-title">${esc(project.shortTitle)}</h3>
             <p class="sf-category">${esc(project.category)}</p>
             <p class="sf-claim">${esc(project.lead)}</p>
@@ -258,26 +275,20 @@ export function workbenchIndex() {
         </nav>`;
 }
 
-/* "Also built": one ruled register below the explorer. Each row says what the work is (its
-   status), what it does and what it is made with, and ends in the same actions in the same
-   order: a quick look for every entry (without JavaScript, a jump to its case file), the full
-   case study where there is one, then the public links. Inside the register those are the
-   GitHub and Chrome Web Store marks alone, named for assistive technology and on hover; the
-   explorer and the quick look spell them out. */
-function iconLink(href, icon, label, project) {
-  return `<a class="ab-icon" href="${esc(href)}" target="_blank" rel="noopener noreferrer" title="${label}">${icon}<span class="sr-only">${label}: ${esc(project.shortTitle)} (opens in a new tab)</span></a>`;
-}
-
+/* "Also built": one ruled register below the explorer. Each row says how far the work has
+   come and whether its source is public, what it does and what it is made with, and ends in
+   the same actions in the same order: a quick look for every entry (without JavaScript, a
+   jump to its case file), the full case study where there is one, then the Chrome Web Store
+   listing and the GitHub repository, each named in words, as they are in the explorer. */
 function alsoRow(project) {
-  githubLink(project); storeLink(project); // the same URL checks as every other link to them
   const actions = [
     `<a class="ab-action" href="#work-${project.key}" data-wb-also="${project.key}">Quick look<span class="sr-only">: ${esc(project.shortTitle)}</span></a>`,
     project.caseStudy ? `<a class="ab-action" href="${project.caseStudy}">Full case study<span class="sr-only">: ${esc(project.shortTitle)}</span><span aria-hidden="true">→</span></a>` : "",
-    project.store ? iconLink(project.store, icons.store, "Chrome Web Store", project) : "",
-    project.repository ? iconLink(project.repository, icons.github, "GitHub", project) : ""
+    storeLink(project),
+    githubLink(project)
   ].join("");
   return `<li class="ab-row">
-            <p class="ab-status">${status(project)}</p>
+            <p class="ab-status">${status(project)}<span class="ab-source">${sourceShort(project)}</span></p>
             <div class="ab-main">
               <h4 class="ab-name">${esc(project.shortTitle)}</h4>
               <p class="ab-summary">${esc(project.summary || project.lead)}</p>
@@ -304,7 +315,7 @@ export function workbenchStage() {
           <p class="stage-hud" aria-hidden="true"><span data-stage-fig>Fig. 01 — ${esc(first.shortTitle)}</span><span data-stage-sub>Cut through ${LAYERS.length} layers · ${esc(first.status)}</span></p>
           <div class="stage-scene" aria-hidden="true" data-stage-scene>${stack(first.key)}</div>
           <div class="stage-controls" data-stage-controls hidden>
-            <p class="stage-hint" aria-hidden="true" data-stage-hint>Drag to orbit · hover to explode · click a layer for a quick look</p>
+            <p class="stage-hint" aria-hidden="true" data-stage-hint>Drag to turn the stack · click a layer for a quick look</p>
             <div class="layer-switch" role="group" aria-label="Highlight a layer">${LAYERS.map((layer, i) => `<button type="button" class="ls-btn" data-layer-btn="${i}" aria-pressed="${i === 0}" aria-label="${layer.code} ${layer.name}"><span>${layer.code}</span> <span class="ls-name">${layer.name}</span></button>`).join("")}</div>
             <div class="view-switch"><button type="button" class="vs-btn" data-explode aria-pressed="false">Explode</button><button type="button" class="vs-btn" data-reset-view>Reset view</button></div>
           </div>
@@ -338,18 +349,17 @@ export function caseCut(key) {
   const full = projectByKey(key);
   if (!full.system?.layers) throw new Error(`case-cut: ${key} has no layer data`);
   const hud = typeof full.order === "number"
-    ? `<span>Fig. ${nn(full.order)} — ${esc(full.shortTitle)}</span><span>Socket ${nn(full.order)} of ${featuredProjects.length}</span>`
-    : `<span>Also built — ${esc(full.shortTitle)}</span><span>Cut through ${LAYERS.length} layers</span>`;
-  return `<section class="case-cut" aria-labelledby="case-cut-title" data-cut>
-        <div class="frame cut-grid">
-          <div class="cut-visual" aria-hidden="true"><p class="stage-hud">${hud}</p><div class="stage-scene mini-scene">${stack(key)}</div></div>
-          <div class="cut-copy">
-            <p class="label">Layer cut</p>
-            <h2 id="case-cut-title" class="cut-title">${esc(full.shortTitle)}, cut through ${LAYERS.length} layers.</h2>
-            ${layerCut(full)}
-          </div>
-        </div>
-      </section>`;
+    ? `<span>Fig. ${nn(full.order)} · ${esc(full.shortTitle)}</span><span>Socket ${nn(full.order)} of ${featuredProjects.length}</span>`
+    : `<span>Also built · ${esc(full.shortTitle)}</span><span>Cut through ${LAYERS.length} layers</span>`;
+  // A figure inside the case study's architecture section: the same cut the homepage shows
+  // for this system, as a summary of the layers the section then explains.
+  return `<figure class="case-cut" data-cut data-reveal>
+              <div class="cut-visual" aria-hidden="true"><p class="stage-hud">${hud}</p><div class="stage-scene mini-scene">${stack(key)}</div></div>
+              <div class="cut-copy">
+                <figcaption class="artifact-label">${esc(full.shortTitle)}, layer by layer</figcaption>
+                ${layerCut(full)}
+              </div>
+            </figure>`;
 }
 
 export function caseEnd(key) {
@@ -395,6 +405,7 @@ export function caseSource(key) {
 /* ---------- Partial resolution ---------- */
 
 const PARTIALS = {
+  "head-boot": () => headBoot(),
   header: (arg) => header(arg || "home"),
   footer: (arg) => footer(arg),
   "wb-index": () => workbenchIndex(),

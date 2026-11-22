@@ -18,6 +18,16 @@ function attrValue(attrs, name) {
 const htmlByFile = new Map();
 for (const file of pages) htmlByFile.set(file, await fs.readFile(path.join(root, file), "utf8"));
 
+// The host serves pages at clean URLs (/flowbank-one, / for the homepage) and redirects
+// /page.html there, so the built pages must only ever link, and declare canonicals, that way.
+const domain = siteConfig.profile.domain.replace(/\/$/, "");
+const routeOf = (file) => (file === "index.html" ? "/" : `/${file.replace(/\.html$/, "")}`);
+const fileOfRoute = (route) => {
+  const rel = route.replace(/^\//, "");
+  if (!rel) return "index.html";
+  return pages.includes(`${rel}.html`) ? `${rel}.html` : rel;
+};
+
 for (const [file, html] of htmlByFile) {
   console.log(`INFO ${file}: ${countHtmlWords(html)} content words`);
   if ((html.match(/<h1\b/gi) || []).length !== 1) fail(`${file}: expected exactly one h1`);
@@ -26,6 +36,14 @@ for (const [file, html] of htmlByFile) {
   if (file !== "404.html") {
     for (const metadata of ["og:title", "og:description", "og:image", "twitter:title", "twitter:description", "twitter:image"]) {
       if (!new RegExp(`<meta (?:property|name)="${metadata}" content="[^"]+"`, "i").test(html)) fail(`${file}: missing ${metadata}`);
+    }
+    const canonical = html.match(/<link rel="canonical" href="([^"]+)"/)?.[1];
+    const ogUrl = html.match(/<meta property="og:url" content="([^"]+)"/)?.[1];
+    if (canonical !== `${domain}${routeOf(file)}`) fail(`${file}: canonical is ${canonical}, expected the clean URL ${domain}${routeOf(file)}`);
+    if (ogUrl !== canonical) fail(`${file}: og:url (${ogUrl}) differs from the canonical URL`);
+    for (const match of html.matchAll(/<meta (?:property|name)="(?:og|twitter):image" content="([^"]+)"/g)) {
+      if (!match[1].startsWith(`${domain}/`)) { fail(`${file}: social image is not an absolute URL on the site: ${match[1]}`); continue; }
+      if (!(await fs.stat(path.join(root, match[1].slice(domain.length + 1))).catch(() => null))) fail(`${file}: social image is missing from dist: ${match[1]}`);
     }
   }
   for (const [name, pattern] of [
@@ -45,8 +63,10 @@ for (const [file, html] of htmlByFile) {
       continue;
     }
     if (/^(mailto:|tel:)/i.test(href)) continue;
-    const [targetFileRaw, fragment] = href.split("#");
-    const targetFile = targetFileRaw || file;
+    if (!href.startsWith("/") && !href.startsWith("#")) { fail(`${file}: internal link is not root-relative, so it breaks on the 404 page: ${href}`); continue; }
+    if (/\.html(#|$)/.test(href)) fail(`${file}: internal link uses .html, which the host answers with a redirect: ${href}`);
+    const [targetPath, fragment] = href.split("#");
+    const targetFile = targetPath ? fileOfRoute(targetPath) : file;
     if (!htmlByFile.has(targetFile) && !(await fs.stat(path.join(root, targetFile)).catch(() => null))) { fail(`${file}: missing internal target ${href}`); continue; }
     if (fragment) {
       const targetHtml = htmlByFile.get(targetFile);
@@ -101,7 +121,9 @@ for (const [file, html] of htmlByFile) {
 }
 
 const home = htmlByFile.get("index.html");
-if (!home.includes(">Full-stack developer and software engineer building for real operational needs.</h1>")) fail("homepage: full-stack hero statement is missing");
+// The headline may be reworded; it must still name the role, in a line short enough to lead.
+const heroTitle = (home.match(/<h1 id="hero-title">([^<]+)<\/h1>/)?.[1] || "").trim();
+if (!/software engineer/i.test(heroTitle) || heroTitle.split(/\s+/).length > 14) fail(`homepage: the hero headline must name the role in at most 14 words: "${heroTitle}"`);
 // Separators are bound to the preceding word with no-break spaces, so normalise them.
 if (!home.replace(/&nbsp;| /g, " ").includes("React · JavaScript · TypeScript · Node.js · Java · SQL · C#/.NET")) fail("homepage: primary technology line is missing");
 // Technical breadth is shown once, by the hero stack; technologies otherwise appear where
@@ -148,7 +170,7 @@ for (const project of [...featuredProjects, ...alsoProjects]) {
   if (!home.includes(quickLook)) fail(`homepage: ${project.key} lacks a progressive "Quick look" control`);
   // Every case file is inspectable: a case study on this site, a public repository or store
   // listing, or — for private and confidential work — a source line that says so.
-  for (const href of [project.caseStudy, project.repository, project.store].filter(Boolean)) {
+  for (const href of [project.caseStudy && routeOf(project.caseStudy), project.repository, project.store].filter(Boolean)) {
     if (!home.includes(`href="${href.replaceAll("&", "&amp;")}"`) && !home.includes(`href="${href}"`)) fail(`homepage: ${project.key} does not link to ${href}`);
   }
   const source = project.repository ? "Public on GitHub" : project.sourceNote || "Private repository";
@@ -355,10 +377,10 @@ if (/\.js\s+\.wb-files|\.js\s+\.system-file:not/.test(productionCss)) fail("work
 if (await fs.stat(path.join(root, "assets/vendor")).catch(() => null)) fail("performance: unused vendor libraries are shipped");
 for (const [file, html] of htmlByFile) {
   if (/gsap|three(\.min)?\.js|ScrollTrigger/i.test(html)) fail(`${file}: references a removed animation library`);
-  if (!html.includes('href="assets/styles.css"') || !html.includes('src="assets/script.js"')) fail(`${file}: missing the shared stylesheet or script`);
+  if (!html.includes('href="/assets/styles.css"') || !html.includes('src="/assets/script.js"')) fail(`${file}: missing the shared stylesheet or script (root-relative, so the 404 page works at any depth)`);
   // The theme is resolved before the stylesheet loads, so no page paints in the wrong one.
   const themeBoot = html.indexOf('localStorage.getItem("portfolio-theme")');
-  if (themeBoot === -1 || themeBoot > html.indexOf('href="assets/styles.css"') || html.indexOf('name="theme-color"') > themeBoot) fail(`${file}: the theme must be applied in <head>, after the theme-color meta and before the stylesheet`);
+  if (themeBoot === -1 || themeBoot > html.indexOf('href="/assets/styles.css"') || html.indexOf('name="theme-color"') > themeBoot) fail(`${file}: the theme must be applied in <head>, after the theme-color meta and before the stylesheet`);
   const themeSwitch = html.match(/<div class="theme-switch" role="group" aria-label="[^"]+" data-theme-switch(?:="")? hidden(?:="")?>([\s\S]*?)<\/div>/);
   const choices = themeSwitch ? [...themeSwitch[1].matchAll(/<button class="ts-btn" type="button" data-theme-choice="(dark|light)" aria-pressed="(true|false)"[^>]*>[\s\S]*?<span class="sr-only">[^<]+<\/span><\/button>/g)].map((match) => match[1]).join(",") : "";
   if (choices !== "dark,light") fail(`${file}: header theme switch is missing, visible without JavaScript, or lacks named dark/light buttons`);
@@ -383,6 +405,17 @@ for (const project of caseStudyProjects) {
 }
 if (!/\.media-dialog-hotspot\s*\{[\s\S]*?width:\s*44px;[\s\S]*?height:\s*44px;/m.test(productionCss)) fail("accessibility: dialog hotspot targets must remain at least 44px square");
 if (!/\.media-hotspot\s*\{[\s\S]*?width:\s*44px;[\s\S]*?height:\s*44px;/m.test(productionCss)) fail("accessibility: screenshot hotspot targets must remain at least 44px square");
+
+// The sitemap lists exactly the indexed pages, at the clean URLs they declare as canonical.
+const sitemap = await fs.readFile(path.join(root, "sitemap.xml"), "utf8").catch(() => "");
+const sitemapLocs = [...sitemap.matchAll(/<loc>([^<]+)<\/loc>/g)].map((match) => match[1]).sort().join(",");
+const indexedUrls = siteConfig.pages.filter((page) => page.indexed).map((page) => `${domain}${routeOf(page.file)}`).sort().join(",");
+if (sitemapLocs !== indexedUrls) fail(`sitemap.xml lists [${sitemapLocs}], expected the clean URLs [${indexedUrls}]`);
+const redirects = await fs.readFile(path.join(root, "_redirects"), "utf8").catch(() => "");
+for (const line of redirects.split("\n").filter((entry) => entry.trim() && !entry.startsWith("#"))) {
+  const [, to] = line.trim().split(/\s+/);
+  if (/\.html$/.test(to)) fail(`_redirects: ${line.trim()} points at a .html URL, which adds a second redirect`);
+}
 
 const resume = await fs.stat(path.join(root, "Gurmilan_Singh_2026_CV.pdf")).catch(() => null);
 if (!resume || resume.size < 1000) fail("public PDF résumé missing or empty"); else pass(`public PDF résumé present (${resume.size} bytes)`);

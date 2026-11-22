@@ -4,13 +4,13 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
     <meta name="theme-color" content="#0c0d0f" />
-    <script>(function (d) { var t; try { t = localStorage.getItem("portfolio-theme"); } catch (e) {} if (t !== "light" && t !== "dark") t = matchMedia("(prefers-color-scheme: light)").matches ? "light" : "dark"; d.dataset.theme = t; d.classList.add("js"); if (t === "light") document.querySelector('meta[name="theme-color"]').content = "#f4f4f1"; })(document.documentElement);</script>
+    {{> head-boot}}
     <title>Gurmat Saanj case study - {{profile.name}}</title>
     <meta name="description" content="A deployed community application: Punjabi speech recognition, BaniDB matching, personal phone viewing and approval-controlled projector operation." />
     <meta name="robots" content="index, follow" />
-    <link rel="canonical" href="{{profile.domain}}/gurmat-saanj.html" />
-    <meta property="og:type" content="article" /><meta property="og:url" content="{{profile.domain}}/gurmat-saanj.html" /><meta property="og:title" content="Gurmat Saanj case study - {{profile.name}}" /><meta property="og:description" content="A deployed full-stack community application combining Punjabi speech matching, personal mobile viewing, and approval-controlled projector operation." /><meta property="og:image" content="{{profile.domain}}/assets/social-preview.png" />
-    <meta name="twitter:card" content="summary_large_image" /><meta name="twitter:title" content="Gurmat Saanj case study - {{profile.name}}" /><meta name="twitter:description" content="A deployed full-stack community application combining Punjabi speech matching, personal mobile viewing, and approval-controlled projector operation." /><meta name="twitter:image" content="{{profile.domain}}/assets/social-preview.png" />
+    <link rel="canonical" href="{{profile.domain}}/gurmat-saanj" />
+    <meta property="og:type" content="article" /><meta property="og:url" content="{{profile.domain}}/gurmat-saanj" /><meta property="og:title" content="Gurmat Saanj case study - {{profile.name}}" /><meta property="og:description" content="A deployed full-stack community application combining Punjabi speech matching, personal mobile viewing, and approval-controlled projector operation." /><meta property="og:image" content="{{profile.domain}}/{{projects.gurmat.shareCard}}" /><meta property="og:image:width" content="1200" /><meta property="og:image:height" content="630" /><meta property="og:image:alt" content="Gurmat Saanj projector output: a Gurbani line with transliteration and translation" />
+    <meta name="twitter:card" content="summary_large_image" /><meta name="twitter:title" content="Gurmat Saanj case study - {{profile.name}}" /><meta name="twitter:description" content="A deployed full-stack community application combining Punjabi speech matching, personal mobile viewing, and approval-controlled projector operation." /><meta name="twitter:image" content="{{profile.domain}}/{{projects.gurmat.shareCard}}" />
     <script type="application/ld+json">{"@context":"https://schema.org","@type":"SoftwareApplication","name":"Gurmat Saanj","applicationCategory":"MultimediaApplication","operatingSystem":"Web","description":"A deployed multi-device full-stack community application combining Punjabi speech matching, personal mobile viewing and approval-controlled projector operation."}</script>
     <link rel="preload" href="assets/fonts/instrument-sans-latin.woff2" as="font" type="font/woff2" crossorigin />
     <link rel="preload" href="assets/fonts/jetbrains-mono-latin.woff2" as="font" type="font/woff2" crossorigin />
@@ -28,13 +28,32 @@
           <nav class="breadcrumbs" aria-label="Breadcrumb"><a href="index.html">Home</a><span aria-hidden="true">/</span><a href="index.html#work">Work</a><span aria-hidden="true">/</span><span aria-current="page">Gurmat Saanj</span></nav>
           <p class="case-eyebrow">{{> case-index gurmat}}<span>Deployed community web application</span></p>
           <h1 id="case-title">Following live Gurbani recitation, line by line.</h1>
-          <p class="case-lead">Built for live use at a local Gurdwara, Gurmat Saanj follows Punjabi recitation while one editor coordinates the projector and Sangat viewers read on their own devices—behaviour ordinary presentation software could not provide.</p>
-          <dl class="case-facts"><div><dt>Context</dt><dd>Community application</dd></div><div><dt>Role</dt><dd>End-to-end developer</dd></div><div><dt>Access</dt><dd>QR code or session code</dd></div><div><dt>Devices</dt><dd>Multiple viewers · one editor</dd></div><div><dt>Source</dt><dd>BaniDB</dd></div><div><dt>Status</dt><dd>{{> case-status gurmat}}</dd></div></dl>
+          <p class="case-lead">Gurmat Saanj is in use at a local Gurdwara, a Sikh place of worship. It follows the live recitation of Gurbani, the hymns of the Sikh scripture, and keeps the projector and the Sangat, the congregation, on the same line: one editor controls the display, and anyone can follow on their own phone.</p>
+          <dl class="case-facts"><div><dt>Context</dt><dd>Community application</dd></div><div><dt>Role</dt><dd>End-to-end developer</dd></div><div><dt>Access</dt><dd>QR code or session code</dd></div><div><dt>Devices</dt><dd>Multiple viewers · one editor</dd></div><div><dt>Text from</dt><dd>BaniDB</dd></div><div><dt>Status</dt><dd>{{> case-status gurmat}}</dd></div></dl>
           {{#if projects.gurmat.demo}}<div class="text-links"><a class="text-action" href="{{projects.gurmat.demo}}" target="_blank" rel="noopener noreferrer">Watch demo ↗</a></div>{{/if}}
         </div>
       </section>
 
-      {{> case-cut gurmat}}
+      <section class="case-proof" aria-label="Evidence">
+        <div class="frame proof-grid has-facts">
+          <figure class="annotated-media evidence-media evidence-media-projector" data-hotspot-media>
+            <div class="media-annotated-frame">
+            <a class="media-open" href="{{projects.gurmat.primaryImage}}" target="_blank" rel="noopener noreferrer" aria-label="View larger: projector screenshot" data-media-open data-media-src="{{projects.gurmat.primaryImage}}" data-media-caption="The projector shows the current Gurbani line with its transliteration and English translation, legible across the room.">
+              <picture><source srcset="{{projects.gurmat.primaryImageAvif}}" type="image/avif" /><source srcset="{{projects.gurmat.primaryImageWebp}}" type="image/webp" /><img src="{{projects.gurmat.primaryImage}}" width="1902" height="845" loading="eager" decoding="async" alt="Gurmat Saanj projector output showing a Gurbani line with transliteration and English translation" /></picture>
+              <span class="media-enlarge">View larger ↗</span>
+            </a>
+            <div role="group" class="media-hotspots" aria-label="Projector screenshot details">
+              <button class="media-hotspot" type="button" style="--hotspot-x: 50%; --hotspot-y: 49%;" aria-label="Current shared Gurbani line" aria-expanded="false" aria-controls="hotspot-projector-line" data-hotspot><span aria-hidden="true"></span></button>
+              <div class="media-hotspot-panel" id="hotspot-projector-line" role="tooltip" style="--hotspot-x: 50%; --hotspot-y: 49%;" data-hotspot-panel hidden><strong>Current shared line</strong><p>The projector centers the selected known Gurbani line from shared session state.</p></div>
+              <button class="media-hotspot" type="button" style="--hotspot-x: 50%; --hotspot-y: 75%;" aria-label="Readable transliteration and translation" aria-expanded="false" aria-controls="hotspot-projector-translation" data-hotspot><span aria-hidden="true"></span></button>
+              <div class="media-hotspot-panel" id="hotspot-projector-translation" role="tooltip" style="--hotspot-x: 50%; --hotspot-y: 75%;" data-panel-flow="above" data-hotspot-panel hidden><strong>Room-readable support text</strong><p>Transliteration and English translation remain tied to the same selected line for shared viewing.</p></div>
+            </div>
+            </div>
+            <figcaption>The projector shows the current Gurbani line with its transliteration and English translation. The image is cropped to leave out the session’s QR code.</figcaption>
+          </figure>
+          <dl class="proof-facts"><div><dt>In use</dt><dd>At a local Gurdwara: one shared projector, and phones that join by QR or session code to read along. <a href="#pairing">Pairing and control</a></dd></div><div><dt>Tests</dt><dd>447 automated tests pass (22 November 2026): 125 backend and 322 frontend. Recognition accuracy is not measured yet. <a href="#constraints">What is and is not measured</a></dd></div></dl>
+        </div>
+      </section>
 
       <div class="frame case-layout">
         <aside class="case-aside"><details class="case-toc" open data-toc><summary>On this page</summary><nav aria-label="On this page"><a href="#overview">Product</a><a href="#pipeline">Live system</a><a href="#decisions">Application decision</a><a href="#pairing">Pairing &amp; control</a><a href="#boundaries">Limitations</a><a href="#constraints">Evaluation</a><a href="#lessons">Outcome</a></nav></details></aside>
@@ -43,22 +62,8 @@
             <p class="case-section-no">01 / Product</p>
             <h2 id="overview-title">One live line, read across the room.</h2>
             <p>I built the React and JavaScript interface, Node.js and Express API, matching flow, and multi-device session. Participants join by QR or session code; phones follow the projector without becoming extra control surfaces.</p>
-            <p>Two live modes share one tracker. Kirtan follows a sung Shabad line by line; Katha follows a speaker across nearby Shabads or a whole Ang, and holds while they explain. Away from the microphone, a Shabad can be found by first letters, Ang number or meaning, with a multilingual embedding model running in the browser over a bundled index. Bani mode, the daily Hukamnama and offline session packs sit beside the readers.</p>
-            {{#if projects.gurmat.primaryImage}}<figure class="annotated-media evidence-media evidence-media-projector" data-reveal data-hotspot-media>
-              <div class="media-annotated-frame">
-              <a class="media-open" href="{{projects.gurmat.primaryImage}}" target="_blank" rel="noopener noreferrer" aria-label="View projector evidence: projector output screenshot" data-media-open data-media-src="{{projects.gurmat.primaryImage}}" data-media-caption="Authentic projector output: the shared line, transliteration, and English translation remain legible across the room.">
-                <picture><source srcset="{{projects.gurmat.primaryImageAvif}}" type="image/avif" /><source srcset="{{projects.gurmat.primaryImageWebp}}" type="image/webp" /><img src="{{projects.gurmat.primaryImage}}" width="1902" height="845" loading="lazy" decoding="async" alt="Gurmat Saanj projector output showing a Gurbani line with transliteration and English translation" /></picture>
-                <span class="media-enlarge">View projector evidence ↗</span>
-              </a>
-              <div role="group" class="media-hotspots" aria-label="Projector screenshot details">
-                <button class="media-hotspot" type="button" style="--hotspot-x: 50%; --hotspot-y: 49%;" aria-label="Current shared Gurbani line" aria-expanded="false" aria-controls="hotspot-projector-line" data-hotspot><span aria-hidden="true"></span></button>
-                <div class="media-hotspot-panel" id="hotspot-projector-line" role="tooltip" style="--hotspot-x: 50%; --hotspot-y: 49%;" data-hotspot-panel hidden><strong>Current shared line</strong><p>The projector centers the selected known Gurbani line from shared session state.</p></div>
-                <button class="media-hotspot" type="button" style="--hotspot-x: 50%; --hotspot-y: 75%;" aria-label="Readable transliteration and translation" aria-expanded="false" aria-controls="hotspot-projector-translation" data-hotspot><span aria-hidden="true"></span></button>
-                <div class="media-hotspot-panel" id="hotspot-projector-translation" role="tooltip" style="--hotspot-x: 50%; --hotspot-y: 75%;" data-panel-flow="above" data-hotspot-panel hidden><strong>Room-readable support text</strong><p>Transliteration and English translation remain tied to the same selected line for shared viewing.</p></div>
-              </div>
-              </div>
-              <figcaption>Projector evidence · shared Gurbani line, transliteration, and translation; the reusable QR region is excluded.</figcaption>
-            </figure>{{/if}}
+            <p>Two live modes share one tracker. Kirtan follows a sung Shabad (a hymn) line by line; Katha follows a speaker across nearby Shabads or a whole Ang (a page of the scripture), and holds while they explain. Away from the microphone, a Shabad can be found by first letters, Ang number or meaning, with a multilingual embedding model running in the browser over a bundled index. Bani mode, the daily Hukamnama (the day’s reading) and offline session packs sit beside the readers.</p>
+            {{> case-cut gurmat}}
           </section>
 
           <section id="pipeline" class="case-section case-immersive case-immersive-gurmat" data-case-immersive data-case-variant="gurmat" aria-labelledby="pipeline-title">
@@ -111,7 +116,7 @@
 
           <section id="constraints" class="case-section" aria-labelledby="constraints-title">
             <p class="case-section-no">06 / Evaluation</p><h2 id="constraints-title">What is tested, and what is not measured yet</h2>
-            <div class="evidence-next-step" data-reveal><div><p class="artifact-label">recognition accuracy</p><p>Still unmeasured: no authentic recording has yet been scored against independently verified, synchronized labels. The tooling for it exists — opt-in traces of matching and navigation decisions, audio-and-trace capture bundles, a local review page, and an evaluator that scores a trace against reviewed labels. Synthetic scores check that tooling, not live accuracy.</p></div><div><p class="artifact-label">automated tests</p><p>447 tests pass (22 November 2026): 125 backend tests, including remote authentication, stream tickets, Sangat View revocation, device enrollment and suggestion ranking, all run without calling BaniDB, and 322 frontend tests covering recognition, tracking, capture, evaluation and replay.</p></div></div>
+            <div class="evidence-next-step" data-reveal><div><p class="artifact-label">recognition accuracy</p><p>Still unmeasured: no authentic recording has yet been scored against independently verified, synchronized labels. The tooling for it exists: opt-in traces of matching and navigation decisions, audio-and-trace capture bundles, a local review page, and an evaluator that scores a trace against reviewed labels. Synthetic scores check that tooling, not live accuracy.</p></div><div><p class="artifact-label">automated tests</p><p>447 tests pass (22 November 2026): 125 backend tests, including remote authentication, stream tickets, Sangat View revocation, device enrollment and suggestion ranking, all run without calling BaniDB, and 322 frontend tests covering recognition, tracking, capture, evaluation and replay.</p></div></div>
           </section>
 
           <section id="lessons" class="case-section" aria-labelledby="lessons-title">

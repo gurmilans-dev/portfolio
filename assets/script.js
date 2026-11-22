@@ -7,7 +7,7 @@
   "use strict";
 
   const root = document.documentElement;
-  root.classList.add("js");
+  root.classList.add("js"); // normally already set in <head>; nav-ready is set below, once the menu works
   const motionQuery = matchMedia("(prefers-reduced-motion: reduce)");
   const finePointer = matchMedia("(hover: hover) and (pointer: fine)");
   const desktopQuery = matchMedia("(min-width: 1100px)");
@@ -93,6 +93,9 @@
     focusables[next].focus();
   });
   sheetQuery.addEventListener?.("change", event => { if (!event.matches) setMenu(false); });
+  // Only now can the toggle open the sheet, so only now may the sheet hide the links.
+  if (menuToggle && nav) root.classList.add("nav-ready");
+  root.classList.remove("nav-pending");
 
   /* ---------- Header state, scroll progress ---------- */
   const progress = document.querySelector("[data-scroll-progress]");
@@ -113,7 +116,7 @@
 
   /* ---------- Section awareness: homepage nav + HUD, case-study contents ---------- */
   const hud = document.querySelector("[data-hud]");
-  const HUD_LABELS = { top: "full-stack developer", work: "selected work", experience: "profile", contact: "contact" };
+  const HUD_LABELS = { top: "software engineer", work: "selected work", experience: "experience", contact: "contact" };
 
   function sectionAwareness(links, { onChange, allowEmpty = false } = {}) {
     const targets = links.map(link => document.getElementById(decodeURIComponent(link.hash.slice(1)))).filter(Boolean);
@@ -628,7 +631,7 @@
         contactForm.reset();
         clearErrors();
         resetTurnstile();
-        setState(STATE.RECEIVED, "Message sent. I usually reply within 1–2 business days.");
+        setState(STATE.RECEIVED, "Message sent. I'll reply to the address you gave.");
       } catch (error) {
         resetTurnstile();
         setState(STATE.ERROR, error?.name === "AbortError"

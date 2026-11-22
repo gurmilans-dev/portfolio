@@ -100,6 +100,29 @@ function renderTemplate(source, file) {
   return rendered;
 }
 
+/* URLs. The host (Cloudflare static assets, default HTML handling) serves every page at its
+   clean URL and answers /page.html with a 307 to /page, and / for index.html. So every
+   internal link, canonical and sitemap entry uses the clean URL directly, and every link
+   and asset path is root-relative: the 404 page is served at whatever unknown path was
+   asked for (/old/deep/link), where a relative "assets/styles.css" would not resolve.
+   Source templates and site.config.mjs keep writing file names (erp-case-study.html);
+   this is the one place they become URLs. */
+const ROUTES = new Map(siteConfig.pages.map((page) => [page.file, page.file === "index.html" ? "/" : `/${page.file.replace(/\.html$/, "")}`]));
+const toUrl = (value) => {
+  if (!value || /^(?:[a-z][a-z0-9+.-]*:|\/|#|\{)/i.test(value)) return value; // scheme, root-relative, fragment
+  const [pathAndQuery, hash] = value.split("#");
+  const route = ROUTES.get(pathAndQuery);
+  return `${route ?? `/${pathAndQuery}`}${hash !== undefined ? `#${hash}` : ""}`;
+};
+function rootRelative(html) {
+  return html.replace(/\b(href|src|srcset)="([^"]*)"/g, (match, attr, value) => {
+    const next = attr === "srcset"
+      ? value.split(",").map((candidate) => { const [url, ...descriptor] = candidate.trim().split(/\s+/); return [toUrl(url), ...descriptor].join(" "); }).join(", ")
+      : toUrl(value);
+    return `${attr}="${next}"`;
+  });
+}
+
 function minifyCss(source) {
   return source
     .replace(/\/\*[\s\S]*?\*\//g, "")
@@ -138,15 +161,16 @@ async function build() {
   for (const file of HTML_FILES) {
     const template = await fs.readFile(path.join(ROOT, file), "utf8");
     const rendered = renderTemplate(template, file);
-    await fs.writeFile(path.join(OUT, file), removeHtmlComments(rendered));
+    await fs.writeFile(path.join(OUT, file), rootRelative(removeHtmlComments(rendered)));
   }
 
   const domain = siteConfig.profile.domain.replace(/\/$/, "");
   await fs.writeFile(path.join(OUT, "robots.txt"), `User-agent: *\nAllow: /\n\nSitemap: ${domain}/sitemap.xml\n`);
-  // Sitemap follows siteConfig.pages, so a new page cannot be silently left unindexed.
+  // Sitemap follows siteConfig.pages, so a new page cannot be silently left unindexed. It
+  // lists the clean URLs the host serves, the same ones each page declares as canonical.
   const sitemapUrls = siteConfig.pages
     .filter((page) => page.indexed)
-    .map((page) => `  <url><loc>${domain}/${page.file === "index.html" ? "" : page.file}</loc><changefreq>monthly</changefreq><priority>${page.priority}</priority></url>`)
+    .map((page) => `  <url><loc>${domain}${ROUTES.get(page.file)}</loc><changefreq>monthly</changefreq><priority>${page.priority}</priority></url>`)
     .join("\n");
   await fs.writeFile(path.join(OUT, "sitemap.xml"), `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${sitemapUrls}\n</urlset>\n`);
 

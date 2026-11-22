@@ -4,7 +4,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
     <meta name="theme-color" content="#0c0d0f" />
-    <script>(function (d) { var t; try { t = localStorage.getItem("portfolio-theme"); } catch (e) {} if (t !== "light" && t !== "dark") t = matchMedia("(prefers-color-scheme: light)").matches ? "light" : "dark"; d.dataset.theme = t; d.classList.add("js"); if (t === "light") document.querySelector('meta[name="theme-color"]').content = "#f4f4f1"; })(document.documentElement);</script>
+    {{> head-boot}}
     <title>{{profile.name}} - Software Engineer &amp; Full-Stack Developer</title>
     <meta name="description" content="Software engineer in Modena, Italy: production business software, React and Node.js applications, Java/Spring Boot and C#/.NET systems, and relational data." />
     <meta name="author" content="{{profile.name}}" />
@@ -42,10 +42,10 @@
           <div class="hero-head">
             <p class="hero-loc"><span class="pulse" aria-hidden="true"></span>{{profile.location}}</p>
             <p class="hero-tech">React&nbsp;· JavaScript&nbsp;· TypeScript&nbsp;· Node.js&nbsp;· Java&nbsp;· SQL&nbsp;· C#/.NET</p>
-            <h1 id="hero-title">Full-stack developer and software engineer building for real operational needs.</h1>
+            <h1 id="hero-title">Full-stack software engineer, from the interface down to the release.</h1>
           </div>
           <div class="hero-copy">
-            <p class="hero-lead">I build software people depend on to get something done — internal business platforms, operations and developer tooling, and applications built for one specific community.</p>
+            <p class="hero-lead">I’m the primary developer of a business platform used in daily internal operations. On my own time I build developer tools, a simulated bank and a live reading system for a local Gurdwara.</p>
             <div class="hero-actions">
               <a class="btn btn-primary" href="#work">View work<span aria-hidden="true">↓</span></a>
               <a class="btn btn-line" href="{{profile.resume}}" target="_blank" rel="noopener noreferrer" download>Download CV<span class="sr-only"> (PDF)</span><span aria-hidden="true">↓</span></a>
@@ -99,8 +99,8 @@
             <h2 id="work-title">Six systems, taken apart layer by layer.</h2>
           </div>
         {{> wb-index}}
-        {{> wb-stage}}
         {{> wb-files}}
+        {{> wb-stage}}
         </div>
         {{> also-built}}
       </section>
@@ -132,7 +132,7 @@
                   <h4>Commercial C#/.NET software <span class="badge badge-private">Commercial</span></h4>
                   <p class="xp-branch-role">Development and maintenance</p>
                   <p>The company’s commercial software, including a client-server component that controls licence activation and concurrent use, and the infrastructure it runs on.</p>
-                  <a class="xp-link" href="#work-licenceManager">Open the licence manager file <span aria-hidden="true">→</span></a>
+                  <a class="xp-link" href="#work-licenceManager">Quick look at the licence manager <span aria-hidden="true">→</span></a>
                 </li>
               </ol>
             </article>
@@ -166,16 +166,16 @@
         <div class="frame contact-grid">
           <div class="contact-copy" data-reveal>
             <p class="label label-accent">Contact · reply within 1–2 business days</p>
-            <h2 id="contact-title">Let’s build useful software together.</h2>
-            <p class="section-lead">Software engineering roles, project collaboration, or a technical conversation. Your message comes straight to me.</p>
+            <h2 id="contact-title">Tell me what you’re building.</h2>
+            <p class="section-lead">A software engineering role, a project, or a technical question. Your message comes straight to me.</p>
             <div class="reach">
               <p class="label reach-title" id="reach-title">Direct contact</p>
+              <p class="reach-mail">
+                <a class="reach-address" href="mailto:{{profile.email}}">{{icons.email}}<span><span class="sr-only">Email </span>{{profile.email}}</span></a>
+                <button class="reach-icon copy-btn" type="button" data-copy="{{profile.email}}" hidden><span class="reach-face" aria-hidden="true">{{icons.copy}}{{icons.success}}</span><span class="reach-tip" data-copy-label>Copy address</span></button>
+              </p>
               <div class="reach-row">
                 <ul class="reach-links" aria-labelledby="reach-title">
-                  <li class="reach-mail">
-                    <a class="reach-icon" href="mailto:{{profile.email}}"><span class="reach-face" aria-hidden="true">{{icons.email}}</span><span class="reach-tip"><span class="sr-only">Email </span>{{profile.email}}</span></a>
-                    <button class="reach-icon copy-btn" type="button" data-copy="{{profile.email}}" hidden><span class="reach-face" aria-hidden="true">{{icons.copy}}{{icons.success}}</span><span class="reach-tip" data-copy-label>Copy address</span></button>
-                  </li>
                   <li><a class="reach-icon" href="{{profile.github}}" target="_blank" rel="noopener noreferrer"><span class="reach-face" aria-hidden="true">{{icons.github}}</span><span class="reach-tip">GitHub <span class="reach-handle">gurmilans-dev</span></span><span class="sr-only"> (opens in a new tab)</span></a></li>
                   <li><a class="reach-icon" href="{{profile.linkedin}}" target="_blank" rel="noopener noreferrer"><span class="reach-face" aria-hidden="true">{{icons.linkedin}}</span><span class="reach-tip">LinkedIn <span class="reach-handle">{{profile.name}}</span></span><span class="sr-only"> (opens in a new tab)</span></a></li>
                 </ul>
@@ -193,9 +193,9 @@
               <fieldset class="enquiry">
                 <legend class="label">Enquiry type <span>(optional)</span></legend>
                 <div class="chips">
-                  <div class="chip"><input type="radio" id="enquiry-role" name="enquiryType" value="Software engineering role" /><label for="enquiry-role">Software engineering role</label></div>
-                  <div class="chip"><input type="radio" id="enquiry-project" name="enquiryType" value="Project collaboration" /><label for="enquiry-project">Project collaboration</label></div>
-                  <div class="chip"><input type="radio" id="enquiry-technical" name="enquiryType" value="Technical discussion" /><label for="enquiry-technical">Technical discussion</label></div>
+                  <div class="chip"><input type="radio" id="enquiry-role" name="enquiryType" value="Software engineering role" /><label for="enquiry-role">Engineering role</label></div>
+                  <div class="chip"><input type="radio" id="enquiry-project" name="enquiryType" value="Project collaboration" /><label for="enquiry-project">Project</label></div>
+                  <div class="chip"><input type="radio" id="enquiry-technical" name="enquiryType" value="Technical discussion" /><label for="enquiry-technical">Technical question</label></div>
                   <div class="chip"><input type="radio" id="enquiry-other" name="enquiryType" value="Other" /><label for="enquiry-other">Other</label></div>
                 </div>
               </fieldset>

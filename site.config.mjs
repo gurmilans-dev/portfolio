@@ -88,7 +88,7 @@ export const siteConfig = {
         evidence: "In daily internal use · confidential source and interface"
       },
       system: {
-        head: "Full-stack software for the work behind the business.",
+        head: "Replacing a legacy system, spreadsheets and paper hand-offs with one platform.",
         intro: "I am the primary developer of a full-stack system used in daily internal operations. It replaced a legacy system, separately maintained spreadsheets and paper hand-offs with one application.",
         layers: [
           ["Role-scoped screens", "Responsive screens expose only the modules and actions relevant to the authenticated user."],
@@ -133,6 +133,7 @@ export const siteConfig = {
       status: "In development",
       statusClass: "badge-development",
       caseStudy: "flowbank-one.html",
+      shareCard: "assets/social/flowbank-one.png", // scripts/social-cards.mjs
       // Private for now. Paste the public GitHub URL here when the repository is published.
       repository: "",
       demo: "",
@@ -143,7 +144,7 @@ export const siteConfig = {
         evidence: "355 backend tests · measured load tests"
       },
       system: {
-        head: "Every euro written twice, and never applied twice.",
+        head: "Every transfer is a debit and a credit, and a retry never moves money twice.",
         intro: "No real money and no real bank: every account is fictitious. Each transfer is a debit and a credit committed together or not at all, and the system is tested under concurrency and load to prove the books still balance.",
         layers: [
           ["Four-step transfer", "React and TypeScript. The access token lives only in memory; a double click sends one request, and a transfer with no answer is checked by its key, never resent."],
@@ -174,7 +175,7 @@ export const siteConfig = {
       primaryImageWidth: 1440,
       primaryImageHeight: 900,
       primaryImageAlt: "FlowBank One dashboard for the demo user Giulia: available balance, money in and out this month, spending by category and the latest movements",
-      primaryImageCaption: "Dashboard of the demo user, running locally with generated history. The interface is Italian.",
+      primaryImageCaption: "The demo user's dashboard, running locally with generated history: balance, money in and out this month, spending by category and the latest movements. The interface is Italian.",
       statementImage: "assets/flowbank/flowbank-statement.png",
       statementImageAvif: "assets/flowbank/flowbank-statement.avif",
       statementImageWebp: "assets/flowbank/flowbank-statement.webp",
@@ -215,6 +216,7 @@ export const siteConfig = {
       status: "In development",
       statusClass: "badge-development",
       caseStudy: "procbeacon.html",
+      shareCard: "assets/social/procbeacon.png", // scripts/social-cards.mjs
       // Private for now. Paste the public GitHub URL here when the repository is published.
       repository: "",
       demo: "",
@@ -226,7 +228,7 @@ export const siteConfig = {
       },
       system: {
         head: "Which process owns this port, and is it safe to stop?",
-        intro: "Port conflicts and orphaned dev servers are a daily nuisance on Windows. ProcBeacon reads the system's own tables, links what it finds to the project folders you register, and treats ending a process as a decision to verify rather than a button.",
+        intro: "Port conflicts and orphaned dev servers are a daily nuisance on Windows. ProcBeacon reads the system's own tables, links what it finds to the project folders you register, and checks a process's identity again before it ends it.",
         layers: [
           ["Four-area WPF app", "Workspaces, Ports, Processes and System, with one search across services, PIDs and ports. MVVM view models drive every view."],
           ["Identity before action", "One shared monitor feeds every area. A process is its PID plus its creation time, re-checked on the same handle before anything is ended."],
@@ -256,7 +258,7 @@ export const siteConfig = {
       primaryImageWidth: 1404,
       primaryImageHeight: 841,
       primaryImageAlt: "ProcBeacon Ports view: TCP and UDP endpoints with owning PID and process, and an inspector for an exact local-port lookup with details, timeline and local verification tabs",
-      primaryImageCaption: "Ports, with the exact-port inspector. Rendered from the application's own WPF views with fixture data; the interface is Italian.",
+      primaryImageCaption: "Port 5173 looked up exactly: both endpoints on it, the owning node process attributed as “Inferito” (inferred), and a note that a missing row does not prove the port is free. Rendered from the application's own WPF views with fixture data; the interface is Italian.",
       processesImage: "assets/procbeacon/procbeacon-processes.png",
       processesImageAvif: "assets/procbeacon/procbeacon-processes.avif",
       processesImageWebp: "assets/procbeacon/procbeacon-processes.webp",
@@ -279,9 +281,11 @@ export const siteConfig = {
       category: "Maintenance operations platform",
       lead: "A full-stack system for handling maintenance work from request and triage through assignment, execution, SLA tracking, resolution and reporting.",
       tech: "React · Fastify · MySQL",
-      status: "Public repository",
-      statusClass: "badge-public",
+      // Maturity only; whether the source is public is shown beside it ("Public source").
+      status: "Runs locally",
+      statusClass: "badge-local",
       caseStudy: "maintops.html",
+      shareCard: "assets/social/maintops.png", // scripts/social-cards.mjs
       repository: "https://github.com/gurmilans-dev/maintops-public",
       demo: "",
       meta: {
@@ -322,7 +326,7 @@ export const siteConfig = {
       primaryImageWidth: 1905,
       primaryImageHeight: 831,
       primaryImageAlt: "MaintOps supervisor dashboard showing SLA breach and at-risk counts, an unassigned request queue, current team workload and backlog aging",
-      primaryImageCaption: "Supervisor dashboard, captured from the synthetic demo database."
+      primaryImageCaption: "The supervisor dashboard on the synthetic demo database: SLA breaches and tickets at risk, the unassigned queue, team workload and backlog age."
     },
     gurmat: {
       order: 5,
@@ -334,6 +338,7 @@ export const siteConfig = {
       status: "Deployed",
       statusClass: "badge-deployed",
       caseStudy: "gurmat-saanj.html",
+      shareCard: "assets/social/gurmat-saanj.png", // scripts/social-cards.mjs
       repository: "https://github.com/gurmilans-dev/gurmatsaanj",
       demo: "",
       meta: {
@@ -401,6 +406,7 @@ export const siteConfig = {
       status: "Pilot preparation",
       statusClass: "badge-development",
       caseStudy: "opssemble.html",
+      shareCard: "assets/social/opssemble.png", // scripts/social-cards.mjs
       repository: "",
       demo: "",
       meta: {
@@ -410,13 +416,13 @@ export const siteConfig = {
         evidence: "483 unit tests · recorded release checks"
       },
       system: {
-        head: "What isn't ready, and what just went wrong.",
+        head: "Which parts of an event aren't ready, and why.",
         intro: "Opssemble began as my university final project and grew into a product being hardened for a controlled pilot. Areas hold tasks, problems become tracked exceptions with severity, and readiness is computed from what is still open.",
         layers: [
           ["Readiness dashboard", "React and MUI. Readiness, blockers and open exceptions per area, a mobile My Shift queue, and QR area workspaces for on-site staff."],
           ["Role on every write", "Fastify feature modules. Owner, coordinator, operator and viewer are checked server-side on every write; event-scoped Server-Sent Events push changes live."],
           ["Hashed tokens", "MySQL with migrations. QR, verification and reset tokens are stored only as SHA-256 hashes; evidence photos are re-encoded without metadata and served after authorization."],
-          ["Release gates", "149 frontend and 334 backend unit tests pass; recorded staging checks ran critical journeys in Chromium and WebKit on the packaged build. Not launched."]
+          ["Release checks", "149 frontend and 334 backend unit tests pass; a local validation of the packaged release passed 24 critical journeys in Chromium and WebKit. Not launched."]
         ],
         architecture: [
           ["React + MUI", "Dashboard · My Shift · QR areas"],
@@ -432,7 +438,7 @@ export const siteConfig = {
             ["Trade-off", "Every new write endpoint requires an authorization rule and test."]
           ]
         },
-        evidence: "149 frontend unit tests and 334 backend tests pass (21 November 2026; ten MySQL integration tests run separately). A staging validation on 4 October 2026 recorded 24 critical browser journeys passing against the packaged release.",
+        evidence: "149 frontend unit tests and 334 backend tests pass (21 November 2026; ten MySQL integration tests run separately). A local validation of the packaged release on 4 October 2026 passed 24 critical browser journeys; it was not a live deployment.",
         boundary: "Not launched publicly: it is being prepared for a controlled pilot, so no load, uptime or usage figures exist. The interface shown is Italian."
       },
       primaryImage: "assets/opssemble/opssemble-dashboard.png",
@@ -448,7 +454,7 @@ export const siteConfig = {
       readinessImageWidth: 1600,
       readinessImageHeight: 1000,
       readinessImageAlt: "Opssemble readiness view: areas ready, in progress and blocked, completed tasks, active blockers, and the applied rules that make the event blocked",
-      readinessImageCaption: "Readiness explains itself: the rules that blocked this event are listed beside the score. Captured by the project's screenshot script with fixture data.",
+      readinessImageCaption: "The readiness view of a fixture event: one area blocked, two of six tasks done, and a 62% score marked “Bloccato” (blocked). Beside it, the rules that decided it, starting with “a critical open exception blocks the event”. Captured by the project's screenshot script; the interface is Italian.",
       qrImage: "assets/opssemble/opssemble-qr-area-mobile.png",
       qrImageAvif: "assets/opssemble/opssemble-qr-area-mobile.avif",
       qrImageWebp: "assets/opssemble/opssemble-qr-area-mobile.webp",
@@ -458,7 +464,8 @@ export const siteConfig = {
       qrImageCaption: "What a QR code opens on a phone: one area, its tasks and its problems, nothing else."
     },
     // "Also built": smaller, earlier or in-progress work. No `order`, so these stay out of
-    // the stack; `also` sets their position. Each states what it is through `status`.
+    // the stack; `also` sets their position. `status` says how far each has come (its
+    // maturity); whether the source is public is derived from `repository` and shown beside it.
     esamarea: {
       also: 7,
       title: "Esamarea",
@@ -467,8 +474,8 @@ export const siteConfig = {
       lead: "A study planner that splits one weekly availability budget across every active exam, and records study sessions on a timer the server owns rather than the browser.",
       summary: "Study planner sharing one weekly budget across exams, with server-owned timers.",
       tech: "React · TypeScript · Express · Prisma · MySQL",
-      status: "Open source",
-      statusClass: "badge-public",
+      status: "Runs locally",
+      statusClass: "badge-local",
       caseStudy: "",
       repository: "https://github.com/gurmilans-dev/esamarea",
       demo: "",
@@ -551,7 +558,7 @@ export const siteConfig = {
       title: "Orbit",
       shortTitle: "Orbit",
       category: "Installable planning app · in development",
-      lead: "A personal planning app — appointments with reminders, today, inbox, a weekly and monthly planner, habits, goals and projects — that works offline first and synchronizes once you sign in.",
+      lead: "A personal planning app for appointments with reminders, today, an inbox, a weekly and monthly planner, habits, goals and projects. It works offline first and synchronizes once you sign in.",
       summary: "Offline-first planner for appointments, tasks and goals, with sync and reminders.",
       tech: "React · TypeScript · Node.js · MySQL · PWA",
       status: "In development",
@@ -599,6 +606,7 @@ export const siteConfig = {
       status: "In development",
       statusClass: "badge-development",
       caseStudy: "alfaaz.html",
+      shareCard: "assets/social/alfaaz.png", // scripts/social-cards.mjs
       repository: "",
       demo: "",
       meta: {
@@ -633,22 +641,22 @@ export const siteConfig = {
         evidence: "1,127 automated tests pass: 729 client, 390 server and 8 script tests, with MySQL integration runs only against a separate test database, and Playwright end-to-end coverage of auth, mobile, exports, transliteration and voice notes.",
         boundary: "Private repository, not publicly deployed. Built as a single-writer product; no user numbers are claimed."
       },
-      primaryImage: "assets/alfaaz/alfaaz-sign-in.png",
-      primaryImageAvif: "assets/alfaaz/alfaaz-sign-in.avif",
-      primaryImageWebp: "assets/alfaaz/alfaaz-sign-in.webp",
-      primaryImageWidth: 1843,
-      primaryImageHeight: 982,
-      primaryImageAlt: "The Alfaaz sign-in screen laid out as an open book on warm paper, with the wordmark and a botanical illustration on the left page and the sign-in form on the right",
-      primaryImageCaption: "The sign-in screen, set as an open book.",
-      // The writing surface itself belongs in the case study, beside the write-path
-      // diagram it illustrates.
-      writingImage: "assets/alfaaz/alfaaz-focus-mode.png",
-      writingImageAvif: "assets/alfaaz/alfaaz-focus-mode.avif",
-      writingImageWebp: "assets/alfaaz/alfaaz-focus-mode.webp",
-      writingImageWidth: 1897,
-      writingImageHeight: 985,
-      writingImageAlt: "Alfaaz focus mode in its dark theme: a Devanagari heading and subtitle on a ruled page, with a saved indicator, the ambience control and a live word and line count",
-      writingImageCaption: "Focus mode with rain ambience. The interface stays English while the writing is Devanagari — the autosave state is the small \"Saved\" marker, top left.",
+      // The writing surface shows the product, so it leads: in the quick look and at the top
+      // of the case study. The sign-in screen illustrates the design section.
+      primaryImage: "assets/alfaaz/alfaaz-focus-mode.png",
+      primaryImageAvif: "assets/alfaaz/alfaaz-focus-mode.avif",
+      primaryImageWebp: "assets/alfaaz/alfaaz-focus-mode.webp",
+      primaryImageWidth: 1897,
+      primaryImageHeight: 985,
+      primaryImageAlt: "Alfaaz focus mode in its dark theme: a Devanagari heading and subtitle on a ruled page, with a saved indicator, the ambience control and a live word and line count",
+      primaryImageCaption: "Focus mode with rain ambience: an English interface, writing in Devanagari, and the autosave state as the small “Saved” marker at the top left.",
+      signinImage: "assets/alfaaz/alfaaz-sign-in.png",
+      signinImageAvif: "assets/alfaaz/alfaaz-sign-in.avif",
+      signinImageWebp: "assets/alfaaz/alfaaz-sign-in.webp",
+      signinImageWidth: 1843,
+      signinImageHeight: 982,
+      signinImageAlt: "The Alfaaz sign-in screen laid out as an open book on warm paper, with the wordmark and a botanical illustration on the left page and the sign-in form on the right",
+      signinImageCaption: "The sign-in screen, set as an open book on Alfaaz's warm paper.",
       // Real brand asset, used inside the case study's design section only.
       symbol: "assets/alfaaz/alfaaz-symbol.svg"
     },

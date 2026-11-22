@@ -4,13 +4,13 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
     <meta name="theme-color" content="#0c0d0f" />
-    <script>(function (d) { var t; try { t = localStorage.getItem("portfolio-theme"); } catch (e) {} if (t !== "light" && t !== "dark") t = matchMedia("(prefers-color-scheme: light)").matches ? "light" : "dark"; d.dataset.theme = t; d.classList.add("js"); if (t === "light") document.querySelector('meta[name="theme-color"]').content = "#f4f4f1"; })(document.documentElement);</script>
+    {{> head-boot}}
     <title>ProcBeacon case study - {{profile.name}}</title>
     <meta name="description" content="A Windows developer tool in C# and WPF: ports, processes and project folders linked, and process actions that re-verify identity before acting." />
     <meta name="robots" content="index, follow" />
-    <link rel="canonical" href="{{profile.domain}}/procbeacon.html" />
-    <meta property="og:type" content="article" /><meta property="og:url" content="{{profile.domain}}/procbeacon.html" /><meta property="og:title" content="ProcBeacon case study - {{profile.name}}" /><meta property="og:description" content="Which process owns this port, and is it safe to stop? A C#/.NET Windows tool built on native APIs, with 438 automated tests." /><meta property="og:image" content="{{profile.domain}}/assets/social-preview.png" />
-    <meta name="twitter:card" content="summary_large_image" /><meta name="twitter:title" content="ProcBeacon case study - {{profile.name}}" /><meta name="twitter:description" content="Which process owns this port, and is it safe to stop? A C#/.NET Windows tool built on native APIs, with 438 automated tests." /><meta name="twitter:image" content="{{profile.domain}}/assets/social-preview.png" />
+    <link rel="canonical" href="{{profile.domain}}/procbeacon" />
+    <meta property="og:type" content="article" /><meta property="og:url" content="{{profile.domain}}/procbeacon" /><meta property="og:title" content="ProcBeacon case study - {{profile.name}}" /><meta property="og:description" content="Which process owns this port, and is it safe to stop? A C#/.NET Windows tool built on native APIs, with 438 automated tests." /><meta property="og:image" content="{{profile.domain}}/{{projects.procbeacon.shareCard}}" /><meta property="og:image:width" content="1200" /><meta property="og:image:height" content="630" /><meta property="og:image:alt" content="ProcBeacon's Ports view with an exact port lookup, rendered from the application's views" />
+    <meta name="twitter:card" content="summary_large_image" /><meta name="twitter:title" content="ProcBeacon case study - {{profile.name}}" /><meta name="twitter:description" content="Which process owns this port, and is it safe to stop? A C#/.NET Windows tool built on native APIs, with 438 automated tests." /><meta name="twitter:image" content="{{profile.domain}}/{{projects.procbeacon.shareCard}}" />
     <script type="application/ld+json">{"@context":"https://schema.org","@type":"SoftwareApplication","name":"ProcBeacon","applicationCategory":"DeveloperApplication","operatingSystem":"Windows","description":"A Windows desktop tool for developers that links listening ports and processes to registered project folders, and verifies a process's identity before any action. Built with C#, .NET and WPF."}</script>
     <link rel="preload" href="assets/fonts/instrument-sans-latin.woff2" as="font" type="font/woff2" crossorigin />
     <link rel="preload" href="assets/fonts/jetbrains-mono-latin.woff2" as="font" type="font/woff2" crossorigin />
@@ -28,12 +28,17 @@
           <nav class="breadcrumbs" aria-label="Breadcrumb"><a href="index.html">Home</a><span aria-hidden="true">/</span><a href="index.html#work">Work</a><span aria-hidden="true">/</span><span aria-current="page">ProcBeacon</span></nav>
           <p class="case-eyebrow">{{> case-index procbeacon}}<span>Windows developer tool · C#/.NET</span></p>
           <h1 id="case-title">Which process owns this port, and is it safe to stop?</h1>
-          <p class="case-lead">ProcBeacon is a Windows desktop tool I built for my own development work. It reads the system's port and process tables, links what it finds to the project folders I register, and treats ending a process as a decision to verify rather than a button. It is packaged as a local, unsigned preview and is not distributed.</p>
+          <p class="case-lead">ProcBeacon is a Windows desktop tool I built for my own development work. It reads the system's port and process tables, links what it finds to the project folders I register, and checks a process's identity again before it ends it. It is packaged as a local, unsigned preview and is not distributed.</p>
           <dl class="case-facts"><div><dt>Context</dt><dd>Personal developer tool</dd></div><div><dt>Role</dt><dd>Sole developer</dd></div><div><dt>Stack</dt><dd>C# · .NET 10 · WPF · Win32 APIs</dd></div><div><dt>Status</dt><dd>{{> case-status procbeacon}}</dd></div><div><dt>Source</dt><dd>{{> case-source procbeacon}}</dd></div></dl>
         </div>
       </section>
 
-      {{> case-cut procbeacon}}
+<section class="case-proof" aria-label="Evidence">
+        <div class="frame proof-grid has-facts">
+          <figure class="evidence-media"><a class="media-open" href="{{projects.procbeacon.primaryImage}}" target="_blank" rel="noopener noreferrer"><picture><source srcset="{{projects.procbeacon.primaryImageAvif}}" type="image/avif" /><source srcset="{{projects.procbeacon.primaryImageWebp}}" type="image/webp" /><img src="{{projects.procbeacon.primaryImage}}" width="{{projects.procbeacon.primaryImageWidth}}" height="{{projects.procbeacon.primaryImageHeight}}" loading="eager" decoding="async" alt="{{projects.procbeacon.primaryImageAlt}}" /></picture><span class="media-enlarge" aria-hidden="true">Full size ↗</span><span class="sr-only"> (full size, opens in a new tab)</span></a><figcaption>{{projects.procbeacon.primaryImageCaption}}</figcaption></figure>
+          <dl class="proof-facts"><div><dt>PID reuse</dt><dd>PID, creation time and path are re-checked on the same handle, immediately before TerminateProcess; a changed identity is refused. <a href="#safety">Where a request can stop</a></dd></div><div><dt>Tests</dt><dd>438 automated tests pass in a Release build (21 November 2026), the native ones against fixture processes the tests start themselves. <a href="#reliability">What they cover</a></dd></div></dl>
+        </div>
+      </section>
 
       <div class="frame case-layout">
         <aside class="case-aside"><details class="case-toc" open data-toc><summary>On this page</summary><nav aria-label="On this page"><a href="#why">Why it exists</a><a href="#architecture">Architecture</a><a href="#attribution">Ports &amp; attribution</a><a href="#safety">Process safety</a><a href="#reliability">Reliability &amp; tests</a><a href="#boundaries">Boundaries</a></nav></details></aside>
@@ -44,13 +49,12 @@
             <h2 id="why-title">Port 5173 is taken. By what, and from which project?</h2>
             <p>A day of web development leaves Node servers, watchers and test runners behind. Windows can tell you that a PID owns a port. It cannot tell you which of your projects started it, whether it is the same process you saw a minute ago, or whether ending it is safe. ProcBeacon answers those questions in one window.</p>
             <div role="group" class="operational-scope" data-reveal aria-label="The four areas"><p class="artifact-label">four areas, one search</p><ul><li><strong>Workspaces</strong><span>Registered project folders and services, the processes attributed to them, configured tasks and managed sessions</span></li><li><strong>Ports</strong><span>TCP and UDP endpoints over IPv4 and IPv6, an exact local-port lookup, a sampled timeline and explicit loopback checks</span></li><li><strong>Processes</strong><span>CPU, working set, runtime, endpoints and workspace attribution, with guarded actions</span></li><li><strong>System</strong><span>CPU, memory, disk and network, with the processes using the most. Ctrl+K searches services, names, PIDs and ports</span></li></ul></div>
-            <figure class="evidence-media" data-reveal><picture><source srcset="{{projects.procbeacon.primaryImageAvif}}" type="image/avif" /><source srcset="{{projects.procbeacon.primaryImageWebp}}" type="image/webp" /><img src="{{projects.procbeacon.primaryImage}}" width="{{projects.procbeacon.primaryImageWidth}}" height="{{projects.procbeacon.primaryImageHeight}}" loading="lazy" decoding="async" alt="{{projects.procbeacon.primaryImageAlt}}" /></picture><figcaption>{{projects.procbeacon.primaryImageCaption}}</figcaption></figure>
           </section>
 
           <section id="architecture" class="case-section" aria-labelledby="architecture-title">
             <p class="case-section-no">02 / Architecture</p>
             <h2 id="architecture-title">One monitor, and the native code kept in one place.</h2>
-            <div class="architecture" data-reveal role="img" aria-label="A WPF application binds view models to snapshots produced by a platform-independent core and a Windows layer that owns every native call."><div><span>01</span><strong>WPF app</strong><small>MVVM · four areas · search</small></div><i aria-hidden="true">→</i><div><span>02</span><strong>Core</strong><small>Rules · attribution · one monitor</small></div><i aria-hidden="true">→</i><div><span>03</span><strong>Windows layer</strong><small>IP Helper · kernel32 · PDH</small></div></div>
+            {{> case-cut procbeacon}}
             <p>The solution is split by what each part is allowed to know. The core holds the rules and targets plain .NET, with no Windows dependency. The Windows layer owns every native call and turns raw system tables into typed snapshots. The WPF application binds view models to those snapshots, and a small command-line tool exercises the collectors on their own.</p>
             <p>One monitor coordinates refreshes for all four areas. Scans are serialized, cancellation is honoured, and a late callback from a cancelled scan is discarded rather than painted over newer data, so switching areas never shows two different moments at once.</p>
             <div role="group" class="operational-scope" data-reveal aria-label="Native sources, from the code"><p class="artifact-label">native sources, from the code</p><ul><li><strong>Endpoints</strong><span>GetExtendedTcpTable and GetExtendedUdpTable from IP Helper, with the owning PID</span></li><li><strong>Identity</strong><span>OpenProcess, GetProcessTimes and QueryFullProcessImageNameW</span></li><li><strong>Metrics</strong><span>PDH counters for CPU, disk and network; GlobalMemoryStatusEx for memory</span></li><li><strong>Unknowns</strong><span>A value it cannot read or map is shown as unknown, never filled in</span></li></ul></div>
@@ -67,7 +71,7 @@
 
           <section id="safety" class="case-section" aria-labelledby="safety-title">
             <p class="case-section-no">04 / Process safety</p>
-            <h2 id="safety-title">Ending a process is a decision to verify, not a button.</h2>
+            <h2 id="safety-title">Windows reuses process IDs, so identity is checked on the handle that acts.</h2>
             <p>Windows reuses process IDs: between looking at a row and clicking, the PID can belong to a different program. ProcBeacon therefore identifies a process by its PID and its creation time, and acts only through a handle whose identity it has just verified.</p>
             <div role="group" class="case-flow case-flow-guarded" data-reveal aria-label="Path of a terminate request from the confirmed snapshot to the native call">
               <p class="artifact-label">technical artefact · where a terminate request can stop</p>
@@ -79,7 +83,7 @@
                 <li><span class="case-flow-no">05</span><strong>Confirm</strong><em>The dialog states the risk; the action stays disabled until it is acknowledged</em></li>
                 <li class="case-flow-gate"><span class="case-flow-no">06</span><strong>One shot</strong><em>A prepared session works once; another click needs a new confirmation</em></li>
                 <li class="case-flow-mark"><span class="case-flow-no">07</span><strong>Act</strong><em>Identity is checked again on the same handle immediately before TerminateProcess</em></li>
-                <li><span class="case-flow-no">08</span><strong>Report</strong><em>Exited, already exited, denied, blocked or identity changed — reported as it happened</em></li>
+                <li><span class="case-flow-no">08</span><strong>Report</strong><em>Exited, already exited, denied, blocked or identity changed: reported as it happened</em></li>
               </ol>
             </div>
             <figure class="evidence-media is-compact" data-reveal><picture><source srcset="{{projects.procbeacon.dialogImageAvif}}" type="image/avif" /><source srcset="{{projects.procbeacon.dialogImageWebp}}" type="image/webp" /><img src="{{projects.procbeacon.dialogImage}}" width="{{projects.procbeacon.dialogImageWidth}}" height="{{projects.procbeacon.dialogImageHeight}}" loading="lazy" decoding="async" alt="{{projects.procbeacon.dialogImageAlt}}" /></picture><figcaption>{{projects.procbeacon.dialogImageCaption}}</figcaption></figure>
@@ -100,7 +104,7 @@
 
           <section id="boundaries" class="case-section" aria-labelledby="boundaries-title">
             <p class="case-section-no">06 / Boundaries</p>
-            <h2 id="boundaries-title">What this project does not claim.</h2>
+            <h2 id="boundaries-title">A preview, packaged but not distributed.</h2>
             <dl class="constraint-ledger" data-reveal><div><dt>Distribution</dt><dd>Packaged locally, not distributed: the preview is unsigned, and there is no public release. Installing, reinstalling and uninstalling on a clean test machine, a licence and approval to publish are still pending.</dd></div><div><dt>Usability</dt><dd>The final usability review is pending; high-DPI, multi-monitor and screen-reader checks are still open.</dd></div><div><dt>Interface</dt><dd>Italian.</dd></div><div><dt>Scope</dt><dd>Windows only. Managed sessions start explicit executables and can force-end only their own root process.</dd></div></dl>
             <div class="outcome-summary" data-reveal><div><p class="artifact-label">what it demonstrates</p><p>Desktop engineering in C# and .NET beyond the browser: native Windows APIs behind a clean boundary, a WPF application on MVVM, privacy and consent designed in, and destructive actions built around verified identity rather than trust.</p></div><div><p class="artifact-label">what it is tested with</p><p>xUnit tests for the core rules, the Windows layer and the application, native checks against fixture processes, and offscreen renders of the real views.</p></div></div>
           </section>

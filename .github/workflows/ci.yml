@@ -1,7 +1,8 @@
 name: CI
 
-# Build the static site and run the content/claims validator on every push and PR.
-# Install the locked development dependencies for HTML parsing and regression tests.
+# Build the static site, run the content/claims validator, then drive the built site in
+# headless Chrome (preinstalled on GitHub's Ubuntu runners) for the behaviour checks.
+# Install the locked development dependencies for HTML parsing and image work.
 
 on:
   push:
@@ -19,7 +20,8 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
-          node-version: 20
+          # 22+ for the global WebSocket the browser tests use.
+          node-version: 24
           cache: npm
       - name: Install development dependencies
         run: npm ci --include=dev
@@ -27,3 +29,5 @@ jobs:
         run: node build.mjs
       - name: Validate templates, links, metadata, and claims
         run: npm test
+      - name: Browser regression tests
+        run: npm run test:browser

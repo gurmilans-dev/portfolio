@@ -5,7 +5,9 @@
   "description": "Static portfolio for Gurmilan Singh - full-stack software engineer. Hand-built HTML, CSS and JavaScript with no runtime dependencies; parse5 and sharp are dev-only, for the build and image optimization.",
   "scripts": {
     "build": "node build.mjs",
-    "test": "node --test scripts/html.test.mjs && node validate.mjs"
+    "test": "node --test scripts/html.test.mjs && node validate.mjs",
+    "test:browser": "node --test --test-concurrency=1 scripts/browser.test.mjs",
+    "serve": "node scripts/serve.mjs"
   },
   "devDependencies": {
     "parse5": "8.0.0",

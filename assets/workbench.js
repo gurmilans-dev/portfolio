@@ -116,8 +116,8 @@
     new ResizeObserver(() => requestAnimationFrame(fitBand)).observe(controls);
   }
   if (hint) hint.textContent = finePointer.matches
-    ? "Drag to orbit · hover to explode · click a layer for a quick look"
-    : "Swipe sideways to orbit · tap a layer to highlight it";
+    ? "Drag to turn the stack · click a layer for a quick look"
+    : "Swipe sideways to turn the stack · tap a layer to highlight it";
 
   function syncRows() {
     document.querySelectorAll(".system-file .lc-row").forEach(row => {
@@ -222,15 +222,19 @@
     holdLayer(event);
   }));
 
-  explodeButton?.addEventListener("click", () => {
-    state.exploded = !state.exploded;
-    stack?.classList.toggle("is-exploded", state.exploded);
-    explodeButton.setAttribute("aria-pressed", String(state.exploded));
-  });
+  function setExploded(on) {
+    state.exploded = on;
+    stack?.classList.toggle("is-exploded", on);
+    explodeButton?.setAttribute("aria-pressed", String(on));
+  }
+  explodeButton?.addEventListener("click", () => setExploded(!state.exploded));
+  // "Reset view" means the whole view: the resting angle and the closed stack. The selected
+  // system and highlighted layer are choices, not view, so they stay.
   resetButton?.addEventListener("click", () => {
     state.rx = VIEW.rx;
     state.rz = VIEW.rz;
     applyView();
+    setExploded(false);
   });
 
   /* Stage: hover picks a layer, a socket picks a system, a click opens its quick look,
@@ -346,14 +350,30 @@
     openFile(order[(index + direction + order.length) % order.length]);
   }
 
+  /* Focus goes back to the control that opened the quick look. Moving to another system
+     inside the drawer can hide that control (each system's panel shows only while it is
+     selected), so fall back to the control that now stands for the system last shown:
+     its tab for one of the six, its register row's "Quick look" for the rest. */
+  const isUsable = element => element instanceof HTMLElement && element.isConnected
+    && !element.closest("[hidden], [inert]") && !element.matches(":disabled")
+    && element.getClientRects().length > 0 && getComputedStyle(element).visibility !== "hidden";
+  function focusAfterClose(trigger, key) {
+    if (isUsable(trigger) && trigger !== document.body) { trigger.focus({ preventScroll: true }); return; }
+    const featuredIndex = featured.indexOf(key);
+    const fallback = featuredIndex >= 0 ? tabs[featuredIndex] : alsoLinks.find(link => link.dataset.wbAlso === key);
+    // The fallback may be off screen (a register row further down), so let focus scroll to it.
+    if (isUsable(fallback)) fallback.focus();
+  }
+
   function finishClose() {
+    const shownKey = openKey;
     restoreFile();
     alsoLinks.forEach(link => link.classList.remove("is-current"));
     if (drawer.open) drawer.close();
     Site.unlockScroll();
     const target = returnFocus;
     returnFocus = null;
-    if (target && document.contains(target)) target.focus({ preventScroll: true });
+    focusAfterClose(target, shownKey);
   }
 
   function closeDrawer() {
@@ -390,10 +410,17 @@
   }
 
   /* ---------- Deep links: #work-<system> selects or opens that system ---------- */
+  /* A hand-edited or truncated link (#work-%, #work-%E0%A4) must not stop the workbench from
+     starting, and an unknown key changes nothing. */
+  function keyFromHash(hash) {
+    const match = /^#work-(.+)$/.exec(hash);
+    if (!match) return null;
+    try { return decodeURIComponent(match[1]); } catch { return null; }
+  }
+
   function fromHash({ scroll = false } = {}) {
-    const match = /^#work-(.+)$/.exec(location.hash);
-    if (!match) return;
-    const key = decodeURIComponent(match[1]);
+    const key = keyFromHash(location.hash);
+    if (!key) return;
     const index = featured.indexOf(key);
     if (index >= 0) select(index);
     else if (order.includes(key) && canDrawer) openFile(key);
