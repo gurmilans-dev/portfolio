@@ -169,11 +169,30 @@ export async function launchBrowser() {
         await call("Input.dispatchMouseEvent", { type: "mouseReleased", x, y, button: "left", clickCount: 1 });
         await sleep(80);
       },
+      /* Two presses in quick succession, as a real double-click sends them (detail 1, then 2). */
+      async dblclick(selector, options) {
+        const { x, y } = await page.point(selector, options);
+        await call("Input.dispatchMouseEvent", { type: "mouseMoved", x, y });
+        for (const clickCount of [1, 2]) {
+          await call("Input.dispatchMouseEvent", { type: "mousePressed", x, y, button: "left", clickCount });
+          await call("Input.dispatchMouseEvent", { type: "mouseReleased", x, y, button: "left", clickCount });
+        }
+        await sleep(80);
+      },
       async tap(selector, options) {
         const { x, y } = await page.point(selector, options);
         await call("Input.dispatchTouchEvent", { type: "touchStart", touchPoints: [{ x, y }] });
         await call("Input.dispatchTouchEvent", { type: "touchEnd", touchPoints: [] });
         await sleep(120);
+      },
+      /* Every console message and browser log entry since the page opened (diagnostics). */
+      messages() {
+        return events.flatMap((event) => {
+          if (event.method === "Runtime.consoleAPICalled") return [`${event.params.type}: ${event.params.args.map((arg) => arg.value ?? arg.description).join(" ")}`];
+          if (event.method === "Log.entryAdded") return [`${event.params.entry.level} (${event.params.entry.source}): ${event.params.entry.text}`];
+          if (event.method === "Runtime.exceptionThrown") return [`exception: ${event.params.exceptionDetails.exception?.description || event.params.exceptionDetails.text}`];
+          return [];
+        });
       },
       /* Uncaught exceptions and console errors since the page opened. */
       errors() {

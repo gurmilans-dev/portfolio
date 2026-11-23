@@ -24,10 +24,11 @@ The root HTML files are source templates. Essential values and repeated markup a
 ## How the pages are built
 
 - `site.config.mjs` — profile, contact form, the four layers, and every project: copy, status, evidence, what is *not* claimed, layer summaries, architecture, decision record and images. This is the single source of truth for the workbench order and the case files.
-- `scripts/components.mjs` — build-time partials (`{{> head-boot}}`, `{{> header home}}`, `{{> footer}}`, `{{> wb-index}}`, `{{> wb-stage}}`, `{{> wb-files}}`, `{{> also-built}}`, `{{> drawer}}`, `{{> case-cut key}}`, `{{> case-end key}}`, `{{> case-index key}}`, `{{> case-status key}}`, `{{> case-source key}}`, `{{> github-link key}}`) rendered from the config. `github-link` renders nothing unless the project has a public GitHub repository; `case-source` shows that link once it exists and the words "Private repository" until then.
+- `scripts/components.mjs` — build-time partials (`{{> head-boot}}`, `{{> header home}}`, `{{> footer}}`, `{{> wb-index}}`, `{{> wb-stage}}`, `{{> wb-files}}`, `{{> also-built}}`, `{{> drawer}}`, `{{> case-cut key}}`, `{{> case-end key}}`, `{{> case-index key}}`, `{{> case-status key}}`, `{{> case-source key}}`, `{{> github-link key}}`, `{{> sim id}}`) rendered from the config. `github-link` renders nothing unless the project has a public GitHub repository; `case-source` shows that link once it exists and the words "Private repository" until then.
+- `scripts/sims.mjs` — the two simulations' scenarios and steps, and the markup made from them (see below).
 - `build.mjs` — partial and token resolution, conservative CSS/JS minification, comment removal, sitemap and robots generation, static and media copy. It also turns every internal link and asset path into a root-relative, clean URL (`erp-case-study.html` becomes `/erp-case-study`, `index.html#work` becomes `/#work`): templates and `site.config.mjs` keep writing file names.
 - `validate.mjs` — run by `npm test`: metadata, canonical URLs and the sitemap, links and fragments, unique ids, accessibility contracts, workbench order against the config, and the claim checks that keep every case study honest (no invented usage, deployment or technology).
-- `scripts/browser.test.mjs` — run by `npm run test:browser` against the built site, in headless Chrome driven by `scripts/cdp.mjs` (no dependencies; Node 22+). It checks behaviour the validator cannot see: the small-screen menu with and without its script, focus after a quick look closes, `#work-` links (valid, unknown and malformed), the selected system's summary on narrow screens, the stage controls on short windows, Reset view, themes, internal links, the contact form against intercepted requests (nothing is sent), and the 404 page at a nested path.
+- `scripts/browser.test.mjs` — run by `npm run test:browser` against the built site, in headless Chrome driven by `scripts/cdp.mjs` (no dependencies; Node 22+). It checks behaviour the validator cannot see: the small-screen menu with and without its script, focus after a quick look closes, `#work-` links (valid, unknown and malformed), the selected system's summary on narrow screens, the stage controls on short windows, Reset view, themes, internal links, the contact form against intercepted requests (nothing is sent), the 404 page at a nested path, layout shift while pages load, input during transitions, and every path through the two simulations (keyboard, touch, every width and step, both themes, contrast, reduced motion, without JavaScript, a slow or blocked `sims.js`).
 
 ## Publishing a private repository
 
@@ -42,6 +43,18 @@ The GitHub action then appears in its homepage file and quick look, in its case 
 
 - `assets/script.js` (every page): colour theme switch, navigation sheet, section awareness, reveal-on-scroll, case-study sequences, screenshot hotspots and lightbox, contact form, copy-to-clipboard, the Modena clock. The small-screen menu is drawn as a sheet from the first paint (`.nav-pending`, set in `<head>`), but it only becomes the working menu once this script has wired it (`.nav-ready`); if the script is blocked or fails, the pending state is dropped at DOMContentLoaded and the plain links come back.
 - `assets/workbench.js` (homepage): hero tilt, the systems tablist, the stack (orbit, explode, layer highlighting) and the quick-look drawer.
+- `assets/sims.js` (FlowBank One and ProcBeacon case studies only, about 5 KB): steps the simulations. It never talks to the network, a database or a process.
+
+The inline head script follows the stylesheet link directly, on every page. Being a script, it makes the parser wait for `styles.css` before reading the body, so a page's view-transition opt-in is in force before anything can ask for it: Chromium otherwise sometimes evaluated an arriving page without it and abandoned the transition (reproduced in Chrome under Playwright in about half of the explorer-to-case-study trips, none after the move). Rendering waits for the stylesheet anyway, so the theme is still applied before the first paint. `validate.mjs` keeps the order.
+
+## Break it yourself: the two simulations
+
+The FlowBank One case study (Ledger & concurrency) and the ProcBeacon case study (Process safety) each carry a small instrument labelled as a simulation, beside the decision record it puts to the test:
+
+- **FlowBank One, lock order:** two crossed transfers, in FlowBank's order, out of order (the deadlock the rule prevents, PostgreSQL's `40P01` and FlowBank's single retry), and a lock held past `lock_timeout` (`55P03`, `503 ACCOUNT_BUSY`). Taken from `AccountLockOrder`, `PostingService`, ADR-0005, `LedgerConcurrencyIT` and the performance report.
+- **ProcBeacon, PID reuse:** a PID that passes to another program between the refresh and the click (blocked as `IdentityChanged` on the handle), the same process ended and verified on its handle (the session then refuses a second run), and a critical process with an ordinary name. Taken from `WindowsProcessControlService`, `ProcessControlPolicy`, the confirmation window and `ProcessControlTests`. The processes, PIDs, times and paths are invented.
+
+`scripts/sims.mjs` holds the steps, and the build renders three things from them: a written transcript (what a reader without JavaScript gets, and what prints), the live instrument already drawn in its start state, and the steps as JSON for `assets/sims.js`. The live view is shown from the first paint under `.sim-pending` (dropped at DOMContentLoaded unless `sims.js` took over), so nothing moves when the script arrives, and nothing changes size while it steps: lines of different length are stacked in one cell. Step, Back, Reset, Play and the step rail are buttons; arrow keys, Home and End step while focus is on the controls; each step is announced through a polite live region.
 
 ## Transitions and the contact response
 
@@ -57,7 +70,7 @@ The homepage's contact section and footer reverse figure and ground in both them
 
 ## Fallbacks
 
-Without JavaScript the workbench is a plain list of every system with its full case file. Reduced-motion preferences disable the load sequence, the ambient drift, and the request/response trace and release pipeline in the hero figure, which then rests in its final state. The 3D stack is decorative and hidden from assistive technology; the same information is in the index and the layer files.
+Without JavaScript the workbench is a plain list of every system with its full case file, and each simulation is its written transcript. Reduced-motion preferences disable the load sequence, the ambient drift, and the request/response trace and release pipeline in the hero figure, which then rests in its final state. The 3D stack is decorative and hidden from assistive technology; the same information is in the index and the layer files.
 
 ## Assets
 

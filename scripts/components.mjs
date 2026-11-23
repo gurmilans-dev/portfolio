@@ -4,6 +4,7 @@
  * enhance what these functions already produced.
  */
 import { siteConfig, featuredProjects, alsoProjects, caseStudyProjects } from "../site.config.mjs";
+import { sims } from "./sims.mjs";
 
 const { profile, layers: LAYERS } = siteConfig;
 
@@ -131,17 +132,44 @@ export function headBoot() {
       if (t !== "light" && t !== "dark") t = matchMedia("(prefers-color-scheme: light)").matches ? "light" : "dark";
       d.dataset.theme = t;
       if (t === "light") document.querySelector('meta[name="theme-color"]').content = "#f4f4f1";
-      d.classList.add("js", "nav-pending");
-      document.addEventListener("DOMContentLoaded", function () { if (!d.classList.contains("nav-ready")) d.classList.remove("nav-pending"); });
+      d.classList.add("js", "nav-pending", "wb-pending", "sim-pending");
+      try { if (localStorage.getItem("portfolio-also-built") === "folded") d.classList.add("ab-folded"); } catch (e) {}
+      document.addEventListener("DOMContentLoaded", function () {
+        if (!d.classList.contains("nav-ready")) d.classList.remove("nav-pending");
+        if (!d.classList.contains("workbench-ready")) d.classList.remove("wb-pending", "ab-folded");
+        if (!d.classList.contains("sims-ready")) d.classList.remove("sim-pending");
+      });
       /* Page transitions: the arrival side runs here, before the first frame. It marks the
          page as arriving (so load animations do not replay under the transition), adds the
          direction of a step through the case studies or through history, and keeps only
          what is on screen moving: a project's name or screenshot below the fold just fades. */
+      /* While a view transition runs, the browser hit-tests its overlay, so a press lands on
+         <html> and the click that follows does nothing. The guard ends the transition at
+         once on a press (the page is then in its final state) and hands the click to the link
+         or button that is under the pointer now. Only a plain single click is carried over: the
+         second click of a double-click is not, so nothing is activated twice. Keyboard
+         activation never needed this: keys go to the focused element throughout. */
+      window.__guardTransition = function (vt) {
+        var down = null, live = true;
+        function press(ev) { if (!live || ev.button > 0 || ev.isPrimary === false) return; down = { x: ev.clientX, y: ev.clientY, t: Date.now() }; try { vt.skipTransition(); } catch (x) {} }
+        function click(ev) {
+          var at = down; down = null;
+          if (!at || ev.target !== d || ev.detail > 1 || Date.now() - at.t > 1500 || ev.ctrlKey || ev.metaKey || ev.shiftKey || ev.altKey) return;
+          var hit = document.elementFromPoint(at.x, at.y), el = hit && hit.closest && hit.closest("a[href], button:not([disabled]), summary, label, input, select, textarea");
+          if (el) { if (/^(INPUT|SELECT|TEXTAREA)$/.test(el.tagName)) el.focus(); else el.click(); }
+        }
+        function stop() { live = false; removeEventListener("pointerdown", press, true); setTimeout(function () { removeEventListener("click", click, true); }, down ? 1500 : 0); }
+        addEventListener("pointerdown", press, true);
+        addEventListener("click", click, true);
+        vt.finished.then(stop, stop);
+        [vt.ready, vt.updateCallbackDone].forEach(function (p) { if (p && p.catch) p.catch(function () {}); }); // a skipped or aborted transition rejects these; expected
+      };
       addEventListener("pagereveal", function (e) {
         var vt = e.viewTransition, dir = null, nav = window.navigation && navigation.activation, held;
         try { var hint = JSON.parse(sessionStorage.getItem("vt-dir") || "null"); sessionStorage.removeItem("vt-dir"); if (hint && Date.now() - hint.t < 8000) dir = hint.dir; } catch (x) {}
         if (!vt) return;
         d.classList.add("vt-arrive");
+        window.__guardTransition(vt);
         if (nav && nav.navigationType === "traverse" && nav.from && nav.entry) dir = nav.entry.index < nav.from.index ? "prev" : "next";
         if (dir && vt.types) { try { vt.types.add(dir); } catch (x) {} }
         held = [].filter.call(document.querySelectorAll("[data-vt]"), function (el) { var r = el.getBoundingClientRect(); return r.bottom < 0 || r.top > innerHeight; });
@@ -280,7 +308,7 @@ function systemFile(project, featured) {
     storeLink(project),
     githubLink(project)
   ].join("");
-  return `<section id="work-${project.key}" class="system-file${featured ? "" : " is-also"}" data-system="${project.key}" aria-labelledby="work-${project.key}-title" style="${vtVars(project)}">
+  return `<section id="work-${project.key}" class="system-file${featured ? (project.order === 1 ? " is-current" : "") : " is-also"}" data-system="${project.key}" aria-labelledby="work-${project.key}-title" style="${vtVars(project)}">
           <header class="sf-head">
             <p class="sf-kicker"><span class="sf-no">${number}</span>${status(project)}<span class="sf-source">${sourceShort(project)}</span></p>
             <h3 id="work-${project.key}-title" class="sf-title" data-vt="title">${esc(project.shortTitle)}</h3>
@@ -459,6 +487,10 @@ const PARTIALS = {
   "case-status": (arg) => caseStatus(arg),
   "case-source": (arg) => caseSource(arg),
   "vt-shot": (arg) => vtShot(arg),
+  sim: (arg) => {
+    if (!sims[arg]) throw new Error(`sim: unknown simulation ${arg}`);
+    return sims[arg]();
+  },
   "github-link": (key) => {
     const project = siteConfig.projects[key];
     if (!project) throw new Error(`github-link: unknown project ${key}`);

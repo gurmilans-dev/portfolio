@@ -132,9 +132,10 @@
     syncRows();
   }
 
-  function select(index, { focus = false } = {}) {
+  function select(index, { focus = false, remember = true } = {}) {
     state.selected = clamp(index, 0, featured.length - 1);
     const key = featured[state.selected];
+    if (remember) { try { history.replaceState({ ...(history.state || {}), wbSystem: key }, ""); } catch { /* the selection still applies */ } }
     tabs.forEach((tab, i) => {
       const on = i === state.selected;
       tab.setAttribute("aria-selected", String(on));
@@ -319,6 +320,7 @@
   let openKey = null;
   let placeholder = null;
   let returnFocus = null;
+  let openedAt = 0;
   let closeTimer = 0;
 
   function restoreFile() {
@@ -361,12 +363,14 @@
      stylesheet names them). Anywhere else the drawer slides on its own CSS transition. */
   const canMorph = typeof document.startViewTransition === "function";
   const morphing = () => canMorph && !motionQuery.matches && document.visibilityState === "visible";
-  function withTransition(update, { closing = false } = {}) {
+  function withTransition(update, { closing = false, after } = {}) {
     root.classList.add("vt-quick-look");
     root.classList.toggle("vt-closing", closing);
     let transition;
-    try { transition = document.startViewTransition(update); } catch { root.classList.remove("vt-quick-look"); update(); return; }
-    transition.finished.finally(() => root.classList.remove("vt-quick-look", "vt-closing"));
+    try { transition = document.startViewTransition(update); } catch { root.classList.remove("vt-quick-look"); update(); after?.(); return; }
+    window.__guardTransition?.(transition); // a click while it runs is carried through, not lost
+    transition.ready.catch(() => {}); // skipped on purpose (a press, another transition): not an error
+    transition.finished.finally(() => { root.classList.remove("vt-quick-look", "vt-closing"); after?.(); });
   }
 
   function openFile(key, trigger, { animate = true } = {}) {
@@ -377,6 +381,7 @@
     const show = settled => {
       mountFile(key);
       if (opening) {
+        openedAt = performance.now();
         returnFocus = trigger || document.activeElement;
         drawer.showModal();
         Site.lockScroll();
@@ -413,12 +418,12 @@
     else if (featuredIndex < 0 && isUsable(registerToggle)) registerToggle.focus();
   }
 
-  function finishClose() {
+  function finishClose({ unlock = true } = {}) {
     const shownKey = openKey;
     restoreFile();
     alsoLinks.forEach(link => link.classList.remove("is-current"));
     if (drawer.open) drawer.close();
-    Site.unlockScroll();
+    if (unlock) Site.unlockScroll();
     const target = returnFocus;
     returnFocus = null;
     focusAfterClose(target, shownKey);
@@ -428,7 +433,7 @@
     if (!drawer?.open) return;
     if (morphing()) {
       clearTimeout(closeTimer);
-      withTransition(() => { drawer.classList.remove("is-visible"); bench.classList.remove("is-drawer-open"); finishClose(); }, { closing: true });
+      withTransition(() => { drawer.classList.remove("is-visible"); bench.classList.remove("is-drawer-open"); finishClose({ unlock: false }); }, { closing: true, after: () => Site.unlockScroll() });
       return;
     }
     drawer.classList.remove("is-visible");
@@ -447,7 +452,7 @@
     drawer.querySelector("[data-drawer-next]")?.addEventListener("click", () => step(1));
     drawer.addEventListener("cancel", event => { event.preventDefault(); closeDrawer(); });
     drawer.addEventListener("click", event => {
-      if (event.target !== drawer) return;
+      if (event.target !== drawer || event.detail > 1 || performance.now() - openedAt < 350) return;
       const rect = drawer.getBoundingClientRect();
       const inside = event.clientX >= rect.left && event.clientX <= rect.right && event.clientY >= rect.top && event.clientY <= rect.bottom;
       if (!inside) closeDrawer();
@@ -492,11 +497,15 @@
   }
 
   bench.classList.add("wb-ready");
-  select(0);
+  select(0, { remember: false });
+  // Back or Forward to this entry: the system it showed (a #work-<system> link still wins).
+  const remembered = history.state?.wbSystem;
+  if (remembered && !keyFromHash(location.hash) && featured.includes(remembered)) select(featured.indexOf(remembered), { remember: false });
   selectFromHint();
   setLayer(0);
   applyView();
   fromHash({ scroll: true });
   addEventListener("hashchange", () => fromHash({ scroll: true }));
   root.classList.add("workbench-ready");
+  root.classList.remove("wb-pending", "ab-folded");
 })();

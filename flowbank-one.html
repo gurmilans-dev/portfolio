@@ -4,7 +4,6 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
     <meta name="theme-color" content="#0c0d0f" />
-    {{> head-boot}}
     <title>FlowBank One case study - {{profile.name}}</title>
     <meta name="description" content="A simulated bank in Java and Spring Boot: double-entry ledger, idempotent transfers, ordered locking, rotating sessions, and load tests that recheck the books." />
     <meta name="robots" content="index, follow" />
@@ -16,8 +15,10 @@
     <link rel="preload" href="assets/fonts/jetbrains-mono-latin.woff2" as="font" type="font/woff2" crossorigin />
     <link rel="icon" href="assets/favicon.svg" type="image/svg+xml" />
     <link rel="stylesheet" href="assets/styles.css" />
+    {{> head-boot}}
     <link rel="expect" href="#case-title" blocking="render" />
     <script src="assets/script.js" defer></script>
+    <script src="assets/sims.js" defer></script>
   </head>
   <body class="page-flowbank page-case">
     <a class="skip-link" href="#main-content">Skip to content</a>
@@ -88,6 +89,7 @@
               <h3 id="flowbank-decision-title">Lock accounts in one global order</h3>
               <dl><div><dt>Constraint</dt><dd>Two transfers between the same accounts in opposite directions each lock one account and then wait for the other: a deadlock.</dd></div><div><dt>Decision</dt><dd>One component decides the lock order for every code path that locks more than one account, and SQL never decides it with an ORDER BY.</dd></div><div><dt>Result</dt><dd>1,800 crossed transfers between two accounts in the load test, with no deadlock.</dd></div><div><dt>Trade-off</dt><dd>Writers to one busy account queue behind each other, and while they wait they hold database connections.</dd></div></dl>
             </article>
+            {{> sim lock-order}}
             <p>That trade-off is the main open issue the load test found: transactions queuing on a hot account's lock keep their connections, so a burst on one account slows unrelated ones. A larger pool made it worse. A limit on concurrent writes is the chosen direction; it is designed, not implemented.</p>
           </section>
 

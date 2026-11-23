@@ -377,15 +377,49 @@ if (!/<ol class="form-trace" aria-hidden="true" data-contact-trace(?:="")? hidde
 if (!productionCss.includes(".case-immersive-frame") || !productionJs.includes("[data-case-immersive]")) fail("motion: case-study immersive progress contract is missing");
 // The workbench layout must only replace the plain list once its script is running, so
 // a failed or blocked script still leaves every system readable.
-if (!productionWorkbench.includes('classList.add("wb-ready")') || !productionCss.includes(".wb-ready")) fail("workbench: the interactive layout is not gated on the running script");
+if (!productionWorkbench.includes('classList.add("wb-ready")') || !productionCss.includes(".workbench-ready")) fail("workbench: the interactive layout is not gated on the running script");
 if (/\.js\s+\.wb-files|\.js\s+\.system-file:not/.test(productionCss)) fail("workbench: case files are hidden by the early js class instead of the running script");
+// The explorer may be drawn before workbench.js runs only under .wb-pending, which the head
+// script drops at DOMContentLoaded unless workbench.js has taken over.
+if (!/classList\.remove\("wb-pending"/.test(home) || !productionWorkbench.includes('classList.add("workbench-ready")')) fail("workbench: the pending explorer layout must fall back to the plain list when workbench.js does not run");
+// Break it yourself: the two simulations are labelled as simulated, readable without
+// JavaScript, drawn before their script runs (under .sim-pending, dropped at DOMContentLoaded
+// unless sims.js took over), and their script loads only on the two pages that have one.
+const productionSims = await fs.readFile(path.join(root, "assets/sims.js"), "utf8");
+const simPages = { "flowbank-one.html": "lock-order", "procbeacon.html": "pid-reuse" };
+if (!/classList\.remove\("sim-pending"/.test(home) || !productionSims.includes('classList.add("sims-ready")')) fail("sims: the pending live view must fall back to the transcript when sims.js does not run");
+if (productionSims.length > 6000) fail(`sims: assets/sims.js is ${productionSims.length} bytes; keep the engine small, the data lives in the page`);
+if (/\bfetch\(|XMLHttpRequest|WebSocket|sendBeacon/.test(productionSims)) fail("sims: the simulation engine must not talk to the network");
+for (const [file, html] of htmlByFile) {
+  const expected = simPages[file];
+  const loads = html.includes('src="/assets/sims.js"');
+  if (Boolean(expected) !== loads) fail(`${file}: sims.js must load only on the pages with a simulation`);
+  const found = [...html.matchAll(/data-sim="([\w-]+)"/g)].map((match) => match[1]);
+  if (found.join() !== (expected || "")) { fail(`${file}: expected simulation ${expected || "none"}, found ${found.join() || "none"}`); continue; }
+  if (!expected) continue;
+  const block = html.slice(html.indexOf(`data-sim="${expected}"`));
+  if (!/<span class="sim-flag">Simulated<\/span>/.test(block.slice(0, 2000))) fail(`${file}: the simulation must say plainly that it is simulated`);
+  if (!/<div class="sim-static">[\s\S]*?<ol>[\s\S]*?<li>/.test(block)) fail(`${file}: the simulation has no written transcript for readers without JavaScript`);
+  if (!/<div class="sim-live" hidden(?:="")?>/.test(block)) fail(`${file}: the live simulation must stay hidden without JavaScript`);
+  if (!/<p class="sr-only" aria-live="polite" data-say(?:="")?>/.test(block)) fail(`${file}: the simulation must announce its steps`);
+  const json = block.match(/<script type="application\/json" class="sim-data">([\s\S]*?)<\/script>/)?.[1];
+  try {
+    const data = JSON.parse(json);
+    if (!data.scenarios?.length || data.scenarios.some((scenario) => scenario.steps.length < 2)) fail(`${file}: simulation data without scenarios or steps`);
+  } catch { fail(`${file}: the simulation's step data is not valid JSON`); }
+}
 if (await fs.stat(path.join(root, "assets/vendor")).catch(() => null)) fail("performance: unused vendor libraries are shipped");
 for (const [file, html] of htmlByFile) {
   if (/gsap|three(\.min)?\.js|ScrollTrigger/i.test(html)) fail(`${file}: references a removed animation library`);
   if (!html.includes('href="/assets/styles.css"') || !html.includes('src="/assets/script.js"')) fail(`${file}: missing the shared stylesheet or script (root-relative, so the 404 page works at any depth)`);
-  // The theme is resolved before the stylesheet loads, so no page paints in the wrong one.
+  // The head script comes straight after the stylesheet. Being a script, it makes the parser
+  // wait for styles.css before reading the body, so the page's view-transition opt-in is in
+  // force before anything can ask for it (Chromium otherwise sometimes evaluates the arriving
+  // page without it and abandons the transition). The theme is still set before the first
+  // paint, which the stylesheet blocks anyway.
   const themeBoot = html.indexOf('localStorage.getItem("portfolio-theme")');
-  if (themeBoot === -1 || themeBoot > html.indexOf('href="/assets/styles.css"') || html.indexOf('name="theme-color"') > themeBoot) fail(`${file}: the theme must be applied in <head>, after the theme-color meta and before the stylesheet`);
+  const stylesheet = html.indexOf('<link rel="stylesheet" href="/assets/styles.css">');
+  if (themeBoot === -1 || stylesheet === -1 || themeBoot < stylesheet || themeBoot > html.indexOf("</head>") || html.indexOf('name="theme-color"') > themeBoot || !/<link rel="stylesheet" href="\/assets\/styles\.css">\s*<script>\(function \(d\)/.test(html)) fail(`${file}: the head script must follow the stylesheet directly, after the theme-color meta and inside <head>`);
   const themeSwitch = html.match(/<div class="theme-switch" role="group" aria-label="[^"]+" data-theme-switch(?:="")? hidden(?:="")?>([\s\S]*?)<\/div>/);
   const choices = themeSwitch ? [...themeSwitch[1].matchAll(/<button class="ts-btn" type="button" data-theme-choice="(dark|light)" aria-pressed="(true|false)"[^>]*>[\s\S]*?<span class="sr-only">[^<]+<\/span><\/button>/g)].map((match) => match[1]).join(",") : "";
   if (choices !== "dark,light") fail(`${file}: header theme switch is missing, visible without JavaScript, or lacks named dark/light buttons`);

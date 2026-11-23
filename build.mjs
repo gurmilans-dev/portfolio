@@ -33,8 +33,9 @@ const FONT_FILES = [
   "assets/fonts/jetbrains-mono-latin-ext.woff2"
 ];
 // Client scripts, minified on build. script.js runs on every page; workbench.js only on
-// the homepage. Neither is required to read any page.
-const SCRIPT_FILES = ["assets/script.js", "assets/workbench.js"];
+// the homepage; sims.js only on the two case studies with a simulation. None is required
+// to read any page.
+const SCRIPT_FILES = ["assets/script.js", "assets/workbench.js", "assets/sims.js"];
 const COPY_FILES = [
   siteConfig.profile.resume,
   "_redirects",

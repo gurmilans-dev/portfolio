@@ -4,7 +4,6 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
     <meta name="theme-color" content="#0c0d0f" />
-    {{> head-boot}}
     <title>ProcBeacon case study - {{profile.name}}</title>
     <meta name="description" content="A Windows developer tool in C# and WPF: ports, processes and project folders linked, and process actions that re-verify identity before acting." />
     <meta name="robots" content="index, follow" />
@@ -16,8 +15,10 @@
     <link rel="preload" href="assets/fonts/jetbrains-mono-latin.woff2" as="font" type="font/woff2" crossorigin />
     <link rel="icon" href="assets/favicon.svg" type="image/svg+xml" />
     <link rel="stylesheet" href="assets/styles.css" />
+    {{> head-boot}}
     <link rel="expect" href="#case-title" blocking="render" />
     <script src="assets/script.js" defer></script>
+    <script src="assets/sims.js" defer></script>
   </head>
   <body class="page-procbeacon page-case">
     <a class="skip-link" href="#main-content">Skip to content</a>
@@ -93,6 +94,7 @@
               <h3 id="procbeacon-decision-title">Identify a process by PID and creation time, on one handle</h3>
               <dl><div><dt>Constraint</dt><dd>Windows reuses process IDs, so the PID on screen can name a different program by the time you act.</dd></div><div><dt>Decision</dt><dd>Open a handle first, then compare PID, creation time and executable path with the confirmed snapshot on that same handle, and check again just before acting.</dd></div><div><dt>Result</dt><dd>A changed identity, a critical or protected process, or ProcBeacon itself is refused before any request reaches Windows.</dd></div><div><dt>Trade-off</dt><dd>A process that cannot be opened or read is never offered an action, even when ending it would be harmless.</dd></div></dl>
             </article>
+            {{> sim pid-reuse}}
             <p>Managed sessions follow the same rule from the other side. ProcBeacon starts only explicit executables, keeps their output in bounded buffers, and can force-end only the root process it created. It says plainly that an orderly stop is not supported and that child processes may survive.</p>
           </section>
 

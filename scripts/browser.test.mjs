@@ -388,6 +388,15 @@ const ready = `document.querySelector("[data-workbench]")?.classList.contains("w
 // Every rendered element's view-transition-name, so duplicates (which cancel a transition) show up.
 const transitionNames = `[...document.querySelectorAll("*")].filter((el) => el.getClientRects().length).map((el) => getComputedStyle(el).viewTransitionName).filter((name) => name && name !== "none")`;
 
+/* How each page arrived: through a transition, or as a plain load. A navigation that should
+   transition and does not is a failure, with no second attempt: the one intermittent cause seen
+   (Chromium reading the arriving page before its stylesheet, and so without its opt-in) is fixed
+   by the head script's place right after the stylesheet, which validate.mjs enforces. */
+const recordTransitions = `addEventListener("pagereveal", (event) => { window.__revealed = event.viewTransition ? "transition" : "plain"; }, true);`;
+async function throughTransition(page, attempt) {
+  assert.ok(await attempt(), "the navigation should arrive through a view transition");
+}
+
 test("transition names are unique on every page, and name the right things", async () => {
   for (const [width, height, mobile] of [[390, 844, true], [1440, 900, false]]) {
     await withPage({ width, height, mobile }, async (page) => {
@@ -415,12 +424,15 @@ test("transition names are unique on every page, and name the right things", asy
 
 test("explorer to case study and back: a transition each way, history and selection intact", async () => {
   await withPage({ width: 1440, height: 900 }, async (page) => {
-    await page.goto(`${base}/`);
-    await page.waitFor(ready);
-    await page.click("#tab-flowbank");
-    await page.click(`#work-flowbank .sf-actions a[href="/flowbank-one"]`);
-    await page.waitFor(`location.pathname === "/flowbank-one" && document.readyState === "complete"`, { timeout: 8000 });
-    assert.ok(await page.evaluate(`document.documentElement.classList.contains("vt-arrive")`), "the case study arrived through a view transition");
+    await page.addInitScript(recordTransitions);
+    await throughTransition(page, async () => {
+      await page.goto(`${base}/`);
+      await page.waitFor(ready);
+      await page.click("#tab-flowbank");
+      await page.click(`#work-flowbank .sf-actions a[href="/flowbank-one"]`);
+      await page.waitFor(`location.pathname === "/flowbank-one" && document.readyState === "complete"`, { timeout: 8000 });
+      return page.evaluate(`document.documentElement.classList.contains("vt-arrive")`);
+    });
     await page.waitFor(`getComputedStyle(document.querySelector(".case-index")).opacity === "1"`);
     // Back: the explorer, still on FlowBank One.
     await page.evaluate("history.back()");
@@ -436,17 +448,22 @@ test("explorer to case study and back: a transition each way, history and select
 
 test("case study pager: Next and Previous transition in their direction, and the explorer link returns to the same system", async () => {
   await withPage({ width: 1440, height: 900 }, async (page) => {
+    await page.addInitScript(recordTransitions);
+    // One step through the pager, slowed so the transition's type can be read while it runs.
+    const step = (from, control, to, type) => throughTransition(page, async () => {
+      if (await page.evaluate("location.pathname") !== from) await page.goto(base + from);
+      await page.animationRate(0.1);
+      await page.click(control);
+      await page.waitFor(`location.pathname === "${to}" && window.__revealed`, { timeout: 8000 });
+      const typed = await page.evaluate(`window.__revealed === "transition" && document.documentElement.matches(":active-view-transition-type(${type})")`);
+      await page.animationRate(1);
+      await page.waitFor(`!document.documentElement.matches(":active-view-transition")`, { timeout: 4000 });
+      if (await page.evaluate(`window.__revealed === "transition"`)) assert.ok(typed, `${control} should transition as ${type}`);
+      return typed;
+    });
     await page.goto(`${base}/flowbank-one`);
-    await page.animationRate(0.1);
-    await page.click(".pager-next");
-    await page.waitFor(`location.pathname === "/procbeacon" && document.documentElement.matches(":active-view-transition-type(next)")`, { timeout: 8000, message: "Next should transition as next" });
-    await page.animationRate(1);
-    await page.waitFor(`!document.documentElement.matches(":active-view-transition")`, { timeout: 4000 });
-    await page.animationRate(0.1);
-    await page.click(".pager-prev");
-    await page.waitFor(`location.pathname === "/flowbank-one" && document.documentElement.matches(":active-view-transition-type(prev)")`, { timeout: 8000, message: "Previous should transition as prev" });
-    await page.animationRate(1);
-    await page.waitFor(`!document.documentElement.matches(":active-view-transition")`, { timeout: 4000 });
+    await step("/flowbank-one", ".pager-next", "/procbeacon", "next");
+    await step("/procbeacon", ".pager-prev", "/flowbank-one", "prev");
     // "Back to the explorer" lands on FlowBank One, at the explorer.
     await page.click(".pager-home");
     await page.waitFor(`location.pathname === "/" && ${ready}`, { timeout: 8000 });
@@ -587,5 +604,392 @@ test("contact response: the trace follows the real request, and only a confirmed
     await page.goto(`${base}/#contact`);
     assert.ok(!(await page.evaluate(visible("[data-contact-trace]"))));
     assert.match(await page.evaluate(`document.querySelector("[data-contact-form]").getAttribute("action")`), /^https:\/\/formspree\.io\//);
+  });
+});
+
+/* ---------- Reliability: first paint, and input during transitions ---------- */
+
+// Layout shift across a page load, under a slow network and a slower CPU.
+async function loadShift(page, url) {
+  await page.call("Network.enable");
+  await page.call("Network.setCacheDisabled", { cacheDisabled: true });
+  await page.call("Network.emulateNetworkConditions", { offline: false, latency: 60, downloadThroughput: 0.75e6, uploadThroughput: 0.25e6 });
+  await page.addInitScript(`window.__cls = 0; new PerformanceObserver((list) => { for (const entry of list.getEntries()) if (!entry.hadRecentInput) window.__cls += entry.value; }).observe({ type: "layout-shift", buffered: true });`);
+  await page.goto(url, { settle: 2000 });
+  return page.evaluate("window.__cls");
+}
+
+test("the homepage does not shift while it loads, from the top or a deep link", async () => {
+  for (const [width, height, mobile, cpu] of [[1440, 900, false, 1], [1280, 720, false, 2], [820, 1180, true, 4], [390, 844, true, 4]]) {
+    for (const entry of ["/", "/#work", "/#contact"]) {
+      await withPage({ width, height, mobile }, async (page) => {
+        await page.call("Emulation.setCPUThrottlingRate", { rate: cpu });
+        const shift = await loadShift(page, base + entry);
+        assert.ok(shift < 0.05, `${width}x${height} ${entry}: cumulative layout shift ${shift.toFixed(4)}`);
+      });
+    }
+  }
+});
+
+test("the explorer is drawn from the first frame, and falls back to the full list without its script", async () => {
+  // First frame: before workbench.js runs, the explorer composition is already in place.
+  await withPage({ width: 1440, height: 900 }, async (page) => {
+    await page.intercept(/\/assets\/workbench\.js$/, () => ({ status: 200, body: "", headers: { "Content-Type": "text/javascript" }, delay: 1500 }));
+    // Recorded on the first frames that have the explorer in them, long before workbench.js arrives.
+    await page.addInitScript(`(function look() { const stage = document.querySelector("[data-wb-stage]"); if (!stage || !document.querySelector("#also-built")) return requestAnimationFrame(look); window.__first = { pending: document.documentElement.classList.contains("wb-pending"), files: [...document.querySelectorAll(".wb-files .system-file")].filter((file) => file.getClientRects().length).length, stage: stage.getClientRects().length > 0 }; })();`);
+    await page.goto(`${base}/`, { settle: 100 });
+    const first = await page.evaluate("window.__first");
+    assert.ok(first?.pending, "pending while workbench.js is on its way");
+    assert.equal(first.files, 1, "one case file on show");
+    assert.ok(first.stage, "the stage is in place");
+  });
+  // No workbench.js at all: the plain list of every case file.
+  await withPage({ width: 1440, height: 900 }, async (page) => {
+    await page.intercept(/\/assets\/workbench\.js$/, () => ({ fail: "BlockedByClient" }));
+    await page.goto(`${base}/`);
+    assert.ok(!(await page.evaluate(`document.documentElement.classList.contains("wb-pending")`)), "pending is dropped");
+    assert.equal(await page.evaluate(`[...document.querySelectorAll(".wb-files .system-file")].filter((file) => file.getClientRects().length).length`), 13, "all thirteen case files are readable");
+    assert.ok(!(await page.evaluate(visible("[data-wb-stage]"))), "no stage without its script");
+    assert.ok(!(await page.evaluate(visible("#work-erp [data-open-file]"))), "no quick look button that would do nothing");
+  });
+});
+
+test("a click during a transition reaches its target instead of being lost", async () => {
+  // Same-document: the quick look is opening (slowed down) when Close is pressed.
+  await withPage({ width: 1440, height: 900 }, async (page) => {
+    await page.goto(`${base}/`);
+    await page.waitFor(ready);
+    await page.animationRate(0.05);
+    await page.click("#work-erp [data-open-file]");
+    await page.waitFor(`document.documentElement.matches(":active-view-transition")`, { message: "the quick look should be opening through a transition" });
+    await page.click("[data-drawer-close]", { scroll: false });
+    await page.animationRate(1);
+    await page.waitFor(`!document.querySelector("[data-drawer]").open`, { message: "the Close click during the transition was lost" });
+    assert.deepEqual(page.errors(), []);
+  });
+  // Cross-document: a case study is arriving (slowed down) when its breadcrumb is pressed.
+  await withPage({ width: 1440, height: 900 }, async (page) => {
+    await page.goto(`${base}/`);
+    await page.waitFor(ready);
+    await page.animationRate(0.05);
+    await page.click(`#work-erp .sf-actions a[href="/erp-case-study"]`);
+    await page.waitFor(`location.pathname === "/erp-case-study" && document.documentElement.matches(":active-view-transition")`, { timeout: 8000 });
+    await page.click(`.breadcrumbs a[href="/"]`, { scroll: false });
+    await page.animationRate(1);
+    await page.waitFor(`location.pathname === "/" && document.readyState === "complete"`, { timeout: 8000, message: "the breadcrumb click during the transition was lost" });
+  });
+});
+
+test("double clicks and keys during transitions do nothing twice", async () => {
+  await withPage({ width: 1024, height: 768 }, async (page) => {
+    await page.goto(`${base}/`);
+    await page.waitFor(ready);
+    // A double-click on the quick look card opens it once and leaves it open.
+    await page.dblclick("#work-erp [data-open-file]");
+    await new Promise((resolve) => setTimeout(resolve, 900));
+    assert.ok(await page.evaluate(`document.querySelector("[data-drawer]").open`), "the drawer stays open after a double-click");
+    assert.equal(await page.evaluate("location.pathname"), "/");
+    // Escape while the closing or opening transition runs still closes it.
+    await page.key("Escape");
+    await page.waitFor(`!document.querySelector("[data-drawer]").open`);
+    // A double-click on a case study link navigates once.
+    const before = await page.evaluate("history.length");
+    await page.dblclick(`#work-erp .sf-actions a[href="/erp-case-study"]`);
+    await page.waitFor(`location.pathname === "/erp-case-study" && document.readyState === "complete"`, { timeout: 8000 });
+    await new Promise((resolve) => setTimeout(resolve, 600));
+    assert.equal(await page.evaluate("history.length"), before + 1, "one history entry for a double-click");
+    // Back while the arrival transition is still running.
+    await page.animationRate(0.05);
+    await page.click(".pager-next");
+    await page.waitFor(`location.pathname !== "/erp-case-study" && document.documentElement.matches(":active-view-transition")`, { timeout: 8000 });
+    await page.evaluate("history.back()");
+    await page.animationRate(1);
+    await page.waitFor(`location.pathname === "/erp-case-study" && document.readyState === "complete"`, { timeout: 8000 });
+    assert.deepEqual(page.errors(), []);
+  });
+});
+
+/* ---------- Break it yourself: the FlowBank One and ProcBeacon simulations ---------- */
+
+// Each scenario: how many steps it has, what it ends on, and one state on the way to check.
+const SIMS = {
+  "/flowbank-one": {
+    ordered: { steps: 6, end: { "res.committed": "2 of 2", "res.deadlocks": "0", "res.retries": "0", "res.answer": "both posted", "a.bal": "€85.00", "b.bal": "€115.00" }, probe: [2, `document.querySelector(".sim-graph").dataset.is === "t2" && document.querySelector('[data-of="a.wait"]').dataset.is === "T2"`] },
+    crossed: { steps: 7, end: { "res.committed": "2 of 2", "res.deadlocks": "1", "res.retries": "1", "res.answer": "both posted", "a.bal": "€85.00", "b.bal": "€115.00" }, probe: [4, `document.querySelector(".sim-graph").dataset.is === "cycle" && document.querySelector('[data-of="a.lock"]').dataset.is === "T1" && document.querySelector('[data-of="b.lock"]').dataset.is === "T2"`] },
+    held: { steps: 3, end: { "res.committed": "0 of 1", "res.deadlocks": "0", "res.retries": "0", "res.answer": "503 ACCOUNT_BUSY", "a.bal": "€100.00", "b.bal": "€100.00" }, probe: [1, `document.querySelector('[data-of="a.lock"]').dataset.is === "S" && document.querySelector(".sim-graph").dataset.is === "s"`] }
+  },
+  "/procbeacon": {
+    reused: { steps: 5, end: { "res.sent": "nothing", "res.outcome": "IdentityChanged", "res.ended": "nothing", "res.naive": "postgres.exe" }, probe: [5, `[...document.querySelectorAll('[data-of="m.created"][data-is="mismatch"]')].filter((el) => el.getClientRects().length && getComputedStyle(el).visibility === "visible").length === 2 && document.querySelector('[data-of="g.act"]').dataset.is === "skip"`] },
+    same: { steps: 5, end: { "res.sent": "1 request", "res.outcome": "Exited", "res.ended": "node.exe", "res.naive": "node.exe too" }, probe: [4, `document.querySelector('[data-of="g.exit"]').dataset.is === "exited" && document.querySelector(".sim-slot").dataset.is === "empty"`] },
+    critical: { steps: 3, end: { "res.sent": "nothing", "res.outcome": "Blocked", "res.ended": "nothing", "res.naive": "agent.exe, and Windows with it" }, probe: [3, `document.querySelector('[data-of="g.critical"]').dataset.is === "block" && document.querySelector('[data-of="g.confirm"]').dataset.is === "skip"`] }
+  }
+};
+const simLive = `document.querySelector("[data-sim]")?.classList.contains("is-live")`;
+// What the instrument shows now: scenario, step, counter, announcement and every bound value.
+const simState = `(() => {
+  const sim = document.querySelector("[data-sim]"), live = sim.querySelector(".sim-live");
+  return { scenario: live.dataset.scenario, step: Number(live.dataset.step), count: sim.querySelector("[data-count]").textContent, say: sim.querySelector("[data-say]").textContent,
+    values: Object.fromEntries([...[...sim.querySelectorAll(".sim-live [data-text]")].map((el) => [el.dataset.text, el]), ...[...sim.querySelectorAll(".sim-result .is-on")].map((el) => [el.dataset.when.split("=")[0], el])]
+      .filter(([, el]) => !el.closest("[hidden]")).map(([key, el]) => [key, el.textContent])),
+    states: [...sim.querySelectorAll(".sim-live [data-of]")].filter((el) => !el.closest("[hidden]")).map((el) => el.dataset.of + "=" + el.dataset.is).join("|") };
+})()`;
+const chooseScenario = (id) => `.sim-scenario:has(input[value="${id}"]) span`;
+
+test("simulations: every scenario runs to its result, and Back, Reset and the step rail retrace it", async () => {
+  for (const [url, scenarios] of Object.entries(SIMS)) {
+    await withPage({ width: 1440, height: 900 }, async (page) => {
+      await page.goto(base + url);
+      await page.waitFor(simLive);
+      for (const [id, { steps, end, probe }] of Object.entries(scenarios)) {
+        await page.click(chooseScenario(id));
+        const first = await page.evaluate(simState);
+        assert.equal(first.scenario, id);
+        assert.equal(first.step, 0, `${id} starts at its start state`);
+        assert.equal(first.count, `Start · ${steps} steps`);
+        if (id !== Object.keys(scenarios)[0]) assert.match(first.say, /^Start\. /, "choosing another scenario announces its start");
+        for (let i = 1; i <= steps; i++) {
+          await page.click('[data-act="next"]', { scroll: i === 1 });
+          if (i === probe[0]) assert.ok(await page.evaluate(probe[1]), `${url} ${id}: the state at step ${i}`);
+        }
+        const last = await page.evaluate(simState);
+        assert.equal(last.step, steps);
+        assert.equal(last.count, `Step ${steps} of ${steps} · end`);
+        assert.match(last.say, new RegExp(`^Step ${steps} of ${steps}\\. `));
+        for (const [key, value] of Object.entries(end)) assert.equal(last.values[key], value, `${url} ${id}: ${key} at the end`);
+        await page.click('[data-act="next"]', { scroll: false });
+        assert.equal((await page.evaluate(simState)).step, steps, "Step at the end does nothing");
+        // Back undoes exactly one step: the same state the rail reaches directly from the start.
+        await page.click('[data-act="back"]', { scroll: false });
+        const back = await page.evaluate(simState);
+        await page.click('[data-act="reset"]', { scroll: false });
+        const reset = await page.evaluate(simState);
+        assert.deepEqual({ ...reset, say: "" }, { ...first, say: "" }, "Reset returns to the start state");
+        await page.click(`.sim-rail[data-for="${id}"] [data-go="${steps - 1}"]`, { scroll: false });
+        const rail = await page.evaluate(simState);
+        assert.deepEqual({ ...rail, say: "" }, { ...back, say: "" }, "Back and the rail reach the same state");
+      }
+      assert.deepEqual(page.errors(), []);
+    });
+  }
+});
+
+test("simulations: keyboard alone steps, jumps, plays and changes scenario, and focus stays put", async () => {
+  await withPage({ width: 1440, height: 900 }, async (page) => {
+    await page.goto(`${base}/flowbank-one`);
+    await page.waitFor(simLive);
+    const step = async () => (await page.evaluate(simState)).step;
+    await page.evaluate(`document.querySelector('[data-act="next"]').scrollIntoView({ block: "center" }); document.querySelector('[data-act="next"]').focus()`);
+    await page.key("Enter");
+    assert.equal(await step(), 1, "Enter on Step");
+    await page.key(" ");
+    assert.equal(await step(), 2, "Space on Step");
+    await page.key("ArrowRight");
+    assert.equal(await step(), 3, "Arrow right");
+    await page.key("ArrowLeft");
+    assert.equal(await step(), 2, "Arrow left");
+    await page.key("End");
+    assert.equal(await step(), 6, "End");
+    await page.key("Enter");
+    assert.equal(await step(), 6, "Step at the end does nothing");
+    assert.ok(await page.evaluate(focused('[data-act="next"]')), "the finished Step button keeps focus");
+    await page.key("Home");
+    assert.equal(await step(), 0, "Home");
+    await page.evaluate(`document.querySelector('[data-act="back"]').focus()`);
+    await page.key("Enter");
+    assert.equal(await step(), 0);
+    assert.ok(await page.evaluate(focused('[data-act="back"]')), "Back at the start keeps focus");
+    await page.evaluate(`document.querySelector('.sim-rail[data-for="ordered"] [data-go="4"]').focus()`);
+    await page.key("Enter");
+    assert.equal(await step(), 4, "a step on the rail");
+    // Play and Pause from the keyboard.
+    await page.evaluate(`document.querySelector('[data-act="play"]').focus()`);
+    await page.key("Enter");
+    assert.equal(await page.evaluate(`document.querySelector('[data-act="play"]').getAttribute("aria-pressed")`), "true");
+    await page.key("Enter");
+    assert.equal(await page.evaluate(`document.querySelector('[data-act="play"]').getAttribute("aria-pressed")`), "false");
+    // Scenarios are a radio group: arrows move the choice, and the new scenario starts at its start.
+    await page.evaluate(`document.querySelector('.sim-scenarios input[value="ordered"]').focus()`);
+    await page.key("ArrowRight");
+    const state = await page.evaluate(simState);
+    assert.equal(state.scenario, "crossed");
+    assert.equal(state.step, 0);
+    assert.ok(await page.evaluate(`document.querySelector('.sim-scenarios input[value="crossed"]').checked`));
+    assert.deepEqual(page.errors(), []);
+  });
+});
+
+test("simulations: touch on a phone, and Play runs to the end without moving anything around it", async () => {
+  await withPage({ width: 390, height: 844, mobile: true }, async (page) => {
+    await page.addInitScript(`window.__shifts = []; new PerformanceObserver((list) => { for (const entry of list.getEntries()) window.__shifts.push({ value: entry.value, input: entry.hadRecentInput, at: entry.startTime }); }).observe({ type: "layout-shift", buffered: true });`);
+    await page.goto(`${base}/procbeacon`);
+    await page.waitFor(simLive);
+    for (let i = 0; i < 3; i++) await page.tap('[data-act="next"]', { scroll: i === 0 });
+    assert.equal((await page.evaluate(simState)).step, 3);
+    await page.tap('.sim-rail[data-for="reused"] [data-go="1"]');
+    assert.equal((await page.evaluate(simState)).step, 1);
+    await page.tap(chooseScenario("critical"));
+    assert.equal((await page.evaluate(simState)).scenario, "critical");
+    // Play: steps every 1.7 s on its own, stops at the end, and nothing on the page moves meanwhile.
+    await page.tap('[data-act="play"]');
+    const started = await page.evaluate("performance.now()");
+    await page.waitFor(`(() => { const live = document.querySelector(".sim-live"); return live.dataset.step === "3" && document.querySelector('[data-act="play"]').getAttribute("aria-pressed") === "false"; })()`, { timeout: 9000, message: "Play should reach the end and stop" });
+    assert.equal(await page.evaluate(`document.querySelector('[data-act="play"]').textContent`), "Play");
+    const moved = await page.evaluate(`window.__shifts.filter((shift) => shift.at > ${started} + 600 && !shift.input).reduce((sum, shift) => sum + shift.value, 0)`);
+    assert.ok(moved < 0.001, `layout shift while playing: ${moved}`);
+    assert.ok(await page.evaluate("document.documentElement.scrollWidth - innerWidth") <= 0, "no horizontal overflow");
+    assert.deepEqual(page.errors(), []);
+  });
+});
+
+// Every scenario and step, at one width: the instrument never changes height while it steps,
+// nothing pokes out of it, panels never overlap, and no label is cut short.
+const simLayoutAudit = `(() => {
+  const sim = document.querySelector("[data-sim]"), next = sim.nextElementSibling, issues = [];
+  const radios = [...sim.querySelectorAll(".sim-scenarios input")];
+  for (const radio of radios) {
+    radio.click();
+    let height = null;
+    for (const button of sim.querySelectorAll('.sim-rail[data-for="' + radio.value + '"] button')) {
+      button.click();
+      const box = sim.getBoundingClientRect(), tag = radio.value + " step " + button.dataset.go;
+      if (height === null) height = box.height;
+      else if (Math.abs(box.height - height) > 0.5) issues.push(tag + ": height " + height + " became " + box.height);
+      if (Math.abs(next.getBoundingClientRect().top - box.bottom) > 60) issues.push(tag + ": the next paragraph is not where it was");
+      for (const el of sim.querySelectorAll(".sim-live *")) {
+        if (!el.getClientRects().length) continue;
+        const r = el.getBoundingClientRect();
+        if (r.width && (r.left < box.left - 0.5 || r.right > box.right + 0.5)) { issues.push(tag + ": " + (el.className.baseVal ?? el.className) + " " + el.tagName + " sticks out"); break; }
+      }
+      const panels = [...sim.querySelectorAll(".sim-stage > .sim-panel")].map((panel) => panel.getBoundingClientRect());
+      for (let i = 0; i < panels.length; i++) for (let j = i + 1; j < panels.length; j++) {
+        const a = panels[i], b = panels[j];
+        if (a.left < b.right - 0.5 && b.left < a.right - 0.5 && a.top < b.bottom - 0.5 && b.top < a.bottom - 0.5) issues.push(tag + ": panels " + i + " and " + j + " overlap");
+      }
+      for (const el of sim.querySelectorAll(".sim-chip, .sim-btn, .sim-rail button, .sim-count, .sim-holder")) {
+        if (el.getClientRects().length && el.scrollWidth > el.clientWidth + 1) issues.push(tag + ": '" + el.textContent + "' is cut short");
+      }
+    }
+  }
+  radios[0].click();
+  return issues;
+})()`;
+
+test("simulations: the layout holds at every width, height and step, in both themes", async () => {
+  const sizes = [[320, 640, true], [390, 844, true], [600, 960, true], [800, 1100, true], [1100, 800, false], [1440, 900, false], [2560, 1300, false], [1280, 600, false]];
+  for (const [width, height, mobile] of sizes) {
+    await withPage({ width, height, mobile, scheme: width === 600 || width === 1440 ? "light" : "dark" }, async (page) => {
+      for (const url of Object.keys(SIMS)) {
+        await page.goto(base + url);
+        await page.waitFor(simLive);
+        const issues = await page.evaluate(simLayoutAudit);
+        assert.deepEqual(issues, [], `${url} at ${width}x${height}`);
+        const overflow = await page.evaluate("document.documentElement.scrollWidth - innerWidth");
+        assert.ok(overflow <= 0, `${url} at ${width}px overflows by ${overflow}px`);
+      }
+      assert.deepEqual(page.errors(), []);
+    });
+  }
+});
+
+// Contrast of every visible piece of text in the instrument against what is behind it.
+const simContrast = `(() => {
+  const rgb = (value) => { const parts = value.match(/[\\d.]+/g)?.map(Number) || [0, 0, 0, 0]; return { r: parts[0], g: parts[1], b: parts[2], a: parts.length > 3 ? parts[3] : 1 }; };
+  const lum = ({ r, g, b }) => [r, g, b].map((v) => { v /= 255; return v <= 0.03928 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4; }).reduce((sum, v, i) => sum + v * [0.2126, 0.7152, 0.0722][i], 0);
+  const behind = (el) => { for (let node = el; node; node = node.parentElement) { const bg = rgb(getComputedStyle(node).backgroundColor); if (bg.a >= 0.5) return bg; } return rgb(getComputedStyle(document.body).backgroundColor); };
+  const ratio = (a, b) => (Math.max(a, b) + 0.05) / (Math.min(a, b) + 0.05);
+  const low = [];
+  for (const el of document.querySelectorAll(".sim-live *")) {
+    if (!el.getClientRects().length || el.closest('[aria-disabled="true"], svg, .sr-only') || getComputedStyle(el).visibility !== "visible") continue;
+    if (![...el.childNodes].some((node) => node.nodeType === 3 && node.textContent.trim())) continue;
+    const value = ratio(lum(rgb(getComputedStyle(el).color)), lum(behind(el)));
+    if (value < 4.5) low.push(el.textContent.trim().slice(0, 30) + " " + value.toFixed(2));
+  }
+  return low;
+})()`;
+
+test("simulations: text keeps its contrast in every state, in both themes", async () => {
+  for (const scheme of ["dark", "light"]) {
+    await withPage({ width: 1440, height: 900, scheme }, async (page) => {
+      for (const [url, scenarios] of Object.entries(SIMS)) {
+        await page.goto(base + url);
+        await page.waitFor(simLive);
+        await page.evaluate(`document.querySelectorAll("[data-reveal]").forEach((el) => el.classList.add("is-in")); 1`);
+        for (const [id, { steps, probe }] of Object.entries(scenarios)) {
+          for (const at of [0, probe[0], steps]) {
+            await page.evaluate(`document.querySelector('.sim-scenarios input[value="${id}"]').click(); document.querySelector('.sim-rail[data-for="${id}"] [data-go="${at}"]').click(); 1`);
+            await new Promise((resolve) => setTimeout(resolve, 400)); // colour transitions settle
+            assert.deepEqual(await page.evaluate(simContrast), [], `${scheme} ${url} ${id} step ${at}`);
+          }
+        }
+      }
+    });
+  }
+});
+
+test("simulations: without JavaScript, or without sims.js, the transcript is the content", async () => {
+  await withPage({ width: 390, height: 844, mobile: true, javaScript: false }, async (page) => {
+    for (const [url, counts] of [["/flowbank-one", [6, 7, 3]], ["/procbeacon", [5, 5, 3]]]) {
+      await page.goto(base + url);
+      assert.equal(await page.evaluate(`getComputedStyle(document.querySelector(".sim-static")).display`), "grid", `${url}: transcript shown`);
+      assert.equal(await page.evaluate(`getComputedStyle(document.querySelector(".sim-live")).display`), "none", `${url}: live view hidden`);
+      assert.deepEqual(await page.evaluate(`[...document.querySelectorAll(".sim-case ol")].map((ol) => ol.children.length)`), counts);
+      assert.equal(await page.evaluate(`document.querySelector(".sim-flag").textContent`), "Simulated");
+      assert.equal(await page.evaluate(`document.querySelectorAll(".sim-case-end").length`), 3, "every scenario states its result");
+    }
+  });
+  await withPage({ width: 1440, height: 900 }, async (page) => {
+    await page.intercept(/\/assets\/sims\.js$/, () => ({ fail: "BlockedByClient" }));
+    await page.goto(`${base}/procbeacon#sim-pid-reuse`);
+    assert.ok(!(await page.evaluate(`document.documentElement.classList.contains("sim-pending")`)), "the pending view is dropped");
+    assert.equal(await page.evaluate(`getComputedStyle(document.querySelector(".sim-static")).display`), "grid");
+    assert.equal(await page.evaluate(`getComputedStyle(document.querySelector(".sim-live")).display`), "none");
+  });
+});
+
+test("simulations: drawn from the first frame, so a slow sims.js moves nothing on a deep link", async () => {
+  const engine = readFileSync(new URL("assets/sims.js", DIST), "utf8");
+  for (const [width, height, mobile, cpu] of [[390, 844, true, 4], [1440, 900, false, 1]]) {
+    for (const url of ["/flowbank-one#sim-lock-order", "/procbeacon#sim-pid-reuse", "/flowbank-one#ledger"]) {
+      await withPage({ width, height, mobile }, async (page) => {
+        await page.call("Emulation.setCPUThrottlingRate", { rate: cpu });
+        await page.intercept(/\/assets\/sims\.js$/, () => ({ status: 200, body: engine, headers: { "Content-Type": "text/javascript" }, delay: 1200 }));
+        const shift = await loadShift(page, base + url);
+        assert.ok(shift < 0.05, `${width}px ${url}: cumulative layout shift ${shift.toFixed(4)}`);
+        assert.ok(await page.evaluate(simLive), "the instrument took over once its script arrived");
+      });
+    }
+  }
+});
+
+test("simulations: reduced motion stills the waiting pulse, and the state is the same either way", async () => {
+  const running = `document.getAnimations().filter((animation) => animation.playState === "running" && animation.effect?.target?.closest?.(".sim")).length`;
+  for (const reducedMotion of [false, true]) {
+    await withPage({ width: 1440, height: 900, reducedMotion }, async (page) => {
+      await page.goto(`${base}/flowbank-one#sim-lock-order`);
+      await page.waitFor(simLive);
+      await page.evaluate(`document.querySelector('.sim-rail[data-for="ordered"] [data-go="2"]').click(); 1`);
+      await new Promise((resolve) => setTimeout(resolve, 150));
+      const count = await page.evaluate(running);
+      if (reducedMotion) assert.equal(count, 0, "no animation runs with reduced motion");
+      else assert.ok(count > 0, "the waiting pulse runs without a reduced-motion preference");
+      assert.equal((await page.evaluate(simState)).values["a.wait"], "T2", "the state is the same either way");
+    });
+  }
+});
+
+test("simulations: sims.js loads only where there is one, and stepping makes no request", async () => {
+  for (const url of PAGES) {
+    const html = await (await fetch(base + url)).text();
+    assert.equal(html.includes("/assets/sims.js"), url in SIMS, `${url}: sims.js ${url in SIMS ? "missing" : "loaded for nothing"}`);
+  }
+  await withPage({ width: 1440, height: 900 }, async (page) => {
+    for (const url of Object.keys(SIMS)) {
+      await page.goto(base + url);
+      await page.waitFor(simLive);
+      const before = await page.evaluate(`performance.getEntriesByType("resource").length`);
+      await page.evaluate(simLayoutAudit);
+      await new Promise((resolve) => setTimeout(resolve, 300));
+      assert.equal(await page.evaluate(`performance.getEntriesByType("resource").length`), before, `${url}: stepping through every scenario fetched something`);
+    }
   });
 });

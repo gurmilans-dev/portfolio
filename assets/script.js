@@ -47,7 +47,12 @@
       applyTheme(theme);
       requestAnimationFrame(() => requestAnimationFrame(() => root.classList.remove("theme-switching")));
     };
-    if (document.startViewTransition && !motionQuery.matches) document.startViewTransition(swap);
+    if (document.startViewTransition && !motionQuery.matches) {
+      // A navigation can cut the transition short; the theme still applies, so that is no error.
+      const transition = document.startViewTransition(swap);
+      transition.ready.catch(() => {});
+      transition.updateCallbackDone?.catch(() => {});
+    }
     else swap();
   }
   applyTheme(isTheme(root.dataset.theme) ? root.dataset.theme : savedTheme() || systemTheme());
@@ -112,6 +117,9 @@
   });
   addEventListener("pageswap", event => {
     if (!event.viewTransition) return;
+    // If the browser abandons the transition after this point, the next page simply loads:
+    // a fallback, not an error, so its rejections are not left unhandled.
+    for (const settled of [event.viewTransition.ready, event.viewTransition.finished, event.viewTransition.updateCallbackDone]) settled?.catch(() => {});
     const offscreen = [...document.querySelectorAll("[data-vt]")].filter(el => {
       const rect = el.getBoundingClientRect();
       return rect.width > 0 && (rect.bottom < 0 || rect.top > innerHeight);
