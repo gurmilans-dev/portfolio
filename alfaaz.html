@@ -16,6 +16,7 @@
     <link rel="preload" href="assets/fonts/jetbrains-mono-latin.woff2" as="font" type="font/woff2" crossorigin />
     <link rel="icon" href="assets/favicon.svg" type="image/svg+xml" />
     <link rel="stylesheet" href="assets/styles.css" />
+    <link rel="expect" href="#case-title" blocking="render" />
     <script src="assets/script.js" defer></script>
   </head>
   <body class="page-alfaaz page-case">
@@ -35,7 +36,7 @@
 
 <section class="case-proof" aria-label="Evidence">
         <div class="frame proof-grid has-facts">
-          <figure class="evidence-media"><a class="media-open" href="{{projects.alfaaz.primaryImage}}" target="_blank" rel="noopener noreferrer"><picture><source srcset="{{projects.alfaaz.primaryImageAvif}}" type="image/avif" /><source srcset="{{projects.alfaaz.primaryImageWebp}}" type="image/webp" /><img src="{{projects.alfaaz.primaryImage}}" width="{{projects.alfaaz.primaryImageWidth}}" height="{{projects.alfaaz.primaryImageHeight}}" loading="eager" decoding="async" alt="{{projects.alfaaz.primaryImageAlt}}" /></picture><span class="media-enlarge" aria-hidden="true">Full size ↗</span><span class="sr-only"> (full size, opens in a new tab)</span></a><figcaption>{{projects.alfaaz.primaryImageCaption}}</figcaption></figure>
+          <figure class="evidence-media"><a class="media-open" href="{{projects.alfaaz.primaryImage}}" {{> vt-shot alfaaz}} target="_blank" rel="noopener noreferrer"><picture><source srcset="{{projects.alfaaz.primaryImageAvif}}" type="image/avif" /><source srcset="{{projects.alfaaz.primaryImageWebp}}" type="image/webp" /><img src="{{projects.alfaaz.primaryImage}}" width="{{projects.alfaaz.primaryImageWidth}}" height="{{projects.alfaaz.primaryImageHeight}}" loading="eager" decoding="async" alt="{{projects.alfaaz.primaryImageAlt}}" /></picture><span class="media-enlarge" aria-hidden="true">Full size ↗</span><span class="sr-only"> (full size, opens in a new tab)</span></a><figcaption>{{projects.alfaaz.primaryImageCaption}}</figcaption></figure>
           <dl class="proof-facts"><div><dt>Stale saves</dt><dd>Every entry carries a version. A save made from an older copy is refused, and the writer chooses: load the newer copy, or keep their text as a new entry. <a href="#writing">The write path</a></dd></div><div><dt>Tests</dt><dd>1,127 automated tests pass (22 November 2026), plus a Playwright end-to-end suite. <a href="#boundaries">What it is tested with</a></dd></div></dl>
         </div>
       </section>

@@ -16,6 +16,7 @@
     <link rel="preload" href="assets/fonts/jetbrains-mono-latin.woff2" as="font" type="font/woff2" crossorigin />
     <link rel="icon" href="assets/favicon.svg" type="image/svg+xml" />
     <link rel="stylesheet" href="assets/styles.css" />
+    <link rel="expect" href="#case-title" blocking="render" />
     <script src="assets/script.js" defer></script>
   </head>
   <body class="page-procbeacon page-case">
@@ -25,7 +26,7 @@
     <main id="main-content">
       <section id="top" class="case-hero" aria-labelledby="case-title">
         <div class="frame case-hero-inner">
-          <nav class="breadcrumbs" aria-label="Breadcrumb"><a href="index.html">Home</a><span aria-hidden="true">/</span><a href="index.html#work">Work</a><span aria-hidden="true">/</span><span aria-current="page">ProcBeacon</span></nav>
+          <nav class="breadcrumbs" aria-label="Breadcrumb"><a href="index.html">Home</a><span aria-hidden="true">/</span><a href="index.html#work" data-wb-select="procbeacon">Work</a><span aria-hidden="true">/</span><span aria-current="page">ProcBeacon</span></nav>
           <p class="case-eyebrow">{{> case-index procbeacon}}<span>Windows developer tool · C#/.NET</span></p>
           <h1 id="case-title">Which process owns this port, and is it safe to stop?</h1>
           <p class="case-lead">ProcBeacon is a Windows desktop tool I built for my own development work. It reads the system's port and process tables, links what it finds to the project folders I register, and checks a process's identity again before it ends it. It is packaged as a local, unsigned preview and is not distributed.</p>
@@ -35,7 +36,7 @@
 
 <section class="case-proof" aria-label="Evidence">
         <div class="frame proof-grid has-facts">
-          <figure class="evidence-media"><a class="media-open" href="{{projects.procbeacon.primaryImage}}" target="_blank" rel="noopener noreferrer"><picture><source srcset="{{projects.procbeacon.primaryImageAvif}}" type="image/avif" /><source srcset="{{projects.procbeacon.primaryImageWebp}}" type="image/webp" /><img src="{{projects.procbeacon.primaryImage}}" width="{{projects.procbeacon.primaryImageWidth}}" height="{{projects.procbeacon.primaryImageHeight}}" loading="eager" decoding="async" alt="{{projects.procbeacon.primaryImageAlt}}" /></picture><span class="media-enlarge" aria-hidden="true">Full size ↗</span><span class="sr-only"> (full size, opens in a new tab)</span></a><figcaption>{{projects.procbeacon.primaryImageCaption}}</figcaption></figure>
+          <figure class="evidence-media"><a class="media-open" href="{{projects.procbeacon.primaryImage}}" {{> vt-shot procbeacon}} target="_blank" rel="noopener noreferrer"><picture><source srcset="{{projects.procbeacon.primaryImageAvif}}" type="image/avif" /><source srcset="{{projects.procbeacon.primaryImageWebp}}" type="image/webp" /><img src="{{projects.procbeacon.primaryImage}}" width="{{projects.procbeacon.primaryImageWidth}}" height="{{projects.procbeacon.primaryImageHeight}}" loading="eager" decoding="async" alt="{{projects.procbeacon.primaryImageAlt}}" /></picture><span class="media-enlarge" aria-hidden="true">Full size ↗</span><span class="sr-only"> (full size, opens in a new tab)</span></a><figcaption>{{projects.procbeacon.primaryImageCaption}}</figcaption></figure>
           <dl class="proof-facts"><div><dt>PID reuse</dt><dd>PID, creation time and path are re-checked on the same handle, immediately before TerminateProcess; a changed identity is refused. <a href="#safety">Where a request can stop</a></dd></div><div><dt>Tests</dt><dd>438 automated tests pass in a Release build (21 November 2026), the native ones against fixture processes the tests start themselves. <a href="#reliability">What they cover</a></dd></div></dl>
         </div>
       </section>

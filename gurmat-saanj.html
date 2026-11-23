@@ -16,6 +16,7 @@
     <link rel="preload" href="assets/fonts/jetbrains-mono-latin.woff2" as="font" type="font/woff2" crossorigin />
     <link rel="icon" href="assets/favicon.svg" type="image/svg+xml" />
     <link rel="stylesheet" href="assets/styles.css" />
+    <link rel="expect" href="#case-title" blocking="render" />
     <script src="assets/script.js" defer></script>
   </head>
   <body class="page-gurmat page-case">
@@ -25,7 +26,7 @@
     <main id="main-content">
       <section id="top" class="case-hero" aria-labelledby="case-title">
         <div class="frame case-hero-inner">
-          <nav class="breadcrumbs" aria-label="Breadcrumb"><a href="index.html">Home</a><span aria-hidden="true">/</span><a href="index.html#work">Work</a><span aria-hidden="true">/</span><span aria-current="page">Gurmat Saanj</span></nav>
+          <nav class="breadcrumbs" aria-label="Breadcrumb"><a href="index.html">Home</a><span aria-hidden="true">/</span><a href="index.html#work" data-wb-select="gurmat">Work</a><span aria-hidden="true">/</span><span aria-current="page">Gurmat Saanj</span></nav>
           <p class="case-eyebrow">{{> case-index gurmat}}<span>Deployed community web application</span></p>
           <h1 id="case-title">Following live Gurbani recitation, line by line.</h1>
           <p class="case-lead">Gurmat Saanj is in use at a local Gurdwara, a Sikh place of worship. It follows the live recitation of Gurbani, the hymns of the Sikh scripture, and keeps the projector and the Sangat, the congregation, on the same line: one editor controls the display, and anyone can follow on their own phone.</p>
@@ -38,7 +39,7 @@
         <div class="frame proof-grid has-facts">
           <figure class="annotated-media evidence-media evidence-media-projector" data-hotspot-media>
             <div class="media-annotated-frame">
-            <a class="media-open" href="{{projects.gurmat.primaryImage}}" target="_blank" rel="noopener noreferrer" aria-label="View larger: projector screenshot" data-media-open data-media-src="{{projects.gurmat.primaryImage}}" data-media-caption="The projector shows the current Gurbani line with its transliteration and English translation, legible across the room.">
+            <a class="media-open" href="{{projects.gurmat.primaryImage}}" {{> vt-shot gurmat}} target="_blank" rel="noopener noreferrer" aria-label="View larger: projector screenshot" data-media-open data-media-src="{{projects.gurmat.primaryImage}}" data-media-caption="The projector shows the current Gurbani line with its transliteration and English translation, legible across the room.">
               <picture><source srcset="{{projects.gurmat.primaryImageAvif}}" type="image/avif" /><source srcset="{{projects.gurmat.primaryImageWebp}}" type="image/webp" /><img src="{{projects.gurmat.primaryImage}}" width="1902" height="845" loading="eager" decoding="async" alt="Gurmat Saanj projector output showing a Gurbani line with transliteration and English translation" /></picture>
               <span class="media-enlarge">View larger ↗</span>
             </a>

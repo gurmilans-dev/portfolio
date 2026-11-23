@@ -86,9 +86,13 @@ export async function launchBrowser() {
         const { requestId, request } = message.params;
         const handler = interceptors.find(({ pattern }) => pattern.test(request.url));
         const reply = handler ? handler.respond(request) : null;
-        if (!reply) call("Fetch.continueRequest", { requestId }).catch(() => {});
-        else if (reply.fail) call("Fetch.failRequest", { requestId, errorReason: reply.fail }).catch(() => {});
-        else call("Fetch.fulfillRequest", { requestId, responseCode: reply.status ?? 200, responseHeaders: Object.entries(reply.headers ?? { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" }).map(([name, value]) => ({ name, value })), body: Buffer.from(reply.body ?? "").toString("base64") }).catch(() => {});
+        const answer = () => {
+          if (!reply) call("Fetch.continueRequest", { requestId }).catch(() => {});
+          else if (reply.fail) call("Fetch.failRequest", { requestId, errorReason: reply.fail }).catch(() => {});
+          else call("Fetch.fulfillRequest", { requestId, responseCode: reply.status ?? 200, responseHeaders: Object.entries(reply.headers ?? { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" }).map(([name, value]) => ({ name, value })), body: Buffer.from(reply.body ?? "").toString("base64") }).catch(() => {});
+        };
+        // A reply may be held back, to see what the page shows while a request is out.
+        if (reply?.delay) setTimeout(answer, reply.delay); else answer();
         return;
       }
       events.push(message);
@@ -119,6 +123,10 @@ export async function launchBrowser() {
         interceptors.push({ pattern, respond });
         await call("Fetch.enable", { patterns: [{ urlPattern: "*" }] });
       },
+      /* Runs before any page script on every document this tab loads. */
+      async addInitScript(source) { await call("Page.addScriptToEvaluateOnNewDocument", { source }); },
+      /* Slows (or restores) every animation, view transitions included, across navigations. */
+      async animationRate(playbackRate) { await call("Animation.enable"); await call("Animation.setPlaybackRate", { playbackRate }); },
       async goto(url, { settle = 400 } = {}) {
         const from = events.length;
         const { errorText } = await call("Page.navigate", { url });
@@ -148,7 +156,9 @@ export async function launchBrowser() {
       async type(text) { await call("Input.insertText", { text }); },
       /* The centre of the first element matching `selector`, scrolled into view first. */
       async point(selector, { scroll = true } = {}) {
-        const box = await evaluate(`(() => { const el = document.querySelector(${JSON.stringify(selector)}); if (!el) return null; ${scroll ? "el.scrollIntoView({ block: 'center', inline: 'center', behavior: 'instant' });" : ""} const r = el.getBoundingClientRect(); return { x: r.left + r.width / 2, y: r.top + r.height / 2 }; })()`);
+        // Waits until the element stops moving (a smooth scroll still running, a layout settling),
+        // so the input lands where the element is, not where it was.
+        const box = await evaluate(`(async () => { const el = document.querySelector(${JSON.stringify(selector)}); if (!el) return null; ${scroll ? "el.scrollIntoView({ block: 'center', inline: 'center', behavior: 'instant' });" : ""} const frame = () => new Promise((resolve) => requestAnimationFrame(resolve)); let last = null; for (let i = 0; i < 60; i++) { await frame(); const r = el.getBoundingClientRect(); const now = { x: r.left + r.width / 2, y: r.top + r.height / 2 }; if (last && Math.abs(now.x - last.x) < 0.5 && Math.abs(now.y - last.y) < 0.5) return now; last = now; } return last; })()`);
         if (!box) throw new Error(`no element matches ${selector}`);
         return box;
       },

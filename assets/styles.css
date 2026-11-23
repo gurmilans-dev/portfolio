@@ -1106,12 +1106,43 @@ code { font-family: var(--mono); font-size: .86em; padding: .08em .36em; backgro
 .form-actions .btn { min-height: 48px; padding-inline: 22px; }
 .form-actions .icon { width: 17px; height: 17px; flex: none; }
 .turnstile:empty { display: none; }
+/* The response that ends the page: the form's own states drawn as a lane in the marks of the
+   hero's request trace (round ports, an orange lane, the packet, a green landing). It is still
+   while the visitor writes, moves only after Send for as long as the request is out, and
+   reaches "Received" only when the form service has confirmed the message. It is decoration:
+   the status line under it says the same in words, and is what assistive technology reads. */
+.form-trace { list-style: none; padding: 0; margin: 4px 0 0; width: min(100%, 440px); display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.ft-step { position: relative; display: grid; justify-items: start; gap: 8px; }
+.ft-port { position: relative; z-index: 1; width: 11px; height: 11px; border: 1.5px solid var(--line-3); border-radius: 50%; background: var(--bg-1); transition: background-color .3s, border-color .3s; }
+.ft-lane { position: absolute; top: 4.75px; left: 16px; right: 5px; height: 1.5px; background: var(--line-2); container-type: inline-size; transition: background-color .4s; }
+.ft-label { font: 500 11px/1.3 var(--mono); letter-spacing: .08em; text-transform: uppercase; color: var(--text-4); transition: color .3s; }
+.ft-packet { position: absolute; top: 50%; left: 0; width: 7px; height: 7px; margin: -3.5px 0 0 -3.5px; border-radius: 50%; background: var(--packet); box-shadow: 0 0 10px 2px var(--accent-fill); opacity: 0; }
+/* Checked: from the moment the form is sending, and after it. */
+:is([data-contact-state="sending"], [data-contact-state="received"], [data-contact-failure="send"]) [data-ft="check"] .ft-port { border-color: var(--accent-fill); background: var(--accent-fill); }
+:is([data-contact-state="sending"], [data-contact-state="received"], [data-contact-failure="send"]) [data-ft="check"] .ft-lane { background: var(--accent-fill); }
+/* Out: the send port waits and the packet travels, for as long as the request takes. */
+[data-contact-state="sending"] [data-ft="send"] .ft-port { border-color: var(--accent-fill); animation: ft-wait 1.4s ease-in-out infinite; }
+[data-contact-state="sending"] [data-ft="send"] .ft-packet { animation: ft-travel 1.1s cubic-bezier(.4, 0, .6, 1) infinite; }
+[data-contact-state="sending"] :is([data-ft="check"], [data-ft="send"]) .ft-label { color: var(--text-2); }
+/* Received: confirmed by the service, never sooner. */
+[data-contact-state="received"] [data-ft="send"] .ft-port { border-color: var(--accent-fill); background: var(--accent-fill); }
+[data-contact-state="received"] [data-ft="send"] .ft-lane { background: var(--accent-fill); }
+[data-contact-state="received"] [data-ft="received"] .ft-port { border-color: var(--ok); background: var(--ok); animation: ft-landed .9s cubic-bezier(.2, .8, .2, 1) both; }
+[data-contact-state="received"] .ft-label { color: var(--text-2); }
+[data-contact-state="received"] [data-ft="received"] .ft-label { color: var(--ok); }
+/* Stopped: where it stopped, in the error colour; the status line says why and what to do. */
+[data-contact-failure="check"] [data-ft="check"] .ft-port, [data-contact-failure="send"] [data-ft="send"] .ft-port { border-color: var(--danger); background: var(--danger); }
+[data-contact-failure="check"] [data-ft="check"] .ft-label, [data-contact-failure="send"] [data-ft="send"] .ft-label { color: var(--danger); }
+@keyframes ft-wait { 0%, 100% { box-shadow: 0 0 0 0 rgb(var(--accent-rgb) / .35); } 50% { box-shadow: 0 0 0 5px rgb(var(--accent-rgb) / 0); } }
+@keyframes ft-travel { 0% { opacity: 0; transform: translateX(0); } 15%, 80% { opacity: 1; } 100% { opacity: 0; transform: translateX(100cqw); } }
+@keyframes ft-landed { from { box-shadow: 0 0 0 0 color-mix(in srgb, var(--ok) 55%, transparent); } to { box-shadow: 0 0 0 12px color-mix(in srgb, var(--ok) 0%, transparent); } }
+@media (prefers-reduced-motion: reduce) { .ft-packet { display: none; } }
 @media (max-width: 639px) { .form-actions .btn { flex: 1 1 100%; } }
 @media (min-width: 640px) { .fields { grid-template-columns: repeat(2, minmax(0, 1fr)); } .field-message { grid-column: 1 / -1; } }
 @media (min-width: 1100px) {
   .contact-grid { grid-template-columns: minmax(0, 5fr) minmax(0, 7fr); gap: clamp(40px, 5vw, 96px); }
   .form-foot { grid-template-columns: minmax(0, 1fr) auto; align-items: center; column-gap: 28px; }
-  .form-foot .form-status { grid-column: 1 / -1; }
+  .form-foot .form-status, .form-foot .form-trace { grid-column: 1 / -1; }
 }
 
 /* ---------- Footer ----------
@@ -1518,6 +1549,66 @@ code { font-family: var(--mono); font-size: .86em; padding: .08em .36em; backgro
 .reveal-ready [data-reveal]:not(.is-in) { opacity: 0; translate: 0 18px; }
 [data-reveal] { transition: opacity .7s var(--ease), translate .7s var(--ease); }
 
+/* ---------- Page transitions ----------
+   Moving through the work keeps hold of what the visitor was looking at: a project's name and
+   its screenshot travel from where they were to where they are next (explorer to case study,
+   panel to quick look, one case study to the next and back), the header stays put, and the
+   rest of the page crossfades. Stepping through the case studies, or back and forward through
+   history, adds a short sideways drift in that direction. All of it is the browser's own view
+   transitions, opted into only without a reduced-motion preference; anything else gets an
+   ordinary page load, and the head script only moves what is on screen. */
+@media (prefers-reduced-motion: no-preference) {
+  @view-transition { navigation: auto; }
+}
+.site-header { view-transition-name: site-header; }
+.scroll-progress { view-transition-name: scroll-progress; }
+.drawer { view-transition-name: quick-look; }
+[data-vt="title"] { view-transition-name: var(--vt-title, none); view-transition-class: vt-title; }
+[data-vt="shot"] { view-transition-name: var(--vt-shot, none); view-transition-class: vt-shot; }
+/* In the explorer only the file on show takes part: the panel's (or the quick look's) title,
+   the panel's preview and the quick look's screenshot. */
+.system-file [data-vt] { view-transition-name: none; }
+.wb-ready .wb-files .system-file.is-current [data-vt="title"], .drawer-body .system-file [data-vt="title"] { view-transition-name: var(--vt-title); }
+.wb-ready .wb-files .system-file.is-current .peek-media[data-vt], .drawer-body .sf-shot [data-vt] { view-transition-name: var(--vt-shot); }
+
+::view-transition-group(*) { z-index: 3; animation-duration: .42s; animation-timing-function: cubic-bezier(.2, .8, .2, 1); }
+/* Paint order while moving: the page, then the header, then the quick look, then whatever is
+   travelling (a name or a screenshot), so nothing that moves passes behind the drawer. */
+::view-transition-group(root) { z-index: 0; }
+::view-transition-group(site-header), ::view-transition-group(scroll-progress) { z-index: 1; }
+::view-transition-group(quick-look) { z-index: 2; }
+/* A name changes size and face on the way (panel title to case-study eyebrow), so the two
+   texts hand over instead of overlapping: the old one goes quickly, the new one arrives. */
+::view-transition-old(*.vt-title) { animation: .14s ease-in both vt-fade-out; }
+::view-transition-new(*.vt-title) { animation: .26s ease-out .1s both vt-appear; }
+::view-transition-old(root) { animation: .16s ease-in both vt-fade-out; }
+::view-transition-new(root) { animation: .32s cubic-bezier(.2, .8, .2, 1) .1s both vt-fade-in; }
+:root:active-view-transition-type(next)::view-transition-old(root) { animation-name: vt-out-left; }
+:root:active-view-transition-type(next)::view-transition-new(root) { animation-name: vt-in-right; }
+:root:active-view-transition-type(prev)::view-transition-old(root) { animation-name: vt-out-right; }
+:root:active-view-transition-type(prev)::view-transition-new(root) { animation-name: vt-in-left; }
+::view-transition-new(quick-look) { animation: .5s cubic-bezier(.2, .8, .2, 1) both vt-drawer-in; }
+::view-transition-old(quick-look) { animation: .32s cubic-bezier(.4, 0, .6, 1) both vt-drawer-out; }
+/* Closing is quicker than opening: the page under it is what the visitor wants back, and it
+   does not take input until the transition ends. */
+:root.vt-closing::view-transition-group(*) { animation-duration: .3s; }
+:root.vt-closing::view-transition-old(root), :root.vt-closing::view-transition-new(root) { animation-duration: .2s; animation-delay: 0s; }
+@keyframes vt-fade-out { to { opacity: 0; } }
+@keyframes vt-appear { from { opacity: 0; } }
+@keyframes vt-fade-in { from { opacity: 0; translate: 0 10px; } }
+@keyframes vt-out-left { to { opacity: 0; translate: -28px 0; } }
+@keyframes vt-in-right { from { opacity: 0; translate: 28px 0; } }
+@keyframes vt-out-right { to { opacity: 0; translate: 28px 0; } }
+@keyframes vt-in-left { from { opacity: 0; translate: -28px 0; } }
+@keyframes vt-drawer-in { from { translate: 100% 0; } }
+@keyframes vt-drawer-out { to { translate: 100% 0; } }
+/* Arriving through a transition, the page is already moving: the load sequences would only
+   replay underneath it (and shift the name it is landing on). */
+.vt-arrive .case-hero-inner > *, .vt-arrive .hero-head > *, .vt-arrive .hero-copy > *, .vt-arrive .fig-cap, .vt-arrive .wire-client, .vt-arrive .plate { animation: none; }
+/* Opening or closing a quick look as a transition: the drawer and its backdrop are drawn at
+   rest for the snapshot, and the transition moves them. */
+.vt-quick-look .drawer, .vt-quick-look .drawer::backdrop { transition: none !important; }
+
 /* ---------- Reduced motion ---------- */
 @media (prefers-reduced-motion: reduce) {
   html { scroll-behavior: auto; }
@@ -1532,7 +1623,7 @@ code { font-family: var(--mono); font-size: .86em; padding: .08em .36em; backgro
   body { background: #fff; color: #111; }
   .site-header, .theme-switch, .scroll-progress, .wb-stage, .stage-controls, .hero-visual, .case-cut .cut-visual, .contact-form, .copy-btn, .drawer, .menu-toggle, .media-hotspots, .media-enlarge, .case-aside { display: none !important; }
   .workbench.wb-ready .system-file, .wb-ready .wb-files .sf-dossier, .wb-ready .wb-files .sf-shot { display: grid !important; }
-  .sf-peek, .ab-toggle, .ab-names { display: none !important; }
+  .sf-peek, .ab-toggle, .ab-names, .form-trace { display: none !important; }
   .also-built .ab-list { display: grid !important; }
   .hero-grid, .case-layout, .case-cut { display: block; min-height: 0; }
   a { text-decoration: underline; }

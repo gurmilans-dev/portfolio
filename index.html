@@ -224,6 +224,11 @@
                   <button class="btn btn-primary" type="submit" data-contact-submit>{{icons.send}}<span data-contact-submit-text>Send message</span></button>
                   <button class="btn btn-line" type="button" data-contact-mailfallback hidden>{{icons.email}}<span>Open email draft</span></button>
                 </div>
+                <ol class="form-trace" aria-hidden="true" data-contact-trace hidden>
+                  <li class="ft-step" data-ft="check"><span class="ft-port"></span><span class="ft-lane"></span><span class="ft-label">Check</span></li>
+                  <li class="ft-step" data-ft="send"><span class="ft-port"></span><span class="ft-lane"><i class="ft-packet"></i></span><span class="ft-label">Send</span></li>
+                  <li class="ft-step" data-ft="received"><span class="ft-port"></span><span class="ft-label">Received</span></li>
+                </ol>
                 <p class="form-status" aria-live="polite" data-contact-status><span class="status-icons" aria-hidden="true">{{icons.success}}{{icons.error}}</span><span data-contact-status-text>Ready to send your message.</span></p>
               </div>
             </div>

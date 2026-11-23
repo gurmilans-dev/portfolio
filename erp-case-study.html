@@ -15,6 +15,7 @@
     <link rel="preload" href="assets/fonts/jetbrains-mono-latin.woff2" as="font" type="font/woff2" crossorigin />
     <link rel="icon" href="assets/favicon.svg" type="image/svg+xml" />
     <link rel="stylesheet" href="assets/styles.css" />
+    <link rel="expect" href="#case-title" blocking="render" />
     <script src="assets/script.js" defer></script>
   </head>
   <body class="page-erp page-case">
@@ -24,7 +25,7 @@
     <main id="main-content">
       <section id="top" class="case-hero" aria-labelledby="case-title">
         <div class="frame case-hero-inner">
-          <nav class="breadcrumbs" aria-label="Breadcrumb"><a href="index.html">Home</a><span aria-hidden="true">/</span><a href="index.html#work">Work</a><span aria-hidden="true">/</span><span aria-current="page">Confidential Business Platform</span></nav>
+          <nav class="breadcrumbs" aria-label="Breadcrumb"><a href="index.html">Home</a><span aria-hidden="true">/</span><a href="index.html#work" data-wb-select="erp">Work</a><span aria-hidden="true">/</span><span aria-current="page">Confidential Business Platform</span></nav>
           <p class="case-eyebrow">{{> case-index erp}}<span>In-house · {{profile.employmentPeriod}}</span></p>
           <h1 id="case-title">Replacing a legacy system, spreadsheets and paper hand-offs with one platform.</h1>
           <p class="case-lead">I’m the primary developer of a full-stack platform used in daily internal operations: its screens, its API and data, its releases, and the support after them.</p>

@@ -355,19 +355,39 @@
     syncRows();
   }
 
-  function openFile(key, trigger) {
+  /* Opening or closing a quick look from the page is a view transition where the browser has
+     them and motion is welcome: the panel's screenshot preview grows into the quick look's
+     screenshot, the system's name moves with it, and the drawer slides in under them (the
+     stylesheet names them). Anywhere else the drawer slides on its own CSS transition. */
+  const canMorph = typeof document.startViewTransition === "function";
+  const morphing = () => canMorph && !motionQuery.matches && document.visibilityState === "visible";
+  function withTransition(update, { closing = false } = {}) {
+    root.classList.add("vt-quick-look");
+    root.classList.toggle("vt-closing", closing);
+    let transition;
+    try { transition = document.startViewTransition(update); } catch { root.classList.remove("vt-quick-look"); update(); return; }
+    transition.finished.finally(() => root.classList.remove("vt-quick-look", "vt-closing"));
+  }
+
+  function openFile(key, trigger, { animate = true } = {}) {
     if (!canDrawer || !fileFor(key)) return;
     clearTimeout(closeTimer);
     Site.closeMenu();
-    mountFile(key);
-    if (!drawer.open) {
-      returnFocus = trigger || document.activeElement;
-      drawer.showModal();
-      Site.lockScroll();
-      bench.classList.add("is-drawer-open");
-      requestAnimationFrame(() => drawer.classList.add("is-visible"));
-    }
-    fileFor(key).querySelector(".sf-title")?.focus({ preventScroll: true });
+    const opening = !drawer.open;
+    const show = settled => {
+      mountFile(key);
+      if (opening) {
+        returnFocus = trigger || document.activeElement;
+        drawer.showModal();
+        Site.lockScroll();
+        bench.classList.add("is-drawer-open");
+        if (settled) drawer.classList.add("is-visible");
+        else requestAnimationFrame(() => drawer.classList.add("is-visible"));
+      }
+      fileFor(key).querySelector(".sf-title")?.focus({ preventScroll: true });
+    };
+    if (opening && animate && morphing()) withTransition(() => show(true));
+    else show(false);
   }
 
   function step(direction) {
@@ -406,6 +426,11 @@
 
   function closeDrawer() {
     if (!drawer?.open) return;
+    if (morphing()) {
+      clearTimeout(closeTimer);
+      withTransition(() => { drawer.classList.remove("is-visible"); bench.classList.remove("is-drawer-open"); finishClose(); }, { closing: true });
+      return;
+    }
     drawer.classList.remove("is-visible");
     bench.classList.remove("is-drawer-open");
     if (motionQuery.matches) finishClose();
@@ -451,13 +476,24 @@
     if (!key) return;
     const index = featured.indexOf(key);
     if (index >= 0) select(index);
-    else if (order.includes(key) && canDrawer) openFile(key);
+    else if (order.includes(key) && canDrawer) openFile(key, null, { animate: false });
     else return;
     if (scroll) document.getElementById("work")?.scrollIntoView({ block: "start" });
   }
 
+  /* "Back to the explorer" from a case study shows the system the visitor came from (a hint
+     the case page leaves for a plain click; a #work-<system> link still wins). */
+  function selectFromHint() {
+    if (keyFromHash(location.hash)) return;
+    let hint = null;
+    try { hint = JSON.parse(sessionStorage.getItem("wb-select") || "null"); sessionStorage.removeItem("wb-select"); } catch { return; }
+    const index = hint && Date.now() - hint.t < 8000 ? featured.indexOf(hint.key) : -1;
+    if (index >= 0) select(index);
+  }
+
   bench.classList.add("wb-ready");
   select(0);
+  selectFromHint();
   setLayer(0);
   applyView();
   fromHash({ scroll: true });

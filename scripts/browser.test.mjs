@@ -373,9 +373,219 @@ test("Also built folds to one line, remembers it, and unfolds for links and quic
     await page.key("Escape");
     await page.waitFor(`!document.querySelector("[data-drawer]").open`);
     await page.waitFor(focused("[data-ab-toggle]"), { message: "focus should land on the register toggle while it is folded" });
+    // The page takes input again once the closing transition (where there is one) has ended.
+    await page.waitFor(`!document.documentElement.classList.contains("vt-quick-look")`);
     // The pointer from the explorer unfolds it.
     await page.click(".wb-also-cue");
     await page.waitFor(visible("#also-built-list"), { message: "the Also built cue should unfold the register" });
     assert.equal(await page.evaluate(`localStorage.getItem("portfolio-also-built")`), "open");
+  });
+});
+
+/* ---------- Page transitions (cross-document view transitions) and the contact response ---------- */
+
+const ready = `document.querySelector("[data-workbench]")?.classList.contains("wb-ready")`;
+// Every rendered element's view-transition-name, so duplicates (which cancel a transition) show up.
+const transitionNames = `[...document.querySelectorAll("*")].filter((el) => el.getClientRects().length).map((el) => getComputedStyle(el).viewTransitionName).filter((name) => name && name !== "none")`;
+
+test("transition names are unique on every page, and name the right things", async () => {
+  for (const [width, height, mobile] of [[390, 844, true], [1440, 900, false]]) {
+    await withPage({ width, height, mobile }, async (page) => {
+      for (const url of PAGES) {
+        await page.goto(base + url, { settle: 200 });
+        if (url === "/") await page.waitFor(ready);
+        const names = await page.evaluate(transitionNames);
+        assert.equal(new Set(names).size, names.length, `${url} at ${width}px has duplicate names: ${names}`);
+      }
+      await page.goto(`${base}/`);
+      await page.waitFor(ready);
+      assert.equal(await page.evaluate(`getComputedStyle(document.querySelector("#work-erp .sf-title")).viewTransitionName`), "vt-title-erp", "the panel's title is named");
+      assert.equal(await page.evaluate(`getComputedStyle(document.querySelector("#work-flowbank .sf-title")).viewTransitionName`), "none", "a hidden panel is not");
+      // With a quick look open, its title and screenshot carry the names, and still only once.
+      await page.click("#work-erp [data-open-file]");
+      await page.waitFor(`document.querySelector("[data-drawer]").open && !document.documentElement.classList.contains("vt-quick-look")`);
+      const open = await page.evaluate(transitionNames);
+      assert.equal(new Set(open).size, open.length, `duplicates with the quick look open: ${open}`);
+      await page.goto(`${base}/flowbank-one`);
+      assert.equal(await page.evaluate(`getComputedStyle(document.querySelector(".case-index")).viewTransitionName`), "vt-title-flowbank");
+      assert.equal(await page.evaluate(`getComputedStyle(document.querySelector('.case-proof [data-vt="shot"]')).viewTransitionName`), "vt-shot-flowbank");
+    });
+  }
+});
+
+test("explorer to case study and back: a transition each way, history and selection intact", async () => {
+  await withPage({ width: 1440, height: 900 }, async (page) => {
+    await page.goto(`${base}/`);
+    await page.waitFor(ready);
+    await page.click("#tab-flowbank");
+    await page.click(`#work-flowbank .sf-actions a[href="/flowbank-one"]`);
+    await page.waitFor(`location.pathname === "/flowbank-one" && document.readyState === "complete"`, { timeout: 8000 });
+    assert.ok(await page.evaluate(`document.documentElement.classList.contains("vt-arrive")`), "the case study arrived through a view transition");
+    await page.waitFor(`getComputedStyle(document.querySelector(".case-index")).opacity === "1"`);
+    // Back: the explorer, still on FlowBank One.
+    await page.evaluate("history.back()");
+    await page.waitFor(`location.pathname === "/" && document.readyState === "complete"`, { timeout: 8000 });
+    await page.waitFor(`document.getElementById("tab-flowbank")?.getAttribute("aria-selected") === "true"`, { message: "the explorer should still show FlowBank One" });
+    // Forward: the case study again.
+    await page.evaluate("history.forward()");
+    await page.waitFor(`location.pathname === "/flowbank-one" && document.readyState === "complete"`, { timeout: 8000 });
+    assert.ok(await page.evaluate(`document.getElementById("case-title") !== null`));
+    assert.deepEqual(page.errors(), []);
+  });
+});
+
+test("case study pager: Next and Previous transition in their direction, and the explorer link returns to the same system", async () => {
+  await withPage({ width: 1440, height: 900 }, async (page) => {
+    await page.goto(`${base}/flowbank-one`);
+    await page.animationRate(0.1);
+    await page.click(".pager-next");
+    await page.waitFor(`location.pathname === "/procbeacon" && document.documentElement.matches(":active-view-transition-type(next)")`, { timeout: 8000, message: "Next should transition as next" });
+    await page.animationRate(1);
+    await page.waitFor(`!document.documentElement.matches(":active-view-transition")`, { timeout: 4000 });
+    await page.animationRate(0.1);
+    await page.click(".pager-prev");
+    await page.waitFor(`location.pathname === "/flowbank-one" && document.documentElement.matches(":active-view-transition-type(prev)")`, { timeout: 8000, message: "Previous should transition as prev" });
+    await page.animationRate(1);
+    await page.waitFor(`!document.documentElement.matches(":active-view-transition")`, { timeout: 4000 });
+    // "Back to the explorer" lands on FlowBank One, at the explorer.
+    await page.click(".pager-home");
+    await page.waitFor(`location.pathname === "/" && ${ready}`, { timeout: 8000 });
+    await page.waitFor(`document.getElementById("tab-flowbank").getAttribute("aria-selected") === "true"`, { message: "the explorer should open on FlowBank One" });
+    assert.equal(await page.evaluate("location.hash"), "#work");
+    assert.deepEqual(page.errors(), []);
+  });
+});
+
+test("reduced motion: ordinary page loads and an ordinary quick look", async () => {
+  await withPage({ width: 1440, height: 900, reducedMotion: true }, async (page) => {
+    await page.goto(`${base}/`);
+    await page.waitFor(ready);
+    await page.evaluate(`window.__vtSeen = false; new MutationObserver(() => { if (document.documentElement.classList.contains("vt-quick-look")) window.__vtSeen = true; }).observe(document.documentElement, { attributes: true }); 1`);
+    await page.click("#work-erp [data-open-file]");
+    await page.waitFor(`document.querySelector("[data-drawer]").open`);
+    await page.key("Escape");
+    await page.waitFor(`!document.querySelector("[data-drawer]").open`);
+    await page.waitFor(focused("#work-erp [data-open-file]"));
+    assert.equal(await page.evaluate("window.__vtSeen"), false, "no view transition for the quick look");
+    await page.click(`#work-erp .sf-actions a[href="/erp-case-study"]`);
+    await page.waitFor(`location.pathname === "/erp-case-study" && document.readyState === "complete"`, { timeout: 8000 });
+    assert.ok(!(await page.evaluate(`document.documentElement.classList.contains("vt-arrive")`)), "no cross-document transition");
+  });
+});
+
+test("without the View Transitions API: the quick look works as before, focus included", async () => {
+  await withPage({ width: 1440, height: 900 }, async (page) => {
+    await page.addInitScript(`delete Document.prototype.startViewTransition;`);
+    await page.goto(`${base}/`);
+    await page.waitFor(ready);
+    assert.equal(await page.evaluate(`typeof document.startViewTransition`), "undefined");
+    await page.evaluate(`document.querySelector("#work-erp [data-open-file]").focus()`);
+    await page.key("Enter");
+    await page.waitFor(`document.querySelector("[data-drawer]").open && document.querySelector("[data-drawer]").contains(document.activeElement)`);
+    await page.key("Escape");
+    await page.waitFor(`!document.querySelector("[data-drawer]").open`);
+    await page.waitFor(focused("#work-erp [data-open-file]"));
+    assert.deepEqual(page.errors(), []);
+  });
+});
+
+test("keyboard and touch through the transitions", async () => {
+  // Keyboard: a quick look opened with Enter keeps focus inside, and gives it back on Escape.
+  await withPage({ width: 1024, height: 768 }, async (page) => {
+    await page.goto(`${base}/`);
+    await page.waitFor(ready);
+    await page.evaluate(`document.querySelector("#work-erp [data-open-file]").focus()`);
+    await page.key("Enter");
+    await page.waitFor(`document.querySelector("[data-drawer]").open && document.querySelector("[data-drawer]").contains(document.activeElement)`);
+    await page.waitFor(`!document.documentElement.classList.contains("vt-quick-look")`);
+    await page.key("Escape");
+    await page.waitFor(`!document.querySelector("[data-drawer]").open && !document.documentElement.classList.contains("vt-quick-look")`);
+    await page.waitFor(focused("#work-erp [data-open-file]"));
+    // Following a link with the keyboard moves to the next page as usual.
+    await page.evaluate(`document.querySelector('#work-erp .sf-actions a[href="/erp-case-study"]').focus()`);
+    await page.key("Enter");
+    await page.waitFor(`location.pathname === "/erp-case-study" && document.readyState === "complete"`, { timeout: 8000 });
+  });
+  // Touch: tap a system, tap its quick look and close it, then tap its case study.
+  for (const [width, height] of [[390, 844], [600, 960], [834, 1112]]) {
+    await withPage({ width, height, mobile: true }, async (page) => {
+      await page.goto(`${base}/`);
+      await page.waitFor(ready);
+      await page.tap("#tab-maintops");
+      await page.tap("#work-maintops [data-open-file]");
+      await page.waitFor(`document.querySelector("[data-drawer]").open && !document.documentElement.classList.contains("vt-quick-look")`, { message: `${width}px: the quick look did not open` });
+      await page.tap("[data-drawer-close]", { scroll: false });
+      await page.waitFor(`!document.querySelector("[data-drawer]").open && !document.documentElement.classList.contains("vt-quick-look")`);
+      await page.tap(`#work-maintops .sf-actions a[href="/maintops"]`);
+      await page.waitFor(`location.pathname === "/maintops" && document.readyState === "complete"`, { timeout: 8000, message: `${width}px: the case study link did not navigate` });
+      assert.deepEqual(page.errors(), [], `${width}px`);
+    });
+  }
+});
+
+test("no layout shift when a case study arrives through a transition", async () => {
+  for (const [width, height, mobile] of [[390, 844, true], [768, 1024, true], [1440, 900, false]]) {
+    await withPage({ width, height, mobile }, async (page) => {
+      await page.goto(`${base}/`);
+      await page.waitFor(ready);
+      await page.evaluate(`document.querySelector('#work-erp .sf-actions a[href="/erp-case-study"]').click()`);
+      await page.waitFor(`location.pathname === "/erp-case-study" && document.readyState === "complete"`, { timeout: 8000 });
+      await new Promise((resolve) => setTimeout(resolve, 900));
+      const shift = await page.evaluate(`new Promise((resolve) => { let total = 0; new PerformanceObserver((list) => { for (const entry of list.getEntries()) if (!entry.hadRecentInput) total += entry.value; }).observe({ type: "layout-shift", buffered: true }); setTimeout(() => resolve(total), 50); })`);
+      assert.ok(shift < 0.02, `${width}px: cumulative layout shift ${shift.toFixed(4)}`);
+    });
+  }
+});
+
+test("contact response: the trace follows the real request, and only a confirmed send reaches Received", async () => {
+  for (const scheme of ["dark", "light"]) {
+    await withPage({ width: 390, height: 844, mobile: true, scheme }, async (page) => {
+      let reply = { status: 503, body: "{}" };
+      await page.intercept(/formspree\.io/, () => reply);
+      await page.goto(`${base}/#contact`);
+      const state = `document.querySelector("[data-contact-form]").dataset`;
+      // Fields are filled by focusing them and typing; the taps under test are on Send.
+      const fill = async (selector, text) => { await page.evaluate(`document.querySelector(${JSON.stringify(selector)}).focus()`); await page.type(text); };
+      const where = async () => page.evaluate(`JSON.stringify({ state: ${state}.contactState, failure: ${state}.contactFailure, status: document.querySelector("[data-contact-status-text]").textContent })`);
+      assert.ok(await page.evaluate(visible("[data-contact-trace]")), "the trace shows with the endpoint configured");
+      assert.equal(await page.evaluate(`document.querySelector("[data-contact-trace]").getAttribute("aria-hidden")`), "true", "the status line, not the trace, is what is announced");
+      // Fields: stops at Check.
+      await page.tap("[data-contact-submit]");
+      await page.waitFor(`${state}.contactState === "error" && ${state}.contactFailure === "check"`);
+      await fill("#contact-name", "Test Visitor");
+      await fill("#contact-email", "visitor@example.com");
+      await fill("#contact-message", "A test message, sent only to an intercepted endpoint.");
+      // While the request is out: Sending, never Received.
+      reply = { status: 200, body: JSON.stringify({ ok: true }), delay: 1500 };
+      await page.tap("[data-contact-submit]");
+      await page.waitFor(`${state}.contactState === "sending"`, { message: `never saw sending: ${await where()}` }).catch(async (error) => { throw new Error(`${error.message} / now ${await where()}`); });
+      await new Promise((resolve) => setTimeout(resolve, 700));
+      assert.equal(await page.evaluate(`${state}.contactState`), "sending", "still sending while the service has not answered");
+      await page.waitFor(`${state}.contactState === "received"`, { timeout: 4000 });
+      assert.match(await page.evaluate(`document.querySelector("[data-contact-status-text]").textContent`), /Message sent/);
+      // A failed send stops at Send, offers the email draft, and keeps the message.
+      await fill("#contact-name", "Test Visitor");
+      assert.equal(await page.evaluate(`${state}.contactState`), "ready", "typing a new message starts the trace again");
+      await fill("#contact-email", "visitor@example.com");
+      await fill("#contact-message", "A second message, answered with a server error.");
+      reply = { status: 503, body: "{}" };
+      await page.tap("[data-contact-submit]");
+      await page.waitFor(`${state}.contactState === "error" && ${state}.contactFailure === "send"`);
+      assert.ok(await page.evaluate(visible("[data-contact-mailfallback]")));
+      assert.ok(await page.evaluate(`document.getElementById("contact-message").value.length > 20`));
+      // The browser logs the intercepted 503 itself; anything else would be a real error.
+      assert.deepEqual(page.errors().filter((error) => !/formspree.io/.test(error)), []);
+    });
+  }
+  // Reduced motion: no travelling packet, the same states.
+  await withPage({ width: 1440, height: 900, reducedMotion: true }, async (page) => {
+    await page.goto(`${base}/#contact`);
+    assert.equal(await page.evaluate(`getComputedStyle(document.querySelector(".ft-packet")).display`), "none");
+  });
+  // Without JavaScript the trace stays hidden and the form posts as a plain form.
+  await withPage({ width: 1440, height: 900, javaScript: false }, async (page) => {
+    await page.goto(`${base}/#contact`);
+    assert.ok(!(await page.evaluate(visible("[data-contact-trace]"))));
+    assert.match(await page.evaluate(`document.querySelector("[data-contact-form]").getAttribute("action")`), /^https:\/\/formspree\.io\//);
   });
 });

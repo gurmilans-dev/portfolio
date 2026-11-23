@@ -126,7 +126,29 @@ export function picture(project, slot = "primary", { loading = "lazy", sizes = "
    load or throws first, DOMContentLoaded (which waits for deferred scripts) drops the
    pending state and the plain list of links comes back. */
 export function headBoot() {
-  return `<script>(function (d) { var t; try { t = localStorage.getItem("portfolio-theme"); } catch (e) {} if (t !== "light" && t !== "dark") t = matchMedia("(prefers-color-scheme: light)").matches ? "light" : "dark"; d.dataset.theme = t; if (t === "light") document.querySelector('meta[name="theme-color"]').content = "#f4f4f1"; d.classList.add("js", "nav-pending"); document.addEventListener("DOMContentLoaded", function () { if (!d.classList.contains("nav-ready")) d.classList.remove("nav-pending"); }); })(document.documentElement);</script>`;
+  return `<script>(function (d) {
+      var t; try { t = localStorage.getItem("portfolio-theme"); } catch (e) {}
+      if (t !== "light" && t !== "dark") t = matchMedia("(prefers-color-scheme: light)").matches ? "light" : "dark";
+      d.dataset.theme = t;
+      if (t === "light") document.querySelector('meta[name="theme-color"]').content = "#f4f4f1";
+      d.classList.add("js", "nav-pending");
+      document.addEventListener("DOMContentLoaded", function () { if (!d.classList.contains("nav-ready")) d.classList.remove("nav-pending"); });
+      /* Page transitions: the arrival side runs here, before the first frame. It marks the
+         page as arriving (so load animations do not replay under the transition), adds the
+         direction of a step through the case studies or through history, and keeps only
+         what is on screen moving: a project's name or screenshot below the fold just fades. */
+      addEventListener("pagereveal", function (e) {
+        var vt = e.viewTransition, dir = null, nav = window.navigation && navigation.activation, held;
+        try { var hint = JSON.parse(sessionStorage.getItem("vt-dir") || "null"); sessionStorage.removeItem("vt-dir"); if (hint && Date.now() - hint.t < 8000) dir = hint.dir; } catch (x) {}
+        if (!vt) return;
+        d.classList.add("vt-arrive");
+        if (nav && nav.navigationType === "traverse" && nav.from && nav.entry) dir = nav.entry.index < nav.from.index ? "prev" : "next";
+        if (dir && vt.types) { try { vt.types.add(dir); } catch (x) {} }
+        held = [].filter.call(document.querySelectorAll("[data-vt]"), function (el) { var r = el.getBoundingClientRect(); return r.bottom < 0 || r.top > innerHeight; });
+        held.forEach(function (el) { el.style.viewTransitionName = "none"; });
+        vt.finished.then(function () { held.forEach(function (el) { el.style.removeProperty("view-transition-name"); }); }, function () {});
+      });
+    })(document.documentElement);</script>`;
 }
 
 export function header(mode = "home") {
@@ -219,6 +241,12 @@ function dossier(project) {
           </div>`;
 }
 
+/* Page transitions (see the stylesheet): a project's name and its primary screenshot are the
+   two things that travel with the visitor, from the explorer to the case study, into a quick
+   look, and from one case study to the next. Each has one name per project. */
+const vtVars = (project) => `--vt-title: vt-title-${project.key}; --vt-shot: vt-shot-${project.key}`;
+export const vtShot = (key) => `style="--vt-shot: vt-shot-${key}" data-vt="shot"`;
+
 /* What a quick look adds to the panel it opens from, in the order it shows it. */
 function peekContents(project) {
   const parts = [project.primaryImage && "screenshot", project.system.decision ? "key decision" : "how it works", "evidence"].filter(Boolean);
@@ -230,7 +258,7 @@ function peekContents(project) {
    card keeps its shape and says what the quick look holds instead. */
 function peek(project) {
   const media = project.primaryImage
-    ? `<span class="peek-media">${picture(project, "primary", { sizes: "136px", alt: "" })}</span>`
+    ? `<span class="peek-media" data-vt="shot">${picture(project, "primary", { sizes: "136px", alt: "" })}</span>`
     : `<span class="peek-media is-empty">${icons.panel}</span>`;
   return `<button class="sf-peek" type="button" data-open-file="${project.key}" hidden>${media}<span class="peek-copy"><span class="peek-label">Quick look<span class="sr-only">: ${esc(project.shortTitle)},</span></span><span class="peek-sub">${dotted(peekContents(project))}</span></span><span class="peek-go" aria-hidden="true">→</span></button>`;
 }
@@ -239,7 +267,7 @@ function peek(project) {
    list layout (no JavaScript) after the actions. */
 function shot(project) {
   if (!project.primaryImage) return ""; // No capture (confidential or desktop-only work).
-  return `<figure class="sf-shot"><a class="media-open" href="${project.primaryImage}" target="_blank" rel="noopener noreferrer">${picture(project, "primary", { sizes: "(min-width: 900px) 700px, 100vw" })}<span class="media-enlarge" aria-hidden="true">Full size ↗</span><span class="sr-only"> (full size, opens in a new tab)</span></a><figcaption>${esc(project.primaryImageCaption)}</figcaption></figure>`;
+  return `<figure class="sf-shot"><a class="media-open" href="${project.primaryImage}" data-vt="shot" target="_blank" rel="noopener noreferrer">${picture(project, "primary", { sizes: "(min-width: 900px) 700px, 100vw" })}<span class="media-enlarge" aria-hidden="true">Full size ↗</span><span class="sr-only"> (full size, opens in a new tab)</span></a><figcaption>${esc(project.primaryImageCaption)}</figcaption></figure>`;
 }
 
 /* Two ways in, named for what they are: a quick look opens in place, beside the explorer; the
@@ -252,10 +280,10 @@ function systemFile(project, featured) {
     storeLink(project),
     githubLink(project)
   ].join("");
-  return `<section id="work-${project.key}" class="system-file${featured ? "" : " is-also"}" data-system="${project.key}" aria-labelledby="work-${project.key}-title">
+  return `<section id="work-${project.key}" class="system-file${featured ? "" : " is-also"}" data-system="${project.key}" aria-labelledby="work-${project.key}-title" style="${vtVars(project)}">
           <header class="sf-head">
             <p class="sf-kicker"><span class="sf-no">${number}</span>${status(project)}<span class="sf-source">${sourceShort(project)}</span></p>
-            <h3 id="work-${project.key}-title" class="sf-title">${esc(project.shortTitle)}</h3>
+            <h3 id="work-${project.key}-title" class="sf-title" data-vt="title">${esc(project.shortTitle)}</h3>
             <p class="sf-category">${esc(project.category)}</p>
             <p class="sf-claim">${esc(project.lead)}</p>
             <p class="sf-tech">${dotted(project.tech)}</p>
@@ -378,7 +406,9 @@ export function caseEnd(key) {
   const prev = caseStudyProjects[(index - 1 + caseStudyProjects.length) % caseStudyProjects.length];
   const next = caseStudyProjects[(index + 1) % caseStudyProjects.length];
   const current = caseStudyProjects[index];
-  const card = (project, dir, cls) => `<a class="pager-card ${cls}" href="${project.caseStudy}"><span class="pager-dir">${dir}</span><strong>${esc(project.shortTitle)}</strong><span>${esc(project.category)}</span></a>`;
+  const card = (project, dir, cls, step) => `<a class="pager-card ${cls}" href="${project.caseStudy}" data-vt-dir="${step}"><span class="pager-dir">${dir}</span><strong data-vt="title" style="--vt-title: vt-title-${project.key}">${esc(project.shortTitle)}</strong><span>${esc(project.category)}</span></a>`;
+  // Back to the explorer on the same system (or to the register, for an "Also built" entry).
+  const home = typeof current.order === "number" ? `href="index.html#work" data-wb-select="${current.key}"` : `href="index.html#also-built"`;
   const subject = encodeURIComponent(`About ${current.shortTitle}`);
   return `<section class="case-end" aria-labelledby="case-end-title">
         <div class="frame case-end-grid">
@@ -386,9 +416,9 @@ export function caseEnd(key) {
           <div class="case-end-actions"><a class="btn btn-primary" href="mailto:${profile.email}?subject=${subject}">Email me about ${esc(current.shortTitle)}<span aria-hidden="true">→</span></a><a class="btn btn-line" href="${profile.resume}" target="_blank" rel="noopener noreferrer" download>Download CV<span class="sr-only"> (PDF)</span>${icons.download}</a></div>
         </div>
         <nav class="frame case-pager" aria-label="Project navigation">
-          ${card(prev, "<span aria-hidden=\"true\">←</span> Previous system", "pager-prev")}
-          <a class="pager-card pager-home" href="index.html#work"><span class="pager-dir">All systems</span><strong>Selected work</strong><span>Back to the explorer</span></a>
-          ${card(next, "Next system <span aria-hidden=\"true\">→</span>", "pager-next")}
+          ${card(prev, "<span aria-hidden=\"true\">←</span> Previous system", "pager-prev", "prev")}
+          <a class="pager-card pager-home" ${home}><span class="pager-dir">All systems</span><strong>Selected work</strong><span>Back to the explorer</span></a>
+          ${card(next, "Next system <span aria-hidden=\"true\">→</span>", "pager-next", "next")}
         </nav>
       </section>`;
 }
@@ -397,7 +427,7 @@ export function caseEnd(key) {
 export function caseIndex(key) {
   const project = projectByKey(key);
   const label = typeof project.order === "number" ? `${nn(project.order)} / ${esc(project.shortTitle)}` : `Also built / ${esc(project.shortTitle)}`;
-  return `<span class="case-index">${label}</span>`;
+  return `<span class="case-index" data-vt="title" style="--vt-title: vt-title-${key}">${label}</span>`;
 }
 
 /* The status fact: the maturity badge, then any public action. */
@@ -428,6 +458,7 @@ const PARTIALS = {
   "case-index": (arg) => caseIndex(arg),
   "case-status": (arg) => caseStatus(arg),
   "case-source": (arg) => caseSource(arg),
+  "vt-shot": (arg) => vtShot(arg),
   "github-link": (key) => {
     const project = siteConfig.projects[key];
     if (!project) throw new Error(`github-link: unknown project ${key}`);

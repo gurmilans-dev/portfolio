@@ -16,6 +16,7 @@
     <link rel="preload" href="assets/fonts/jetbrains-mono-latin.woff2" as="font" type="font/woff2" crossorigin />
     <link rel="icon" href="assets/favicon.svg" type="image/svg+xml" />
     <link rel="stylesheet" href="assets/styles.css" />
+    <link rel="expect" href="#case-title" blocking="render" />
     <script src="assets/script.js" defer></script>
   </head>
   <body class="page-opssemble page-case">
@@ -25,7 +26,7 @@
     <main id="main-content">
       <section id="top" class="case-hero" aria-labelledby="case-title">
         <div class="frame case-hero-inner">
-          <nav class="breadcrumbs" aria-label="Breadcrumb"><a href="index.html">Home</a><span aria-hidden="true">/</span><a href="index.html#work">Work</a><span aria-hidden="true">/</span><span aria-current="page">Opssemble</span></nav>
+          <nav class="breadcrumbs" aria-label="Breadcrumb"><a href="index.html">Home</a><span aria-hidden="true">/</span><a href="index.html#work" data-wb-select="opssemble">Work</a><span aria-hidden="true">/</span><span aria-current="page">Opssemble</span></nav>
           <p class="case-eyebrow">{{> case-index opssemble}}<span>Event operations platform · pilot preparation</span></p>
           <h1 id="case-title">Which parts of an event aren’t ready, and why.</h1>
           <p class="case-lead">Opssemble began as my university final project and grew into a full-stack product for live events: areas hold tasks, problems become tracked exceptions with severity, and readiness is computed from what is still open. It is being hardened for a controlled pilot and has not been launched.</p>

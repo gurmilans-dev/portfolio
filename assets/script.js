@@ -97,6 +97,29 @@
   if (menuToggle && nav) root.classList.add("nav-ready");
   root.classList.remove("nav-pending");
 
+  /* ---------- Page transitions: the leaving side ----------
+     The stylesheet opts into the browser's own cross-document view transitions; the head
+     script handles arrival. Here: a step through the case studies leaves its direction for
+     the next page (only for a plain click that navigates in this tab), "back to the
+     explorer" leaves the system to show there, and only what is on screen is snapshotted to
+     move. A page restored from the back/forward cache gets its names back. */
+  const hint = (key, value) => { try { sessionStorage.setItem(key, JSON.stringify({ ...value, t: Date.now() })); } catch { /* hints are optional */ } };
+  document.addEventListener("click", event => {
+    const link = event.target instanceof Element ? event.target.closest("a[data-vt-dir], a[data-wb-select]") : null;
+    if (!link || event.defaultPrevented || event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey || link.target === "_blank") return;
+    if (link.dataset.vtDir) hint("vt-dir", { dir: link.dataset.vtDir });
+    if (link.dataset.wbSelect) hint("wb-select", { key: link.dataset.wbSelect });
+  });
+  addEventListener("pageswap", event => {
+    if (!event.viewTransition) return;
+    const offscreen = [...document.querySelectorAll("[data-vt]")].filter(el => {
+      const rect = el.getBoundingClientRect();
+      return rect.width > 0 && (rect.bottom < 0 || rect.top > innerHeight);
+    });
+    offscreen.forEach(el => { el.style.viewTransitionName = "none"; });
+    addEventListener("pageshow", () => offscreen.forEach(el => el.style.removeProperty("view-transition-name")), { once: true });
+  });
+
   /* ---------- Header state, scroll progress ---------- */
   const progress = document.querySelector("[data-scroll-progress]");
   const progressBar = progress?.querySelector("span");
@@ -535,9 +558,16 @@
       if (current === STATE.ERROR) return "Try again";
       return "Send message";
     };
-    function setState(next, message) {
+    /* The trace under the form mirrors these states for the eye: check, send, received.
+       It reaches "received" only once the form service has answered with success; the
+       status line below it stays the text everyone (and every screen reader) gets. */
+    const trace = contactForm.querySelector("[data-contact-trace]");
+    if (trace) trace.hidden = mode !== "endpoint";
+    function setState(next, message, failure = "") {
       state = next;
       contactForm.dataset.contactState = next.toLowerCase();
+      if (failure) contactForm.dataset.contactFailure = failure;
+      else delete contactForm.dataset.contactFailure;
       if (statusText && message) statusText.textContent = message;
       if (submitButton) submitButton.disabled = next === STATE.SENDING || mode === "disabled";
       if (submitText) submitText.textContent = submitLabel(next);
@@ -578,7 +608,7 @@
       else if (current.message.length > max) errors.push(["message", `Keep the message under ${max} characters.`]);
       if (errors.length) {
         errors.forEach(([name, message]) => setFieldError(name, message));
-        setState(STATE.ERROR, "Fix the highlighted fields. Your message is still here.");
+        setState(STATE.ERROR, "Fix the highlighted fields. Your message is still here.", "check");
         fields[errors[0][0]]?.focus();
         return null;
       }
@@ -606,14 +636,14 @@
       const target = endpoint || contactForm.action;
       if (!target || target.startsWith("mailto:") || /(?:example\.com|your-|todo|placeholder)/i.test(target)) {
         lastValues = current;
-        setState(STATE.ERROR, "The form endpoint is not configured. Your message is still here — open an email draft instead.");
+        setState(STATE.ERROR, "The form endpoint is not configured. Your message is still here — open an email draft instead.", "send");
         if (fallbackButton) fallbackButton.hidden = false;
         return;
       }
       let token = "";
       if (turnstileRequired) {
         token = (window.turnstile && turnstileId !== null) ? (window.turnstile.getResponse(turnstileId) || "") : "";
-        if (!token) { setState(STATE.ERROR, "Complete the bot check below the form, then send again."); return; }
+        if (!token) { setState(STATE.ERROR, "Complete the bot check below the form, then send again.", "check"); return; }
       }
       lastValues = current;
       const data = new FormData(contactForm);
@@ -636,7 +666,7 @@
         resetTurnstile();
         setState(STATE.ERROR, error?.name === "AbortError"
           ? "The message timed out. Try again, or open a pre-filled email draft."
-          : "The message could not be sent. Try again, or open a pre-filled email draft.");
+          : "The message could not be sent. Try again, or open a pre-filled email draft.", "send");
         if (fallbackButton) fallbackButton.hidden = false;
       } finally {
         clearTimeout(timer);
@@ -647,6 +677,8 @@
       field?.addEventListener("input", () => {
         if (field.getAttribute("aria-invalid") === "true") setFieldError(name);
         if (state === STATE.ERROR && Object.values(errorNodes).every(node => node.hidden)) setState(STATE.READY, readyMessage);
+        // Starting another message after one was sent resets the trace to the beginning.
+        else if (state === STATE.RECEIVED && field.value.trim()) setState(STATE.READY, readyMessage);
       });
     });
     contactForm.addEventListener("submit", event => {

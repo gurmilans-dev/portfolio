@@ -16,6 +16,7 @@
     <link rel="preload" href="assets/fonts/jetbrains-mono-latin.woff2" as="font" type="font/woff2" crossorigin />
     <link rel="icon" href="assets/favicon.svg" type="image/svg+xml" />
     <link rel="stylesheet" href="assets/styles.css" />
+    <link rel="expect" href="#case-title" blocking="render" />
     <script src="assets/script.js" defer></script>
   </head>
   <body class="page-maintops page-case">
@@ -25,7 +26,7 @@
     <main id="main-content">
       <section id="top" class="case-hero" aria-labelledby="case-title">
         <div class="frame case-hero-inner">
-          <nav class="breadcrumbs" aria-label="Breadcrumb"><a href="index.html">Home</a><span aria-hidden="true">/</span><a href="index.html#work">Work</a><span aria-hidden="true">/</span><span aria-current="page">MaintOps</span></nav>
+          <nav class="breadcrumbs" aria-label="Breadcrumb"><a href="index.html">Home</a><span aria-hidden="true">/</span><a href="index.html#work" data-wb-select="maintops">Work</a><span aria-hidden="true">/</span><span aria-current="page">MaintOps</span></nav>
           <p class="case-eyebrow">{{> case-index maintops}}<span>Maintenance operations platform</span></p>
           <h1 id="case-title">Who owns this fault, and is it late?</h1>
           <p class="case-lead">MaintOps handles maintenance work for a single organization: a requester reports a fault, a supervisor triages and assigns it, a technician does the work, and SLA cycles record whether the targets were met. The source is public; there is no hosted instance.</p>
@@ -35,7 +36,7 @@
 
 <section class="case-proof" aria-label="Evidence">
         <div class="frame proof-grid has-facts">
-          <figure class="evidence-media"><a class="media-open" href="{{projects.maintops.primaryImage}}" target="_blank" rel="noopener noreferrer"><picture><source srcset="{{projects.maintops.primaryImageAvif}}" type="image/avif" /><source srcset="{{projects.maintops.primaryImageWebp}}" type="image/webp" /><img src="{{projects.maintops.primaryImage}}" width="{{projects.maintops.primaryImageWidth}}" height="{{projects.maintops.primaryImageHeight}}" loading="eager" decoding="async" alt="{{projects.maintops.primaryImageAlt}}" /></picture><span class="media-enlarge" aria-hidden="true">Full size ↗</span><span class="sr-only"> (full size, opens in a new tab)</span></a><figcaption>{{projects.maintops.primaryImageCaption}}</figcaption></figure>
+          <figure class="evidence-media"><a class="media-open" href="{{projects.maintops.primaryImage}}" {{> vt-shot maintops}} target="_blank" rel="noopener noreferrer"><picture><source srcset="{{projects.maintops.primaryImageAvif}}" type="image/avif" /><source srcset="{{projects.maintops.primaryImageWebp}}" type="image/webp" /><img src="{{projects.maintops.primaryImage}}" width="{{projects.maintops.primaryImageWidth}}" height="{{projects.maintops.primaryImageHeight}}" loading="eager" decoding="async" alt="{{projects.maintops.primaryImageAlt}}" /></picture><span class="media-enlarge" aria-hidden="true">Full size ↗</span><span class="sr-only"> (full size, opens in a new tab)</span></a><figcaption>{{projects.maintops.primaryImageCaption}}</figcaption></figure>
           <dl class="proof-facts"><div><dt>On hold</dt><dd>Putting work on hold is recorded on the ticket, but the resolution clock keeps running, so an ageing held ticket stays visible. <a href="#lifecycle">The lifecycle</a></dd></div><div><dt>Reopened</dt><dd>A reopened ticket starts a new numbered SLA cycle instead of reviving the old one: resolved once and reopened twice reads as three measured attempts.</dd></div></dl>
         </div>
       </section>

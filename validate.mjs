@@ -369,6 +369,11 @@ const productionWorkbench = await fs.readFile(path.join(root, "assets/workbench.
 if (!productionCss.includes(".reveal-ready [data-reveal]") || !productionJs.includes('classList.add("reveal-ready")')) fail("motion: progressive reveal preparation contract is missing");
 if (!/prefers-reduced-motion\s*:\s*reduce/.test(productionJs) || !/prefers-reduced-motion\s*:\s*reduce/.test(productionCss)) fail("motion: reduced-motion handling is missing");
 if (!/prefers-reduced-motion\s*:\s*reduce/.test(productionWorkbench)) fail("motion: the workbench ignores reduced-motion preferences");
+// Page transitions are opted into once, and only without a reduced-motion preference.
+const transitionRules = productionCss.match(/@view-transition\{[^}]*\}/g) || [];
+if (transitionRules.length !== 1 || !productionCss.includes("@media (prefers-reduced-motion:no-preference){@view-transition{navigation:auto;}}")) fail("motion: cross-document view transitions must be opted into once, inside a no-preference reduced-motion query");
+// The contact trace is decoration beside the status line, never a second live region.
+if (!/<ol class="form-trace" aria-hidden="true" data-contact-trace(?:="")? hidden(?:="")?>/.test(home)) fail("contact: the response trace must be hidden from assistive technology, and hidden until script.js shows it");
 if (!productionCss.includes(".case-immersive-frame") || !productionJs.includes("[data-case-immersive]")) fail("motion: case-study immersive progress contract is missing");
 // The workbench layout must only replace the plain list once its script is running, so
 // a failed or blocked script still leaves every system readable.
