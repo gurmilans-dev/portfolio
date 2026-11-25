@@ -719,9 +719,9 @@ const SIMS = {
     held: { steps: 3, end: { "res.committed": "0 of 1", "res.deadlocks": "0", "res.retries": "0", "res.answer": "503 ACCOUNT_BUSY", "a.bal": "€100.00", "b.bal": "€100.00" }, probe: [1, `document.querySelector('[data-of="a.lock"]').dataset.is === "S" && document.querySelector(".sim-graph").dataset.is === "s"`] }
   },
   "/procbeacon": {
-    reused: { steps: 5, end: { "res.sent": "nothing", "res.outcome": "IdentityChanged", "res.ended": "nothing", "res.naive": "postgres.exe" }, probe: [5, `[...document.querySelectorAll('[data-of="m.created"][data-is="mismatch"]')].filter((el) => el.getClientRects().length && getComputedStyle(el).visibility === "visible").length === 2 && document.querySelector('[data-of="g.act"]').dataset.is === "skip"`] },
-    same: { steps: 5, end: { "res.sent": "1 request", "res.outcome": "Exited", "res.ended": "node.exe", "res.naive": "node.exe too" }, probe: [4, `document.querySelector('[data-of="g.exit"]').dataset.is === "exited" && document.querySelector(".sim-slot").dataset.is === "empty"`] },
-    critical: { steps: 3, end: { "res.sent": "nothing", "res.outcome": "Blocked", "res.ended": "nothing", "res.naive": "agent.exe, and Windows with it" }, probe: [3, `document.querySelector('[data-of="g.critical"]').dataset.is === "block" && document.querySelector('[data-of="g.confirm"]').dataset.is === "skip"`] }
+    reused: { steps: 5, end: { "res.sent": "none", "res.outcome": "IdentityChanged", "res.ended": "nothing", "res.naive": "postgres.exe" }, probe: [5, `[...document.querySelectorAll('[data-of="m.created"][data-is="mismatch"]')].filter((el) => el.getClientRects().length && getComputedStyle(el).visibility === "visible").length === 2 && document.querySelector('[data-of="g.act"]').dataset.is === "skip"`] },
+    same: { steps: 5, end: { "res.sent": "1, on the handle", "res.outcome": "Exited", "res.ended": "node.exe", "res.naive": "node.exe too" }, probe: [4, `document.querySelector('[data-of="g.exit"]').dataset.is === "exited" && document.querySelector(".sim-slot").dataset.is === "empty"`] },
+    critical: { steps: 3, end: { "res.sent": "none", "res.outcome": "Blocked", "res.ended": "nothing", "res.naive": "agent.exe, a critical process" }, probe: [3, `document.querySelector('[data-of="g.critical"]').dataset.is === "block" && document.querySelector('[data-of="g.confirm"]').dataset.is === "skip"`] }
   }
 };
 const simLive = `document.querySelector("[data-sim]")?.classList.contains("is-live")`;
@@ -756,6 +756,7 @@ test("simulations: every scenario runs to its result, and Back, Reset and the st
         assert.equal(last.count, `Step ${steps} of ${steps} · end`);
         assert.match(last.say, new RegExp(`^Step ${steps} of ${steps}\\. `));
         for (const [key, value] of Object.entries(end)) assert.equal(last.values[key], value, `${url} ${id}: ${key} at the end`);
+        assert.deepEqual(await page.evaluate(`[...document.querySelectorAll(".sim-rail:not([hidden]) [aria-current]")].map((button) => button.dataset.go + "=" + button.getAttribute("aria-current"))`), [`${steps}=step`], "the rail marks the current step for assistive technology");
         await page.click('[data-act="next"]', { scroll: false });
         assert.equal((await page.evaluate(simState)).step, steps, "Step at the end does nothing");
         // Back undoes exactly one step: the same state the rail reaches directly from the start.
@@ -804,9 +805,9 @@ test("simulations: keyboard alone steps, jumps, plays and changes scenario, and 
     // Play and Pause from the keyboard.
     await page.evaluate(`document.querySelector('[data-act="play"]').focus()`);
     await page.key("Enter");
-    assert.equal(await page.evaluate(`document.querySelector('[data-act="play"]').getAttribute("aria-pressed")`), "true");
+    assert.equal(await page.evaluate(`document.querySelector('[data-act="play"]').textContent`), "Pause", "the button names what it will do next");
     await page.key("Enter");
-    assert.equal(await page.evaluate(`document.querySelector('[data-act="play"]').getAttribute("aria-pressed")`), "false");
+    assert.equal(await page.evaluate(`document.querySelector('[data-act="play"]').textContent`), "Play");
     // Scenarios are a radio group: arrows move the choice, and the new scenario starts at its start.
     await page.evaluate(`document.querySelector('.sim-scenarios input[value="ordered"]').focus()`);
     await page.key("ArrowRight");
@@ -832,7 +833,7 @@ test("simulations: touch on a phone, and Play runs to the end without moving any
     // Play: steps every 1.7 s on its own, stops at the end, and nothing on the page moves meanwhile.
     await page.tap('[data-act="play"]');
     const started = await page.evaluate("performance.now()");
-    await page.waitFor(`(() => { const live = document.querySelector(".sim-live"); return live.dataset.step === "3" && document.querySelector('[data-act="play"]').getAttribute("aria-pressed") === "false"; })()`, { timeout: 9000, message: "Play should reach the end and stop" });
+    await page.waitFor(`(() => { const live = document.querySelector(".sim-live"); return live.dataset.step === "3" && document.querySelector('[data-act="play"]').textContent === "Play"; })()`, { timeout: 9000, message: "Play should reach the end and stop" });
     assert.equal(await page.evaluate(`document.querySelector('[data-act="play"]').textContent`), "Play");
     const moved = await page.evaluate(`window.__shifts.filter((shift) => shift.at > ${started} + 600 && !shift.input).reduce((sum, shift) => sum + shift.value, 0)`);
     assert.ok(moved < 0.001, `layout shift while playing: ${moved}`);
@@ -991,5 +992,461 @@ test("simulations: sims.js loads only where there is one, and stepping makes no 
       await new Promise((resolve) => setTimeout(resolve, 300));
       assert.equal(await page.evaluate(`performance.getEntriesByType("resource").length`), before, `${url}: stepping through every scenario fetched something`);
     }
+  });
+});
+
+/* ---------- Inspect mode: parts of a real screenshot, explained ---------- */
+
+const INSPECT = {
+  "/maintops": { title: "MaintOps · Supervisor dashboard", parts: ["SLA counters", "Needs immediate attention", "Recent activity", "Role and privilege"] },
+  "/opssemble": { title: "Opssemble · Readiness view", parts: ["The event, and your role in it", "Areas, tasks and blockers", "The verdict and its score", "The rules applied"] },
+  "/gurmat-saanj": { title: "Gurmat Saanj · Operator workspace", parts: ["Shabad and follow status", "The current line", "Display controls", "Projector preview"] }
+};
+const inspectorOpen = `document.querySelector("dialog.inspector")?.open === true`;
+// What the inspector shows: its title, the selected part, the panel text, and whether the
+// panel says exactly what the notes under the screenshot say for that part.
+const inspectorState = `(() => {
+  const dialog = document.querySelector("dialog.inspector");
+  const tabs = [...dialog.querySelectorAll('[role="tab"]')];
+  const selected = tabs.findIndex((tab) => tab.getAttribute("aria-selected") === "true");
+  const panelTitle = dialog.querySelector("[data-insp-part-title]").textContent;
+  const notes = [...document.querySelectorAll(".inspect-part")].find((item) => item.querySelector(".inspect-part-title span:last-child").textContent === panelTitle);
+  return { title: dialog.querySelector(".insp-title").textContent, tabs: tabs.length, selected, panelTitle, count: dialog.querySelector("[data-insp-count]").textContent,
+    same: !!notes && notes.querySelector("dl").textContent === dialog.querySelector("[data-insp-notes] dl").textContent,
+    zoom: dialog.querySelector("[data-insp-zoom]").getAttribute("aria-pressed"), focused: document.activeElement === tabs[selected] };
+})()`;
+// The selected part, after zooming, lies inside the stage (it can be read whole).
+const partInStage = `(() => { const stage = document.querySelector("[data-insp-stage]").getBoundingClientRect(); const part = document.querySelector('.insp-part[aria-selected="true"]').getBoundingClientRect(); return part.left >= stage.left - 1 && part.right <= stage.right + 1 && part.top >= stage.top - 1 && part.bottom <= stage.bottom + 1; })()`;
+const canvasScale = `Number(document.querySelector("[data-insp-canvas]").style.transform.match(/scale\\(([\\d.]+)\\)/)?.[1] || 1)`;
+
+test("inspect mode: opens from its button and from the screenshot, explains each part, and closes back", async () => {
+  for (const [url, spec] of Object.entries(INSPECT)) {
+    await withPage({ width: 1440, height: 900 }, async (page) => {
+      await page.goto(base + url);
+      await page.waitFor(`document.documentElement.classList.contains("inspect-ready")`);
+      await page.click("[data-inspect-open]");
+      await page.waitFor(inspectorOpen);
+      let state = await page.evaluate(inspectorState);
+      assert.equal(state.title, spec.title);
+      assert.equal(state.tabs, spec.parts.length);
+      assert.equal(state.selected, 0, "the first part is chosen on opening");
+      assert.ok(state.focused, "focus is on the chosen part");
+      assert.ok(await page.evaluate(`document.documentElement.classList.contains("is-locked")`), "the page behind does not scroll");
+      for (let i = 0; i < spec.parts.length; i++) {
+        await page.click(`.insp-part:nth-child(${i + 1})`);
+        state = await page.evaluate(inspectorState);
+        assert.equal(state.selected, i);
+        assert.equal(state.panelTitle, spec.parts[i], `${url}: part ${i + 1}`);
+        assert.equal(state.count, `Part ${i + 1} of ${spec.parts.length}`);
+        assert.ok(state.same, `${url}: the inspector says what the notes say for ${spec.parts[i]}`);
+      }
+      await page.click("[data-insp-prev]");
+      assert.equal((await page.evaluate(inspectorState)).selected, spec.parts.length - 2, "Previous part");
+      await page.key("Escape");
+      await page.waitFor(`!(${inspectorOpen})`);
+      assert.ok(await page.evaluate(focused("[data-inspect-open]")), "focus returns to the Inspect button");
+      assert.ok(!(await page.evaluate(`document.documentElement.classList.contains("is-locked")`)), "the page scrolls again");
+      assert.deepEqual(page.errors(), []);
+    });
+  }
+  // Pointing at a part on the screenshot opens the inspector on that part.
+  await withPage({ width: 1440, height: 900 }, async (page) => {
+    await page.goto(`${base}/maintops`);
+    await page.waitFor(`document.documentElement.classList.contains("inspect-ready")`);
+    const { x, y } = await page.point('[data-inspect] .inspect-hint[data-index="2"]');
+    await page.call("Input.dispatchMouseEvent", { type: "mouseMoved", x, y });
+    await page.waitFor(`getComputedStyle(document.querySelector(".inspect-hints")).opacity === "1"`, { message: "the parts outline themselves on hover" });
+    await page.call("Input.dispatchMouseEvent", { type: "mousePressed", x, y, button: "left", clickCount: 1 });
+    await page.call("Input.dispatchMouseEvent", { type: "mouseReleased", x, y, button: "left", clickCount: 1 });
+    await page.waitFor(inspectorOpen);
+    assert.equal((await page.evaluate(inspectorState)).panelTitle, "Recent activity", "the part under the pointer");
+    assert.deepEqual(page.errors(), []);
+  });
+});
+
+test("inspect mode: keyboard alone moves between parts, zooms, and reads the notes", async () => {
+  await withPage({ width: 1440, height: 900 }, async (page) => {
+    await page.goto(`${base}/opssemble`);
+    await page.waitFor(`document.documentElement.classList.contains("inspect-ready")`);
+    await page.evaluate(`document.querySelector("[data-inspect-open]").focus()`);
+    await page.key("Enter");
+    await page.waitFor(inspectorOpen);
+    const selected = async () => (await page.evaluate(inspectorState)).selected;
+    await page.key("ArrowRight");
+    assert.equal(await selected(), 1);
+    assert.ok((await page.evaluate(inspectorState)).focused, "focus follows the chosen part");
+    await page.key("End");
+    assert.equal(await selected(), 3);
+    await page.key("ArrowRight");
+    assert.equal(await selected(), 0, "arrows wrap around");
+    await page.key("Home");
+    assert.equal(await selected(), 0);
+    // Tab leaves the parts for the notes, as a tab panel.
+    await page.key("Tab");
+    assert.ok(await page.evaluate(`document.activeElement.getAttribute("role") === "tabpanel" && document.activeElement.getAttribute("aria-labelledby") === document.querySelector('[role="tab"][aria-selected="true"]').id`), "Tab reaches the explanation of the chosen part");
+    // Zoom: the chosen part (the verdict, a third of the screen's width) fills the stage and
+    // stays whole; off again, the whole screenshot.
+    await page.evaluate(`document.querySelectorAll(".insp-part")[2].click()`);
+    await page.evaluate(`document.querySelector("[data-insp-zoom]").focus()`);
+    await page.key("Enter");
+    await new Promise((resolve) => setTimeout(resolve, 650));
+    assert.equal((await page.evaluate(inspectorState)).zoom, "true");
+    assert.ok(await page.evaluate(canvasScale) > 1.5, "zoomed in");
+    assert.ok(await page.evaluate(partInStage), "the zoomed part is entirely on the stage");
+    await page.key("Enter");
+    await new Promise((resolve) => setTimeout(resolve, 650));
+    assert.equal(await page.evaluate(canvasScale), 1, "zoomed out");
+    assert.deepEqual(page.errors(), []);
+  });
+});
+
+test("inspect mode: touch on a phone opens zoomed, steps through parts, and closes", async () => {
+  await withPage({ width: 390, height: 844, mobile: true }, async (page) => {
+    await page.goto(`${base}/maintops`);
+    await page.waitFor(`document.documentElement.classList.contains("inspect-ready")`);
+    await page.tap("[data-inspect-open]");
+    await page.waitFor(inspectorOpen);
+    await new Promise((resolve) => setTimeout(resolve, 650));
+    assert.equal((await page.evaluate(inspectorState)).zoom, "true", "a phone opens zoomed to the part");
+    assert.ok(await page.evaluate(partInStage), "and the part is whole on the stage");
+    await page.tap("[data-insp-next]", { scroll: false });
+    assert.equal((await page.evaluate(inspectorState)).selected, 1);
+    await new Promise((resolve) => setTimeout(resolve, 650));
+    assert.ok(await page.evaluate(partInStage), "the next part is brought into view");
+    assert.ok(await page.evaluate(`document.querySelector("[data-insp-next]").getBoundingClientRect().bottom <= innerHeight`), "the part navigation stays on screen");
+    assert.ok(await page.evaluate("document.documentElement.scrollWidth - innerWidth") <= 0, "no horizontal overflow");
+    await page.tap("[data-insp-close]", { scroll: false });
+    await page.waitFor(`!(${inspectorOpen})`);
+    // A tap on the screenshot itself also opens the inspector.
+    await page.tap("[data-inspect] .media-open");
+    await page.waitFor(inspectorOpen);
+    assert.deepEqual(page.errors(), []);
+  });
+});
+
+test("inspect mode: the inspector fits every width and height, in both themes, and Back leaves nothing open", async () => {
+  const sizes = [[320, 640, true], [390, 844, true], [600, 960, true], [800, 1100, true], [1100, 800, false], [1440, 900, false], [2560, 1300, false], [1280, 600, false]];
+  for (const [width, height, mobile] of sizes) {
+    await withPage({ width, height, mobile, scheme: width % 3 ? "dark" : "light" }, async (page) => {
+      await page.goto(`${base}/opssemble`);
+      await page.waitFor(`document.documentElement.classList.contains("inspect-ready")`);
+      await page.evaluate(`document.querySelector("[data-inspect-open]").click()`);
+      await page.waitFor(inspectorOpen);
+      for (let i = 0; i < 4; i++) {
+        for (const zoom of [true, false]) {
+          await page.evaluate(`(() => { document.querySelectorAll(".insp-part")[${i}].click(); const z = document.querySelector("[data-insp-zoom]"); if ((z.getAttribute("aria-pressed") === "true") !== ${zoom}) z.click(); })()`);
+          await new Promise((resolve) => setTimeout(resolve, 560));
+          const fit = await page.evaluate(`(() => { const box = (s) => document.querySelector(s).getBoundingClientRect(); const frame = box(".insp-frame"), stage = box("[data-insp-stage]"), panel = box(".insp-panel"), nav = box("[data-insp-next]");
+            return { inside: frame.left >= -0.5 && frame.right <= innerWidth + 0.5 && frame.top >= -0.5 && frame.bottom <= innerHeight + 0.5, stage: stage.height > 120 && stage.width > 200, nav: nav.bottom <= innerHeight + 0.5 && nav.top >= panel.top - 0.5, overflow: document.documentElement.scrollWidth - innerWidth }; })()`);
+          assert.ok(fit.inside && fit.stage && fit.nav && fit.overflow <= 0, `${width}x${height} part ${i + 1} zoom ${zoom}: ${JSON.stringify(fit)}`);
+          if (zoom) assert.ok(await page.evaluate(partInStage), `${width}x${height}: part ${i + 1} is whole when zoomed`);
+        }
+      }
+      // Leaving the page with the inspector open, then coming back: nothing is left open or locked.
+      await page.evaluate(`location.assign("/maintops")`);
+      await page.waitFor(`location.pathname === "/maintops" && document.readyState === "complete"`, { timeout: 8000 });
+      await page.evaluate("history.back()");
+      await page.waitFor(`location.pathname === "/opssemble" && document.readyState === "complete"`, { timeout: 8000 });
+      assert.ok(!(await page.evaluate(`document.querySelector("dialog.inspector")?.open === true || document.documentElement.classList.contains("is-locked")`)), "back on the page, no inspector and no scroll lock");
+      assert.deepEqual(page.errors(), []);
+    });
+  }
+});
+
+test("inspect mode: reduced motion, no JavaScript, and a slow inspect.js", async () => {
+  await withPage({ width: 1440, height: 900, reducedMotion: true }, async (page) => {
+    await page.goto(`${base}/gurmat-saanj`);
+    await page.waitFor(`document.documentElement.classList.contains("inspect-ready")`);
+    await page.evaluate(`document.querySelector("[data-inspect-open]").click()`);
+    await page.waitFor(inspectorOpen);
+    await page.evaluate(`document.querySelector("[data-insp-zoom]").click()`);
+    await new Promise((resolve) => setTimeout(resolve, 60));
+    assert.equal(await page.evaluate(`document.getAnimations().filter((animation) => animation.playState === "running").length`), 0, "nothing animates");
+    assert.ok(await page.evaluate(canvasScale) > 1, "zoom still works, at once");
+    assert.equal(await page.evaluate(`document.querySelectorAll(".insp-part").length`), 4, "all the information is there");
+  });
+  // A phone-width window, without touch emulation, so a plain mouse press opens the notes.
+  await withPage({ width: 390, height: 844, javaScript: false }, async (page) => {
+    for (const [url, spec] of Object.entries(INSPECT)) {
+      await page.goto(base + url);
+      assert.equal(await page.evaluate(`getComputedStyle(document.querySelector("[data-inspect-open]")).display`), "none", `${url}: no Inspect button without JavaScript`);
+      assert.deepEqual(await page.evaluate(`[...document.querySelectorAll(".inspect-part .inspect-part-title span:last-child")].map((el) => el.textContent)`), spec.parts, `${url}: every note is in the page`);
+      // A real click, at coordinates read directly: without scripts the page cannot run the
+      // driver's usual frame-by-frame position check.
+      const { x, y } = await page.evaluate(`(() => { const el = document.querySelector(".inspect-notes summary"); el.scrollIntoView({ block: "center", behavior: "instant" }); const r = el.getBoundingClientRect(); return { x: r.left + 12, y: r.top + r.height / 2 }; })()`);
+      await page.call("Input.dispatchMouseEvent", { type: "mousePressed", x, y, button: "left", clickCount: 1 });
+      await page.call("Input.dispatchMouseEvent", { type: "mouseReleased", x, y, button: "left", clickCount: 1 });
+      assert.ok(await page.evaluate(`document.querySelector(".inspect-notes").open && document.querySelector(".inspect-part dd").getBoundingClientRect().height > 0`), `${url}: the notes open without JavaScript`);
+      assert.match(await page.evaluate(`document.querySelector("[data-inspect] .media-open").getAttribute("href")`), /\.png$/, `${url}: the screenshot still links to its full size`);
+    }
+  });
+  // The Inspect button is drawn from the first frame, so a late inspect.js moves nothing.
+  const engine = readFileSync(new URL("assets/inspect.js", DIST), "utf8");
+  for (const [width, height, mobile, cpu] of [[390, 844, true, 4], [1440, 900, false, 1]]) {
+    for (const url of ["/maintops", "/opssemble", "/gurmat-saanj#pipeline"]) {
+      await withPage({ width, height, mobile }, async (page) => {
+        await page.call("Emulation.setCPUThrottlingRate", { rate: cpu });
+        await page.intercept(/\/assets\/inspect\.js$/, () => ({ status: 200, body: engine, headers: { "Content-Type": "text/javascript" }, delay: 1200 }));
+        const shift = await loadShift(page, base + url);
+        assert.ok(shift < 0.05, `${width}px ${url}: cumulative layout shift ${shift.toFixed(4)}`);
+        assert.ok(await page.evaluate(`document.documentElement.classList.contains("inspect-ready")`));
+      });
+    }
+  }
+});
+
+/* ---------- Command palette ---------- */
+
+const paletteOpen = `document.querySelector("dialog.palette")?.open === true`;
+async function chord(page, key, modifiers) {
+  const event = { key, code: `Key${key.toUpperCase()}`, windowsVirtualKeyCode: key.toUpperCase().charCodeAt(0), modifiers };
+  await page.call("Input.dispatchKeyEvent", { type: "keyDown", ...event });
+  await page.call("Input.dispatchKeyEvent", { type: "keyUp", ...event });
+  await new Promise((resolve) => setTimeout(resolve, 60));
+}
+const CTRL = 2, META = 4;
+const paletteResults = `[...document.querySelectorAll(".pal-opt")].map((option) => ({ title: option.querySelector(".pal-title").textContent, kind: option.querySelector(".pal-kind").textContent, path: option.querySelector(".pal-path")?.textContent || "" }))`;
+async function query(page, text) {
+  await page.evaluate(`(() => { const input = document.querySelector(".pal-input"); input.value = ""; input.dispatchEvent(new Event("input")); })()`);
+  await page.type(text);
+  await page.waitFor(`!document.querySelector(".pal-loading")`);
+  return page.evaluate(paletteResults);
+}
+
+test("command palette: Ctrl+K, Cmd+K and the Search button open it; Escape closes it and returns focus", async () => {
+  await withPage({ width: 1440, height: 900 }, async (page) => {
+    await page.goto(`${base}/maintops`);
+    assert.ok(await page.evaluate(visible("[data-palette-open]")), "a visible Search control");
+    assert.equal(await page.evaluate(`document.querySelector("[data-palette-open]").getAttribute("aria-keyshortcuts")`), "Control+K");
+    await page.evaluate(`document.querySelector(".brand").focus()`);
+    await chord(page, "k", CTRL);
+    await page.waitFor(paletteOpen);
+    assert.ok(await page.evaluate(focused(".pal-input")), "the query has focus");
+    assert.ok(await page.evaluate(`document.documentElement.classList.contains("is-locked")`));
+    await page.key("Escape");
+    await page.waitFor(`!(${paletteOpen})`);
+    assert.ok(await page.evaluate(focused(".brand")), "focus returns where it was");
+    assert.ok(!(await page.evaluate(`document.documentElement.classList.contains("is-locked")`)));
+    await chord(page, "k", META);
+    await page.waitFor(paletteOpen);
+    await page.click(".pal-close");
+    await page.waitFor(`!(${paletteOpen})`);
+    await page.click("[data-palette-open]");
+    await page.waitFor(paletteOpen);
+    await page.key("Escape");
+    await page.waitFor(`!(${paletteOpen})`);
+    assert.ok(await page.evaluate(focused("[data-palette-open]")), "focus returns to the Search control");
+    // Other keys stay the page's: a plain K types nothing and opens nothing.
+    await page.key("Tab");
+    await chord(page, "k", 0);
+    assert.ok(!(await page.evaluate(paletteOpen)));
+    // Not over another dialog: with the inspector open, Ctrl+K is left alone.
+    await page.evaluate(`document.querySelector("[data-inspect-open]").click()`);
+    await page.waitFor(inspectorOpen);
+    await chord(page, "k", CTRL);
+    assert.ok(!(await page.evaluate(paletteOpen)), "the palette does not open over the inspector");
+    assert.deepEqual(page.errors(), []);
+  });
+});
+
+test("command palette: technologies, projects and topics lead to the right places, and nothing matches nonsense", async () => {
+  await withPage({ width: 1440, height: 900 }, async (page) => {
+    await page.goto(`${base}/`);
+    await chord(page, "k", CTRL);
+    await page.waitFor(paletteOpen);
+    const index = JSON.parse(readFileSync(new URL("assets/search-index.json", DIST), "utf8"));
+    const techOf = (title) => index.items.find((item) => item.type === "project" && item.title === title)?.tags || "";
+    let results = await query(page, "Java");
+    assert.ok(results.some((r) => r.title === "FlowBank One"), "Java: FlowBank One");
+    for (const r of results.filter((r) => /project|case study/.test(r.kind))) assert.match(techOf(r.title), /\bJava\b/, `Java must not list ${r.title} (${techOf(r.title)})`);
+    results = await query(page, "Spring Boot");
+    assert.equal(results[0].title, "FlowBank One");
+    results = await query(page, "C#");
+    assert.ok(results.some((r) => r.title === "ProcBeacon"), "C#: ProcBeacon");
+    results = await query(page, "PostgreSQL");
+    assert.equal(results[0].title, "FlowBank One");
+    results = await query(page, "PID reuse");
+    assert.deepEqual([results[0].title, results[0].path], ["Process safety", "/procbeacon#safety"]);
+    results = await query(page, "Deadlock");
+    assert.deepEqual([results[0].title, results[0].path], ["Ledger & concurrency", "/flowbank-one#ledger"]);
+    results = await query(page, "SLA");
+    assert.equal(results[0].path, "/maintops#lifecycle");
+    results = await query(page, "Authentication");
+    assert.ok(results.some((r) => r.path === "/flowbank-one#security"), "Authentication: FlowBank One's sessions and security");
+    assert.ok(!results.some((r) => r.path === "/procbeacon#safety"), "and not ProcBeacon's process sessions");
+    results = await query(page, "Gurmat Saanj");
+    assert.deepEqual([results[0].title, results[0].path], ["Gurmat Saanj", "/gurmat-saanj"]);
+    results = await query(page, "ProcBeacon");
+    assert.equal(results[0].path, "/procbeacon");
+    results = await query(page, "zzqx");
+    assert.equal(results.length, 0);
+    assert.match(await page.evaluate(`document.querySelector(".pal-empty").textContent`), /No matches for “zzqx”/);
+    await page.waitFor(`document.querySelector(".pal-status").textContent === "No results"`, { message: "the empty result is announced" });
+    // Every result in the index leads somewhere real (the validator checks every id too).
+    for (const item of index.items) assert.match(item.url, /^\/[\w-]*(#[\w-]+)?$/, item.url);
+    assert.deepEqual(page.errors(), []);
+  });
+});
+
+test("command palette: opening results, across pages and on the same page, with keys and with the mouse", async () => {
+  await withPage({ width: 1440, height: 900 }, async (page) => {
+    await page.goto(`${base}/`);
+    await chord(page, "k", CTRL);
+    await page.waitFor(paletteOpen);
+    await query(page, "PID reuse");
+    await page.key("Enter");
+    await page.waitFor(`location.pathname === "/procbeacon" && location.hash === "#safety" && document.readyState === "complete"`, { timeout: 8000 });
+    await page.waitFor(`(() => { const r = document.getElementById("safety").getBoundingClientRect(); return r.top < innerHeight && r.bottom > 0; })()`, { message: "the section is on screen" });
+    // Same page: a section is reached in place.
+    await chord(page, "k", CTRL);
+    await page.waitFor(paletteOpen);
+    await query(page, "Ports attribution");
+    await page.key("Enter");
+    await page.waitFor(`location.pathname === "/procbeacon" && location.hash === "#attribution"`);
+    assert.ok(!(await page.evaluate(paletteOpen)));
+    // Arrow keys choose, Enter opens the chosen one; a project without a case study opens in the explorer.
+    await chord(page, "k", CTRL);
+    await page.waitFor(paletteOpen);
+    const results = await query(page, "Esamarea");
+    const target = results.findIndex((r) => r.path === "/#work-esamarea");
+    assert.ok(target >= 0, "Esamarea leads to its place in the explorer");
+    for (let i = 0; i < target; i++) await page.key("ArrowDown");
+    assert.equal(await page.evaluate(`document.getElementById(document.querySelector(".pal-input").getAttribute("aria-activedescendant")).querySelector(".pal-path").textContent`), "/#work-esamarea");
+    await page.key("Enter");
+    await page.waitFor(`location.pathname === "/" && location.hash === "#work-esamarea" && document.readyState === "complete"`, { timeout: 8000 });
+    // There, the explorer opens Esamarea's quick look; the palette waits for it to close.
+    await page.waitFor(`document.querySelector("[data-drawer]")?.open === true`, { message: "Esamarea's quick look opens" });
+    await page.key("Escape");
+    await page.waitFor(`!document.querySelector("[data-drawer]").open`);
+    // With the mouse.
+    await chord(page, "k", CTRL);
+    await page.waitFor(paletteOpen);
+    await query(page, "Opssemble");
+    await page.click('.pal-opt:first-of-type');
+    await page.waitFor(`location.pathname === "/opssemble" && document.readyState === "complete"`, { timeout: 8000 });
+    // Back returns to the explorer at Esamarea (whose quick look the hash opens again); the
+    // palette is not left open, and any scroll lock is the quick look's.
+    await page.evaluate("history.back()");
+    await page.waitFor(`location.pathname === "/" && document.readyState === "complete"`, { timeout: 8000 });
+    assert.ok(!(await page.evaluate(`document.querySelector("dialog.palette")?.open === true`)), "no palette left open");
+    assert.ok(await page.evaluate(`!document.documentElement.classList.contains("is-locked") || document.querySelector("[data-drawer]")?.open === true`), "no scroll lock without an open dialog");
+    assert.deepEqual(page.errors(), []);
+  });
+});
+
+test("command palette: actions switch the theme, copy the email address and download the CV", async () => {
+  await withPage({ width: 1440, height: 900 }, async (page) => {
+    let cvRequests = 0;
+    await page.intercept(/Gurmilan_Singh_2026_CV\.pdf$/, () => { cvRequests += 1; return { status: 200, body: "%PDF-1.4", headers: { "Content-Type": "application/pdf" } }; });
+    await page.goto(`${base}/flowbank-one`);
+    await page.call("Browser.grantPermissions", { origin: base, permissions: ["clipboardReadWrite", "clipboardSanitizedWrite"] }).catch(() => {});
+    const before = await page.evaluate("document.documentElement.dataset.theme");
+    const other = before === "dark" ? "light" : "dark";
+    await chord(page, "k", CTRL);
+    await page.waitFor(paletteOpen);
+    const results = await query(page, "theme");
+    assert.equal(results[0].title, `Switch to the ${other} theme`);
+    await page.key("Enter");
+    await page.waitFor(`document.documentElement.dataset.theme === "${other}"`);
+    assert.equal(await page.evaluate(`localStorage.getItem("portfolio-theme")`), other, "the choice is stored, as with the switch");
+    assert.ok(!(await page.evaluate(paletteOpen)));
+    await chord(page, "k", CTRL);
+    await page.waitFor(paletteOpen);
+    await query(page, "copy email");
+    await page.key("Enter");
+    await page.waitFor(`/Copied|Could not copy|not available/.test(document.querySelector(".pal-status").textContent)`);
+    const status = await page.evaluate(`document.querySelector(".pal-status").textContent`);
+    const email = await page.evaluate(`document.querySelector('.nav-meta a[href^="mailto:"]').getAttribute("href").slice(7)`);
+    assert.ok(status.includes(email), "the status names the address either way");
+    if (status.startsWith("Copied")) assert.equal(await page.evaluate("navigator.clipboard.readText()"), email);
+    await query(page, "download CV");
+    await page.key("Enter");
+    for (let i = 0; i < 60 && !cvRequests; i++) await new Promise((resolve) => setTimeout(resolve, 60));
+    assert.ok(cvRequests > 0, "the CV is downloaded");
+    assert.deepEqual(page.errors(), []);
+  });
+});
+
+test("command palette: a phone gets a full-height sheet that works by touch", async () => {
+  await withPage({ width: 390, height: 844, mobile: true }, async (page) => {
+    await page.goto(`${base}/`);
+    await page.tap("[data-palette-open]", { scroll: false });
+    await page.waitFor(paletteOpen);
+    await page.waitFor(`!document.querySelector(".pal-loading")`);
+    const box = await page.evaluate(`(() => { const r = document.querySelector("dialog.palette").getBoundingClientRect(); return { w: r.width, h: r.height }; })()`);
+    assert.ok(box.w >= 389 && box.h >= 843, `the sheet fills the screen: ${JSON.stringify(box)}`);
+    assert.ok(await page.evaluate(`[...document.querySelectorAll(".pal-opt")].every((option) => option.getBoundingClientRect().height >= 44)`), "results are comfortable touch targets");
+    await page.type("maintops");
+    await page.tap(".pal-opt:first-of-type", { scroll: false });
+    await page.waitFor(`location.pathname === "/maintops" && document.readyState === "complete"`, { timeout: 8000 });
+    assert.ok(await page.evaluate("document.documentElement.scrollWidth - innerWidth") <= 0);
+    assert.deepEqual(page.errors(), []);
+  });
+});
+
+test("command palette: a combobox over a listbox, its choice and its count announced", async () => {
+  await withPage({ width: 1440, height: 900 }, async (page) => {
+    await page.goto(`${base}/`);
+    await chord(page, "k", CTRL);
+    await page.waitFor(paletteOpen);
+    await query(page, "flowbank");
+    const aria = await page.evaluate(`(() => { const input = document.querySelector(".pal-input"); const list = document.getElementById(input.getAttribute("aria-controls")); const active = document.getElementById(input.getAttribute("aria-activedescendant"));
+      return { role: input.getAttribute("role"), name: input.getAttribute("aria-label"), list: list?.getAttribute("role"), expanded: input.getAttribute("aria-expanded"), activeRole: active?.getAttribute("role"), activeSelected: active?.getAttribute("aria-selected"), selectedCount: document.querySelectorAll('[role="option"][aria-selected="true"]').length, dialogName: document.querySelector("dialog.palette").getAttribute("aria-label"), groups: [...list.querySelectorAll('[role="group"]')].every((group) => document.getElementById(group.getAttribute("aria-labelledby"))) }; })()`);
+    assert.deepEqual(aria, { role: "combobox", name: "Search projects, technologies and decisions", list: "listbox", expanded: "true", activeRole: "option", activeSelected: "true", selectedCount: 1, dialogName: "Search the portfolio", groups: true });
+    const first = await page.evaluate(`document.querySelector(".pal-input").getAttribute("aria-activedescendant")`);
+    await page.key("ArrowDown");
+    assert.notEqual(await page.evaluate(`document.querySelector(".pal-input").getAttribute("aria-activedescendant")`), first, "Arrow down moves the choice");
+    await page.waitFor(`/^\\d+ results?$/.test(document.querySelector(".pal-status").textContent)`, { message: "the count is announced" });
+    assert.deepEqual(page.errors(), []);
+  });
+});
+
+test("command palette: nothing loads before it is wanted, and a missing index leaves the actions working", async () => {
+  await withPage({ width: 1440, height: 900 }, async (page) => {
+    await page.goto(`${base}/opssemble`);
+    const loaded = () => page.evaluate(`performance.getEntriesByType("resource").map((entry) => entry.name).filter((name) => /palette\\.js|search-index\\.json/.test(name)).map((name) => name.split("/").pop())`);
+    assert.deepEqual(await loaded(), [], "no palette code or index on page load");
+    await chord(page, "k", CTRL);
+    await page.waitFor(paletteOpen);
+    await page.waitFor(`!document.querySelector(".pal-loading")`);
+    assert.deepEqual((await loaded()).sort(), ["palette.js", "search-index.json"]);
+    await page.key("Escape");
+    await chord(page, "k", CTRL);
+    await page.waitFor(paletteOpen);
+    assert.equal((await loaded()).length, 2, "opening again fetches nothing more");
+  });
+  await withPage({ width: 1440, height: 900 }, async (page) => {
+    await page.intercept(/search-index\.json$/, () => ({ status: 503, body: "", headers: { "Content-Type": "text/plain" } }));
+    await page.goto(`${base}/`);
+    await chord(page, "k", CTRL);
+    await page.waitFor(paletteOpen);
+    await page.waitFor(`/could not be loaded/.test(document.querySelector(".pal-status").textContent)`);
+    const results = await query(page, "theme");
+    assert.match(results[0].title, /Switch to the (light|dark) theme/, "the actions still work");
+  });
+});
+
+test("command palette: the overlay fits every width and height, in both themes", async () => {
+  const sizes = [[320, 640, true], [390, 844, true], [600, 960, true], [800, 1100, true], [1100, 800, false], [1440, 900, false], [2560, 1300, false], [1280, 600, false]];
+  for (const [width, height, mobile] of sizes) {
+    await withPage({ width, height, mobile, scheme: width % 3 ? "light" : "dark" }, async (page) => {
+      await page.goto(`${base}/gurmat-saanj`);
+      const header = await page.evaluate(`(() => { const r = (s) => document.querySelector(s)?.getBoundingClientRect(); const search = r("[data-palette-open]"), brand = r(".brand"); return { oneRow: Math.abs(search.top - brand.top) < 20, inside: search.right <= innerWidth }; })()`);
+      assert.ok(header.oneRow && header.inside, `${width}px: the Search control sits in the header row: ${JSON.stringify(header)}`);
+      await page.evaluate(`document.querySelector("[data-palette-open]").click()`);
+      await page.waitFor(paletteOpen);
+      for (const text of ["", "security", "zzqx"]) {
+        await query(page, text || " ");
+        await page.waitFor(`document.querySelector("dialog.palette").getAnimations({ subtree: true }).every((animation) => animation.playState !== "running")`);
+        const fit = await page.evaluate(`(() => { const box = (s) => document.querySelector(s).getBoundingClientRect(); const d = box("dialog.palette"), input = box(".pal-input"), foot = box(".pal-foot");
+          return { inside: d.left >= -0.5 && d.right <= innerWidth + 0.5 && d.top >= -0.5 && d.bottom <= innerHeight + 0.5, input: input.width > 120 && input.top >= d.top, foot: foot.bottom <= d.bottom + 0.5, overflow: document.documentElement.scrollWidth - innerWidth, clipped: [...document.querySelectorAll(".pal-title")].some((el) => el.scrollWidth > el.clientWidth + 1) }; })()`);
+        assert.ok(fit.inside && fit.input && fit.foot && fit.overflow <= 0 && !fit.clipped, `${width}x${height} "${text}": ${JSON.stringify(fit)}`);
+      }
+      assert.deepEqual(page.errors(), []);
+    });
+  }
+  await withPage({ width: 1440, height: 900, javaScript: false }, async (page) => {
+    await page.goto(`${base}/`);
+    assert.equal(await page.evaluate(`getComputedStyle(document.querySelector("[data-palette-open]")).display`), "none", "no Search control without JavaScript");
   });
 });

@@ -78,10 +78,10 @@
             <div role="group" class="case-flow case-flow-guarded" data-reveal aria-label="Path of a terminate request from the confirmed snapshot to the native call">
               <p class="artifact-label">technical artefact · where a terminate request can stop</p>
               <ol class="case-flow-track">
-                <li class="case-flow-gate"><span class="case-flow-no">01</span><strong>Preflight</strong><em>Refused at once if the snapshot lacks a creation time or path, or points at ProcBeacon itself</em></li>
-                <li><span class="case-flow-no">02</span><strong>Open</strong><em>A handle is opened for the PID; the process object cannot be recycled while it is held</em></li>
-                <li class="case-flow-gate"><span class="case-flow-no">03</span><strong>Re-verify</strong><em>On that handle, PID, creation time and full path must match the confirmed snapshot</em></li>
-                <li class="case-flow-gate"><span class="case-flow-no">04</span><strong>Criticality</strong><em>IsProcessCritical, PIDs 0 to 4 and protected processes are blocked</em></li>
+                <li class="case-flow-gate"><span class="case-flow-no">01</span><strong>Preflight</strong><em>Refused at once if the snapshot has no creation time, names PID 0 to 4 or ProcBeacon itself, or carries a protected process name</em></li>
+                <li><span class="case-flow-no">02</span><strong>Open</strong><em>A handle is opened for the PID. Windows does not give that PID to another process while a handle to it is open</em></li>
+                <li class="case-flow-gate"><span class="case-flow-no">03</span><strong>Re-verify</strong><em>On that handle, PID and creation time must match the confirmed snapshot; a process that has already exited is reported as such</em></li>
+                <li class="case-flow-gate"><span class="case-flow-no">04</span><strong>Critical, then path</strong><em>IsProcessCritical, PIDs 0 to 4, ProcBeacon itself and protected names are blocked; the current full path must be readable and match the snapshot&rsquo;s</em></li>
                 <li><span class="case-flow-no">05</span><strong>Confirm</strong><em>The dialog states the risk; the action stays disabled until it is acknowledged</em></li>
                 <li class="case-flow-gate"><span class="case-flow-no">06</span><strong>One shot</strong><em>A prepared session works once; another click needs a new confirmation</em></li>
                 <li class="case-flow-mark"><span class="case-flow-no">07</span><strong>Act</strong><em>Identity is checked again on the same handle immediately before TerminateProcess</em></li>
@@ -92,7 +92,7 @@
             <article class="decision-record" aria-labelledby="procbeacon-decision-title" data-reveal>
               <p class="decision-id">decision 01</p>
               <h3 id="procbeacon-decision-title">Identify a process by PID and creation time, on one handle</h3>
-              <dl><div><dt>Constraint</dt><dd>Windows reuses process IDs, so the PID on screen can name a different program by the time you act.</dd></div><div><dt>Decision</dt><dd>Open a handle first, then compare PID, creation time and executable path with the confirmed snapshot on that same handle, and check again just before acting.</dd></div><div><dt>Result</dt><dd>A changed identity, a critical or protected process, or ProcBeacon itself is refused before any request reaches Windows.</dd></div><div><dt>Trade-off</dt><dd>A process that cannot be opened or read is never offered an action, even when ending it would be harmless.</dd></div></dl>
+              <dl><div><dt>Constraint</dt><dd>Windows reuses process IDs, so the PID on screen can name a different program by the time you act.</dd></div><div><dt>Decision</dt><dd>Open a handle first, then compare PID, creation time and executable path with the confirmed snapshot on that same handle, and check again just before acting.</dd></div><div><dt>Result</dt><dd>A changed identity, a critical or protected process, or ProcBeacon itself is refused before any termination request is sent.</dd></div><div><dt>Trade-off</dt><dd>A process that cannot be opened or read is never offered an action, even when ending it would be harmless.</dd></div></dl>
             </article>
             {{> sim pid-reuse}}
             <p>Managed sessions follow the same rule from the other side. ProcBeacon starts only explicit executables, keeps their output in bounded buffers, and can force-end only the root process it created. It says plainly that an orderly stop is not supported and that child processes may survive.</p>

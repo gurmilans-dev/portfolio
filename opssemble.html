@@ -18,6 +18,7 @@
     {{> head-boot}}
     <link rel="expect" href="#case-title" blocking="render" />
     <script src="assets/script.js" defer></script>
+    <script src="assets/inspect.js" defer></script>
   </head>
   <body class="page-opssemble page-case">
     <a class="skip-link" href="#main-content">Skip to content</a>
@@ -37,7 +38,7 @@
 
 <section class="case-proof" aria-label="Evidence">
         <div class="frame proof-grid has-facts">
-          <figure class="evidence-media"><a class="media-open" href="{{projects.opssemble.readinessImage}}" target="_blank" rel="noopener noreferrer"><picture><source srcset="{{projects.opssemble.readinessImageAvif}}" type="image/avif" /><source srcset="{{projects.opssemble.readinessImageWebp}}" type="image/webp" /><img src="{{projects.opssemble.readinessImage}}" width="{{projects.opssemble.readinessImageWidth}}" height="{{projects.opssemble.readinessImageHeight}}" loading="eager" decoding="async" alt="{{projects.opssemble.readinessImageAlt}}" /></picture><span class="media-enlarge" aria-hidden="true">Full size ↗</span><span class="sr-only"> (full size, opens in a new tab)</span></a><figcaption>{{projects.opssemble.readinessImageCaption}}</figcaption></figure>
+          <figure class="evidence-media" data-inspect="opssemble"><a class="media-open" href="{{projects.opssemble.readinessImage}}" target="_blank" rel="noopener noreferrer"><picture><source srcset="{{projects.opssemble.readinessImageAvif}}" type="image/avif" /><source srcset="{{projects.opssemble.readinessImageWebp}}" type="image/webp" /><img src="{{projects.opssemble.readinessImage}}" width="{{projects.opssemble.readinessImageWidth}}" height="{{projects.opssemble.readinessImageHeight}}" loading="eager" decoding="async" alt="{{projects.opssemble.readinessImageAlt}}" /></picture><span class="media-enlarge" aria-hidden="true">Full size ↗</span><span class="sr-only"> (full size, opens in a new tab)</span></a><figcaption>{{projects.opssemble.readinessImageCaption}}</figcaption>{{> inspect opssemble}}</figure>
           <dl class="proof-facts"><div><dt>Readiness</dt><dd>A critical open exception or a blocked task blocks its area; ready means every task done and no critical blocker. The score comes with the rules that set it. <a href="#system-sequence">The core workflow</a></dd></div><div><dt>Release checks</dt><dd>149 frontend and 334 backend unit tests pass (21 November 2026). A local validation of the packaged release passed 24 critical browser journeys (4 October 2026); it was not a live deployment. <a href="#outcome">Current boundaries</a></dd></div></dl>
         </div>
       </section>

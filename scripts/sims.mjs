@@ -140,10 +140,10 @@ const pidReuse = {
         { title: "The dev server exits", say: "Before you click, the dev server is stopped from its terminal. PID 18244 is free, and the row on screen has not changed.", set: { occ: "gone", slot: "empty" } },
         { title: "Windows reuses PID 18244", say: "Windows starts postgres.exe, a database server, and gives it PID 18244. The row still says node.exe.", set: { occ: "postgres", slot: "other" } },
         { title: "You click Force terminate", say: "Preflight passes: the snapshot has a PID and a creation time, the PID is not reserved, and node.exe is not a protected name.", set: { "g.preflight": "pass" } },
-        { title: "A handle for PID 18244", say: "ProcBeacon opens a handle for PID 18244 and gets postgres.exe, the process that has the number now. While that handle is open, the number cannot pass to anyone else.", set: { "g.open": "pass", handle: "open, on postgres.exe", "handle.is": "open" } },
-        { title: "The creation time differs", say: "On that handle the PID matches, but the creation time is 09:52:30.004, not 09:41:07.312. Outcome: IdentityChanged. The handle is closed, nothing is sent to Windows, and postgres.exe keeps running.", set: { "g.pid": "pass", "g.created": "mismatch", ...unreached("critical", "path", "confirm", "act", "exit", "once"), "m.pid": "match", "m.created": "mismatch", handle: "closed, nothing sent", "handle.is": "closed", "res.sent": "nothing", "res.outcome": "IdentityChanged", "res.ended": "nothing", "res.naive": "postgres.exe" } }
+        { title: "A handle for PID 18244", say: "ProcBeacon opens a handle for PID 18244 and gets postgres.exe, the process that has the number now. Windows does not give a PID to another process while a handle to it is open.", set: { "g.open": "pass", handle: "open, on postgres.exe", "handle.is": "open" } },
+        { title: "The creation time differs", say: "On that handle the PID matches, but the creation time is 09:52:30.004, not 09:41:07.312. Outcome: IdentityChanged. The handle is closed, no termination request is sent, and postgres.exe keeps running.", set: { "g.pid": "pass", "g.created": "mismatch", ...unreached("critical", "path", "confirm", "act", "exit", "once"), "m.pid": "match", "m.created": "mismatch", handle: "closed, nothing terminated", "handle.is": "closed", "res.sent": "none", "res.outcome": "IdentityChanged", "res.ended": "nothing", "res.naive": "postgres.exe" } }
       ],
-      result: "Blocked as IdentityChanged before any request: the database server keeps running. A PID alone would have ended it."
+      result: "Blocked as IdentityChanged before any termination request: the database server keeps running. A tool that trusted the PID alone would have targeted it."
     },
     {
       id: "same", name: "Same process", sub: "verified, ended, and only once",
@@ -154,7 +154,7 @@ const pidReuse = {
         { title: "Preflight and a handle", say: "You click Force terminate. Preflight passes, and ProcBeacon opens a handle for PID 18244: the dev server itself.", set: { "g.preflight": "pass", "g.open": "pass", handle: "open, on node.exe", "handle.is": "open" } },
         { title: "Identity verified", say: "On the handle the PID, the creation time and the full path all match the snapshot, IsProcessCritical says no, and the name is not protected.", set: { "g.pid": "pass", "g.created": "pass", "g.critical": "pass", "g.path": "pass", "m.pid": "match", "m.created": "match", "m.path": "match" } },
         { title: "Confirmation", say: "The dialog names this exact process with its verified creation time and path, warns that unsaved data can be lost, and keeps Force terminate disabled until the risk is acknowledged.", set: { "g.confirm": "pass" } },
-        { title: "Act, then verify the exit", say: "Identity is checked once more on the same handle, TerminateProcess goes through that handle, and ProcBeacon waits on it. The exit is confirmed within 2 s: Exited. Without that, the result would say the request was sent but not verified.", set: { "g.act": "sent", "g.exit": "exited", occ: "exited", slot: "empty", handle: "closed after the exit", "handle.is": "closed", "res.sent": "1 request", "res.outcome": "Exited", "res.ended": "node.exe" } },
+        { title: "Act, then verify the exit", say: "Identity is checked once more on the same handle, TerminateProcess goes through that handle, and ProcBeacon waits on it. The exit is confirmed within 2 s: Exited. Without that, the result would say the request was sent but not verified.", set: { "g.act": "sent", "g.exit": "exited", occ: "exited", slot: "empty", handle: "closed after the exit", "handle.is": "closed", "res.sent": "1, on the handle", "res.outcome": "Exited", "res.ended": "node.exe" } },
         { title: "The session is spent", say: "Running the same prepared session again is refused: it was used once, and another action needs a new confirmation. One confirmation can never end two processes.", set: { "g.once": "refused", "res.naive": "node.exe too" } }
       ],
       result: "Exited, confirmed on the handle that acted; the spent session refuses a second run."
@@ -170,7 +170,7 @@ const pidReuse = {
         { title: "An ordinary name", say: "agent.exe, a background agent, has a name that is not on ProcBeacon's protected list, so its row offers Force terminate like any other." },
         { title: "Preflight and a handle", say: "Preflight passes on the snapshot, and ProcBeacon opens a handle for PID 7316.", set: { "g.preflight": "pass", "g.open": "pass", handle: "open, on agent.exe", "handle.is": "open" } },
         { title: "Identity verified", say: "The PID and the creation time match on the handle: this is the process the row describes.", set: { "g.pid": "pass", "g.created": "pass", "m.pid": "match", "m.created": "match" } },
-        { title: "IsProcessCritical: yes", say: "IsProcessCritical reports that the process is marked critical, and Windows stops with a bug check when a critical process ends. Outcome: Blocked, before any dialog and before any request.", set: { "g.critical": "block", ...unreached("path", "confirm", "act", "exit", "once"), slot: "critical", handle: "closed, nothing sent", "handle.is": "closed", "res.sent": "nothing", "res.outcome": "Blocked", "res.ended": "nothing", "res.naive": "agent.exe, and Windows with it" } }
+        { title: "IsProcessCritical: yes", say: "On the handle, IsProcessCritical reports the process as critical, and ProcBeacon refuses to act on a critical process. Outcome: Blocked, before any dialog and before any termination request.", set: { "g.critical": "block", ...unreached("path", "confirm", "act", "exit", "once"), slot: "critical", handle: "closed, nothing terminated", "handle.is": "closed", "res.sent": "none", "res.outcome": "Blocked", "res.ended": "nothing", "res.naive": "agent.exe, a critical process" } }
       ],
       result: "Blocked on the handle's critical flag, although the name looked harmless."
     }
@@ -226,7 +226,7 @@ function controls(sim) {
                 <div class="sim-buttons">
                   <button type="button" class="sim-btn" data-act="reset">Reset</button>
                   <button type="button" class="sim-btn" data-act="back" aria-disabled="true">Back</button>
-                  <button type="button" class="sim-btn" data-act="play" aria-pressed="false">Play</button>
+                  <button type="button" class="sim-btn" data-act="play">Play</button>
                   <button type="button" class="sim-btn sim-btn-step" data-act="next">Step</button>
                 </div>
               </div>`;
@@ -270,7 +270,7 @@ function lane(sim, state, laneId) {
       return `<li class="sim-row" ${of(value, key)}><code>${esc(label)}</code>${chip(sim, value, key)}</li>`;
     }).join("")}</ol>`;
   }).join("");
-  return `<section class="sim-panel sim-lane" data-lane="${laneId}" aria-labelledby="sim-lane-${laneId}"><p class="sim-panel-head" id="sim-lane-${laneId}">${name}</p>${rows}</section>`;
+  return `<div class="sim-panel sim-lane" role="group" data-lane="${laneId}" aria-labelledby="sim-lane-${laneId}"><p class="sim-panel-head" id="sim-lane-${laneId}">${name}</p>${rows}</div>`;
 }
 
 /* Lane rows default to "planned": the start state only names rows that begin otherwise. */
@@ -285,7 +285,7 @@ function lockStage(state) {
   const account = (key, name, id) => `<tr><th scope="row">${name} <span>${id}</span></th><td ${text(state, `${key}.bal`)}</td><td><span class="sim-holder" ${of(state, `${key}.lock`)} ${text(state, `${key}.lock`, "free")}</span></td><td><span class="sim-holder" ${of(state, `${key}.wait`)} ${text(state, `${key}.wait`, "—")}</span></td></tr>`;
   return `<div class="sim-stage sim-stage-lock">
                 ${lane(sim, state, "t1")}
-                <section class="sim-panel sim-accounts" aria-label="Accounts and locks">
+                <div class="sim-panel sim-accounts" role="group" aria-label="Accounts and locks">
                   <p class="sim-panel-head"><strong>Accounts</strong><span>rows in PostgreSQL</span></p>
                   <table class="sim-table"><colgroup><col><col><col><col></colgroup><thead><tr><th scope="col">Account</th><th scope="col">Balance</th><th scope="col">Lock</th><th scope="col">Waiting</th></tr></thead>
                     <tbody>${account("a", "A", "9b2e…")}${account("b", "B", "41c7…")}</tbody>
@@ -302,7 +302,7 @@ function lockStage(state) {
                     <div class="sim-variants">${waitSays.map(([value, say]) => `<p data-when="wait=${value}"${(state.wait || "") === value ? ' class="is-on"' : ""}>${esc(say)}</p>`).join("")}</div>
                   </div>
                   <p class="sim-fine">Why A first? UUID.compareTo reads 9b2e… as a negative number, so A sorts before B. PostgreSQL would put B first, which is why SQL never decides the order.</p>
-                </section>
+                </div>
                 ${lane(sim, state, "t2")}
               </div>`;
 }
@@ -311,12 +311,12 @@ function pidStage(state) {
   const sim = pidReuse;
   const field = (label, key, match) => `<div${match ? ` ${of(state, match)}` : ""}><dt>${label}</dt><dd ${text(state, key)}</dd></div>`;
   return `<div class="sim-stage sim-stage-pid">
-                <section class="sim-panel sim-snap" aria-label="What the row shows">
+                <div class="sim-panel sim-snap" role="group" aria-label="What the row shows">
                   <p class="sim-panel-head"><strong>The row</strong><span>what ProcBeacon showed</span></p>
                   <dl class="sim-fields">${field("Process", "snap.name")}${field("PID", "snap.pid", "m.pid")}${field("Created", "snap.created", "m.created")}${field("Path", "snap.path", "m.path")}</dl>
                   <p class="sim-panel-foot" ${text(state, "snap.note")}</p>
-                </section>
-                <section class="sim-panel sim-slot" ${of(state, "slot")} aria-label="What Windows has now">
+                </div>
+                <div class="sim-panel sim-slot" role="group" ${of(state, "slot")} aria-label="What Windows has now">
                   <p class="sim-panel-head"><strong ${text(state, "slot.pid")}</strong><span>in Windows, now</span></p>
                   <div class="sim-variants">${sim.scenarios.map((scenario) => Object.entries(scenario.cards).map(([id, card]) => {
                     const on = scenario === sim.scenarios[0] && state.occ === id;
@@ -324,17 +324,17 @@ function pidStage(state) {
                     return `<dl class="sim-fields${on ? " is-on" : ""}" ${forScenario(sim, scenario)} data-when="occ=${id}">${row("Process", card.name)}${row("Created", card.created, "m.created")}${row("Path", card.path, "m.path")}${row("State", card.state)}</dl>`;
                   }).join("")).join("")}</div>
                   <p class="sim-handle" ${of(state, "handle.is")}><span>ProcBeacon's handle</span> <strong ${text(state, "handle")}</strong></p>
-                </section>
-                <section class="sim-panel sim-gates" aria-label="ProcBeacon's checks">
+                </div>
+                <div class="sim-panel sim-gates" role="group" aria-label="ProcBeacon's checks">
                   <p class="sim-panel-head"><strong>ProcBeacon</strong><span>checks, in order</span></p>
                   <ol class="sim-rows">${sim.gates.map(([id, label]) => `<li class="sim-row" ${of(state, `g.${id}`)}><span>${esc(label)}</span>${chip(sim, state, `g.${id}`)}</li>`).join("")}</ol>
-                </section>
+                </div>
               </div>`;
 }
 
 export const sims = {
   "lock-order": () => frame(lockOrder, lockStage, [["Committed", "res.committed"], ["Deadlocks", "res.deadlocks"], ["Retries", "res.retries"], ["Answer", "res.answer"]]),
-  "pid-reuse": () => frame(pidReuse, pidStage, [["Sent to Windows", "res.sent"], ["Outcome", "res.outcome"], ["Ended", "res.ended"], ["A PID alone would end", "res.naive"]])
+  "pid-reuse": () => frame(pidReuse, pidStage, [["Terminate requests", "res.sent"], ["Outcome", "res.outcome"], ["Ended", "res.ended"], ["Trusting the PID alone would target", "res.naive"]])
 };
 
 export const simData = { "lock-order": lockOrder, "pid-reuse": pidReuse };

@@ -45,7 +45,10 @@ export const icons = {
   error: inlineIcon("error", '<path d="M12 8v5" /><path d="M12 17h.01" /><path d="M4.8 4.8h14.4v14.4H4.8z" />'),
   copy: inlineIcon("copy", '<path d="M8.5 8.5h11v11h-11z" /><path d="M15.5 8.5v-4h-11v11h4" />'),
   moon: inlineIcon("moon", '<path d="M20 14.6A8.2 8.2 0 0 1 9.4 4a8.2 8.2 0 1 0 10.6 10.6z" />'),
-  sun: inlineIcon("sun", '<circle cx="12" cy="12" r="3.8" /><path d="M12 2.8v2.1M12 19.1v2.1M2.8 12h2.1M19.1 12h2.1M5.5 5.5 7 7M17 17l1.5 1.5M5.5 18.5 7 17M17 7l1.5-1.5" />')
+  sun: inlineIcon("sun", '<circle cx="12" cy="12" r="3.8" /><path d="M12 2.8v2.1M12 19.1v2.1M2.8 12h2.1M19.1 12h2.1M5.5 5.5 7 7M17 17l1.5 1.5M5.5 18.5 7 17M17 7l1.5-1.5" />'),
+  // A selection frame's corners around a centre mark: the inspector's region selection.
+  inspect: inlineIcon("inspect", '<path d="M4 9V4h5" /><path d="M15 4h5v5" /><path d="M20 15v5h-5" /><path d="M9 20H4v-5" /><path d="M12 10v4M10 12h4" />'),
+  search: inlineIcon("search", '<circle cx="10.5" cy="10.5" r="6" /><path d="m15 15 5 5" />')
 };
 
 /* Six fixed sockets on each 360-unit plane, as percentages, in index order. */
@@ -132,12 +135,13 @@ export function headBoot() {
       if (t !== "light" && t !== "dark") t = matchMedia("(prefers-color-scheme: light)").matches ? "light" : "dark";
       d.dataset.theme = t;
       if (t === "light") document.querySelector('meta[name="theme-color"]').content = "#f4f4f1";
-      d.classList.add("js", "nav-pending", "wb-pending", "sim-pending");
+      d.classList.add("js", "nav-pending", "wb-pending", "sim-pending", "inspect-pending");
       try { if (localStorage.getItem("portfolio-also-built") === "folded") d.classList.add("ab-folded"); } catch (e) {}
       document.addEventListener("DOMContentLoaded", function () {
         if (!d.classList.contains("nav-ready")) d.classList.remove("nav-pending");
         if (!d.classList.contains("workbench-ready")) d.classList.remove("wb-pending", "ab-folded");
         if (!d.classList.contains("sims-ready")) d.classList.remove("sim-pending");
+        if (!d.classList.contains("inspect-ready")) d.classList.remove("inspect-pending");
       });
       /* Page transitions: the arrival side runs here, before the first frame. It marks the
          page as arriving (so load animations do not replay under the transition), adds the
@@ -155,7 +159,9 @@ export function headBoot() {
         function click(ev) {
           var at = down; down = null;
           if (!at || ev.target !== d || ev.detail > 1 || Date.now() - at.t > 1500 || ev.ctrlKey || ev.metaKey || ev.shiftKey || ev.altKey) return;
-          var hit = document.elementFromPoint(at.x, at.y), el = hit && hit.closest && hit.closest("a[href], button:not([disabled]), summary, label, input, select, textarea");
+          // The control under the pointer, or failing that the element itself (a palette result,
+          // say), which is what was clicked; never the page as a whole.
+          var hit = document.elementFromPoint(at.x, at.y), el = hit && hit.closest && (hit.closest("a[href], button:not([disabled]), summary, label, input, select, textarea") || (hit !== d && hit !== document.body ? hit : null));
           if (el) { if (/^(INPUT|SELECT|TEXTAREA)$/.test(el.tagName)) el.focus(); else el.click(); }
         }
         function stop() { live = false; removeEventListener("pointerdown", press, true); setTimeout(function () { removeEventListener("click", click, true); }, down ? 1500 : 0); }
@@ -195,6 +201,7 @@ export function header(mode = "home") {
           <a class="nav-cv" href="${profile.resume}" target="_blank" rel="noopener noreferrer">${icons.resume}<span>CV</span><span class="sr-only"> (PDF, opens in a new tab)</span>${icons.external}</a>
           <p class="nav-meta"><a href="mailto:${profile.email}">${profile.email}</a><span>${esc(profile.location)}</span></p>
         </nav>
+        <button class="search-btn" type="button" data-palette-open aria-haspopup="dialog" hidden>${icons.search}<span class="search-label">Search</span><kbd class="search-kbd" data-palette-kbd aria-hidden="true">Ctrl K</kbd></button>
         <div class="theme-switch" role="group" aria-label="Colour theme" data-theme-switch hidden><button class="ts-btn" type="button" data-theme-choice="dark" aria-pressed="true" title="Dark theme">${icons.moon}<span class="sr-only">Dark theme</span></button><button class="ts-btn" type="button" data-theme-choice="light" aria-pressed="false" title="Light theme">${icons.sun}<span class="sr-only">Light theme</span></button></div>
         <button class="menu-toggle" type="button" aria-expanded="false" aria-controls="site-navigation" data-menu-toggle><span class="sr-only">Menu</span><span class="menu-bars" aria-hidden="true"><i></i><i></i></span></button>
       </div>
@@ -411,6 +418,31 @@ export function drawer() {
 
 /* ---------- Case studies ---------- */
 
+/* Inspect mode for one screenshot (`inspect` in the project's config). The build renders the
+   notes as a plain list inside a closed <details>, readable without JavaScript, and the
+   button that assets/inspect.js reveals; the inspector itself reads the list (titles, text
+   and each part's box, converted here from image pixels to percentages). The bar belongs to
+   the figure with the same data-inspect key: inside it, or (where the figure sits in a sticky
+   sequence, as on Gurmat Saanj) just after the sequence. */
+export function inspectNotes(key) {
+  const project = siteConfig.projects[key];
+  const inspect = project?.inspect;
+  if (!inspect) throw new Error(`inspect: ${key} has no inspect config`);
+  const width = project[`${inspect.image}ImageWidth`], height = project[`${inspect.image}ImageHeight`];
+  if (!width || !height) throw new Error(`inspect: ${key} has no size for its ${inspect.image} image`);
+  const pct = (value, total) => Number((value / total * 100).toFixed(2));
+  const lang = inspect.lang ? ` lang="${inspect.lang}"` : "";
+  const parts = inspect.parts.map((part, i) => {
+    const [x, y, w, h] = part.box;
+    if (x < 0 || y < 0 || x + w > width || y + h > height) throw new Error(`inspect: ${key}/${part.id} lies outside its ${width}x${height} image`);
+    const rows = [["What it does", part.does], ["Behind it", part.behind], ["Why it matters", part.matters], ["Decision", part.decision]].filter(([, text]) => text);
+    const terms = part.terms?.length ? `<div class="inspect-terms"><dt>On screen</dt><dd><ul>${part.terms.map(([shown, meaning]) => `<li><span${lang}>${esc(shown)}</span> <span class="inspect-means">${esc(meaning)}</span></li>`).join("")}</ul></dd></div>` : "";
+    return `<li class="inspect-part" data-part="${part.id}" data-box="${pct(x, width)} ${pct(y, height)} ${pct(w, width)} ${pct(h, height)}"><p class="inspect-part-title"><span class="inspect-part-no" aria-hidden="true">${nn(i + 1)}</span><span>${esc(part.title)}</span></p><dl>${rows.map(([label, text]) => `<div><dt>${label}</dt><dd>${esc(text)}</dd></div>`).join("")}${terms}</dl></li>`;
+  }).join("");
+  const named = inspect.title.toLowerCase();
+  return `<div class="inspect-bar" data-inspect-for="${key}" data-title="${esc(`${project.shortTitle || project.title} · ${inspect.title}`)}"><button type="button" class="inspect-open" data-inspect-open aria-haspopup="dialog" hidden>${icons.inspect}<span>Inspect the ${esc(named)}</span></button><details class="inspect-notes"><summary>What the ${esc(named)} shows <span>${inspect.parts.length} parts</span></summary><ol class="inspect-parts">${parts}</ol></details></div>`;
+}
+
 export function caseCut(key) {
   const full = projectByKey(key);
   if (!full.system?.layers) throw new Error(`case-cut: ${key} has no layer data`);
@@ -487,6 +519,7 @@ const PARTIALS = {
   "case-status": (arg) => caseStatus(arg),
   "case-source": (arg) => caseSource(arg),
   "vt-shot": (arg) => vtShot(arg),
+  inspect: (arg) => inspectNotes(arg),
   sim: (arg) => {
     if (!sims[arg]) throw new Error(`sim: unknown simulation ${arg}`);
     return sims[arg]();

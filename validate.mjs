@@ -288,7 +288,8 @@ for (const required of ["Web Speech API", "Normalize + BaniDB", "Application res
 // Ollama was never integrated in Gurmat Saanj; no local-model claim may appear.
 if (/ollama|local (model|AI|assistance|LLM)/i.test(gurmat)) fail("gurmat-saanj.html: unsupported local-model claim");
 if (/TypeScript/i.test(gurmat)) fail("gurmat-saanj.html: TypeScript contradicts the confirmed JavaScript stack");
-if ((gurmat.match(/data-media-open/g) || []).length !== 4) fail("gurmat-saanj.html: expected four inspectable authentic screenshots");
+// Four screenshots open larger: in the lightbox, or (the operator workspace) in Inspect mode.
+if ((gurmat.match(/data-media-open/g) || []).length + (gurmat.match(/data-inspect="/g) || []).length !== 4) fail("gurmat-saanj.html: expected four inspectable authentic screenshots");
 if ((gurmat.match(/loading="lazy"/g) || []).length < 5) fail("gurmat-saanj.html: evidence images must lazy-load below the fold");
 if (/WebSockets?|Socket\.IO|SignalR|server-sent events|peer-to-peer|WebRTC|event sourcing|distributed locking|message queues?|OAuth|JWT|session persistence|persistent accounts/i.test(gurmat)) fail("gurmat-saanj.html: unsupported networking or account technology is named");
 // MaintOps: the source is public but nothing is hosted. Nothing may imply otherwise.
@@ -408,6 +409,41 @@ for (const [file, html] of htmlByFile) {
     if (!data.scenarios?.length || data.scenarios.some((scenario) => scenario.steps.length < 2)) fail(`${file}: simulation data without scenarios or steps`);
   } catch { fail(`${file}: the simulation's step data is not valid JSON`); }
 }
+// Inspect mode: inspect.js only where a screenshot has notes; every figure has its notes (a
+// closed list, readable without JavaScript) and a button hidden until the script runs; every
+// part lies inside its image.
+if (!/classList\.remove\("inspect-pending"/.test(home)) fail("inspect: the pending Inspect button must be dropped when inspect.js does not run");
+for (const [file, html] of htmlByFile) {
+  const figures = [...html.matchAll(/data-inspect="([\w-]+)"/g)].map((match) => match[1]);
+  if (Boolean(figures.length) !== html.includes('src="/assets/inspect.js"')) fail(`${file}: inspect.js must load exactly where a screenshot has Inspect notes`);
+  for (const key of figures) {
+    const bar = html.match(new RegExp(`<div class="inspect-bar" data-inspect-for="${key}"[\\s\\S]*?</details></div>`))?.[0];
+    if (!bar) { fail(`${file}: the ${key} screenshot has no Inspect notes`); continue; }
+    if (!/<button type="button" class="inspect-open" data-inspect-open(?:="")? aria-haspopup="dialog" hidden(?:="")?>/.test(bar)) fail(`${file}: the ${key} Inspect button must stay hidden without JavaScript`);
+    if (!/<details class="inspect-notes">/.test(bar) || /<details class="inspect-notes" open/.test(bar)) fail(`${file}: the ${key} notes must be a closed <details> under the screenshot`);
+    const boxes = [...bar.matchAll(/data-box="([\d. ]+)"/g)].map((match) => match[1].split(" ").map(Number));
+    if (boxes.length < 2 || boxes.length > 5) fail(`${file}: the ${key} screenshot should explain a few parts (2 to 5), not ${boxes.length}`);
+    if (boxes.some(([x, y, w, h]) => x < 0 || y < 0 || w <= 0 || h <= 0 || x + w > 100.01 || y + h > 100.01)) fail(`${file}: a ${key} part lies outside its screenshot`);
+  }
+}
+// Command palette: palette.js is loaded by script.js on first use, never by a page; its index
+// leads only to pages and ids that exist.
+for (const [file, html] of htmlByFile) {
+  if (html.includes("/assets/palette.js")) fail(`${file}: palette.js must not be loaded up front`);
+  if (!/<button class="search-btn" type="button" data-palette-open(?:="")? aria-haspopup="dialog" hidden(?:="")?>/.test(html)) fail(`${file}: the header Search button is missing or visible without JavaScript`);
+}
+if (!productionJs.includes('"/assets/palette.js"')) fail("palette: script.js does not load assets/palette.js");
+const searchIndex = JSON.parse(await fs.readFile(path.join(root, "assets/search-index.json"), "utf8").catch(() => "null"));
+if (!searchIndex?.items?.length) fail("palette: dist/assets/search-index.json is missing or empty");
+for (const item of searchIndex?.items || []) {
+  const [route, hash] = item.url.split("#");
+  const target = htmlByFile.get(fileOfRoute(route));
+  if (!target) { fail(`palette: ${item.title} leads to ${item.url}, which is not a page`); continue; }
+  if (hash && !target.includes(`id="${hash}"`)) fail(`palette: ${item.title} leads to #${hash}, which ${route} does not have`);
+}
+for (const project of [...featuredProjects, ...alsoProjects]) {
+  if (!searchIndex?.items?.some((item) => item.type === "project" && item.title === project.title)) fail(`palette: ${project.title} is missing from the search index`);
+}
 if (await fs.stat(path.join(root, "assets/vendor")).catch(() => null)) fail("performance: unused vendor libraries are shipped");
 for (const [file, html] of htmlByFile) {
   if (/gsap|three(\.min)?\.js|ScrollTrigger/i.test(html)) fail(`${file}: references a removed animation library`);
@@ -446,6 +482,9 @@ if (!/\.media-dialog-hotspot\s*\{[\s\S]*?width:\s*44px;[\s\S]*?height:\s*44px;/m
 if (!/\.media-hotspot\s*\{[\s\S]*?width:\s*44px;[\s\S]*?height:\s*44px;/m.test(productionCss)) fail("accessibility: screenshot hotspot targets must remain at least 44px square");
 
 // The sitemap lists exactly the indexed pages, at the clean URLs they declare as canonical.
+// The sitemap is generated into dist/, which is all the host publishes. A copy in the source
+// folder is never published and only goes stale (an old one listed .html URLs).
+if (await fs.stat(path.resolve("sitemap.xml")).catch(() => null)) fail("sitemap.xml: remove the copy in the source folder; the build generates dist/sitemap.xml from siteConfig.pages");
 const sitemap = await fs.readFile(path.join(root, "sitemap.xml"), "utf8").catch(() => "");
 const sitemapLocs = [...sitemap.matchAll(/<loc>([^<]+)<\/loc>/g)].map((match) => match[1]).sort().join(",");
 const indexedUrls = siteConfig.pages.filter((page) => page.indexed).map((page) => `${domain}${routeOf(page.file)}`).sort().join(",");

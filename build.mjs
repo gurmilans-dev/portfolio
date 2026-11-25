@@ -1,8 +1,9 @@
 import { promises as fs } from "node:fs";
 import path from "node:path";
-import { siteConfig } from "./site.config.mjs";
+import { siteConfig, featuredProjects, alsoProjects } from "./site.config.mjs";
 import { removeHtmlComments } from "./scripts/html.mjs";
 import { icons, renderPartials } from "./scripts/components.mjs";
+import { buildSearchIndex } from "./scripts/search-index.mjs";
 
 const ROOT = path.resolve(".");
 const OUT = path.join(ROOT, "dist");
@@ -33,9 +34,10 @@ const FONT_FILES = [
   "assets/fonts/jetbrains-mono-latin-ext.woff2"
 ];
 // Client scripts, minified on build. script.js runs on every page; workbench.js only on
-// the homepage; sims.js only on the two case studies with a simulation. None is required
-// to read any page.
-const SCRIPT_FILES = ["assets/script.js", "assets/workbench.js", "assets/sims.js"];
+// the homepage; sims.js and inspect.js only on the case studies that use them; palette.js
+// is loaded by script.js when the command palette is first opened. None is required to read
+// any page.
+const SCRIPT_FILES = ["assets/script.js", "assets/workbench.js", "assets/sims.js", "assets/inspect.js", "assets/palette.js"];
 const COPY_FILES = [
   siteConfig.profile.resume,
   "_redirects",
@@ -159,11 +161,18 @@ async function build() {
     await fs.writeFile(path.join(OUT, file), minifyJs(source));
   }
 
+  const built = new Map();
   for (const file of HTML_FILES) {
     const template = await fs.readFile(path.join(ROOT, file), "utf8");
     const rendered = renderTemplate(template, file);
-    await fs.writeFile(path.join(OUT, file), rootRelative(removeHtmlComments(rendered)));
+    const html = rootRelative(removeHtmlComments(rendered));
+    built.set(file, html);
+    await fs.writeFile(path.join(OUT, file), html);
   }
+  // The command palette's index, from the projects and the pages just written (see
+  // scripts/search-index.mjs). Fetched only when the palette first opens.
+  const searchIndex = buildSearchIndex({ siteConfig, projects: [...featuredProjects, ...alsoProjects], pages: built, routeOf: (file) => ROUTES.get(file) });
+  await fs.writeFile(path.join(OUT, "assets/search-index.json"), JSON.stringify(searchIndex));
 
   const domain = siteConfig.profile.domain.replace(/\/$/, "");
   await fs.writeFile(path.join(OUT, "robots.txt"), `User-agent: *\nAllow: /\n\nSitemap: ${domain}/sitemap.xml\n`);

@@ -245,7 +245,7 @@ export const siteConfig = {
           rows: [
             ["Constraint", "Windows reuses process IDs: the PID on screen can belong to a different program by the time you act."],
             ["Decision", "Open a handle first, then compare PID, creation time and executable path with the confirmed snapshot on that same handle."],
-            ["Result", "A changed identity, a critical or protected process, or ProcBeacon itself is refused before any request reaches Windows."],
+            ["Result", "A changed identity, a critical or protected process, or ProcBeacon itself is refused before any termination request is sent."],
             ["Trade-off", "A process that cannot be opened or read is never offered an action, even when ending it would be harmless."]
           ]
         },
@@ -325,6 +325,43 @@ export const siteConfig = {
       primaryImageWebp: "assets/maintops/maintops-supervisor-queue.webp",
       primaryImageWidth: 1905,
       primaryImageHeight: 831,
+      // Inspect mode (assets/inspect.js): a few parts of a real screenshot, each explained.
+      // Boxes are [x, y, width, height] in the image's own pixels. Every statement is taken
+      // from the project's source: here SupervisorDashboard, SupervisorOperationsTables,
+      // sla.constants and sla.repository, userPresentation, and the case study's own claims.
+      inspect: {
+        image: "primary",
+        title: "Supervisor dashboard",
+        parts: [
+          {
+            id: "sla", box: [276, 156, 1606, 166], title: "SLA counters",
+            does: "Counts active requests by SLA state, beside the triage and priority totals: one request has breached its target, none is at risk.",
+            behind: "SLA state is computed in SQL from the ticket's current SLA cycle: at risk once 75% of a target's time has passed, breached at 100%. Every cycle has two targets, time to start work and time to resolution.",
+            matters: "A supervisor sees late work before anyone reports it, without opening tickets one by one.",
+            decision: "Targets come from versioned SLA policies, and a reopened ticket starts a new numbered cycle instead of rewriting the old one."
+          },
+          {
+            id: "attention", box: [276, 335, 796, 155], title: "Needs immediate attention",
+            does: "Up to four open requests that need coordination now, with location, priority, SLA state, age, assignee and a Triage action.",
+            behind: "A request appears here when it is at risk, breached, high priority or on hold. This one has breached and has no technician yet.",
+            matters: "Exceptions come to the supervisor instead of waiting to be found in the queue.",
+            terms: [["Climatizzatore sala 204 non raffredda", "The air conditioner in room 204 is not cooling"], ["7 ore fa", "7 hours ago"]]
+          },
+          {
+            id: "activity", box: [1488, 504, 394, 309], title: "Recent activity",
+            does: "The latest lifecycle updates across operations: a technician assigned, requests created, and how long ago.",
+            behind: "Each line is a recorded ticket event. Lifecycle changes run inside database transactions and write immutable events, so a ticket's history is appended to, never overwritten.",
+            matters: "What happened to a request can be read back in order, and the record does not change afterwards.",
+            terms: [["Condizionatore non funzionante – Sala riunioni B1", "Air conditioner not working, meeting room B1"], ["2 minuti fa", "2 minutes ago"]]
+          },
+          {
+            id: "role", box: [1632, 2, 252, 44], title: "Role and privilege",
+            does: "Who is signed in: the Supervisor role, followed by Account administrator.",
+            behind: "Account administrator is a flag on the account, added to the label when it is set. It is a privilege, not a fourth role, and it is what puts Users, SLA Policies and the Audit Log in the menu.",
+            matters: "The menu only reflects it. Whether a request is allowed is decided by the API, not by the interface."
+          }
+        ]
+      },
       primaryImageAlt: "MaintOps supervisor dashboard showing SLA breach and at-risk counts, an unassigned request queue, current team workload and backlog aging",
       primaryImageCaption: "The supervisor dashboard on the synthetic demo database: SLA breaches and tickets at risk, the unassigned queue, team workload and backlog age."
     },
@@ -385,6 +422,40 @@ export const siteConfig = {
       secondaryImageWebp: "assets/gurmat/gurmat-main-workspace.webp",
       secondaryImageWidth: 960,
       secondaryImageHeight: 817,
+      // Sources: ShabadPage (status text, mic, display toggles), useFollowHold (the hold),
+      // AppContext (what is sent to the projector) and ProjectorMiniPreview.
+      inspect: {
+        image: "secondary",
+        title: "Operator workspace",
+        parts: [
+          {
+            id: "status", box: [13, 0, 894, 105], title: "Shabad and follow status",
+            does: "The shabad on screen, with its writer, granth and ang, and the state of live following: here, Paused - waiting for kirtan.",
+            behind: "While the mic listens, the transcript is matched against the shabad's lines. After 2.5 seconds without a confident match, during spoken explanation or an interlude, the line is held rather than guessed; a confident match resumes following at once.",
+            matters: "The room does not see the display jump to a wrong line because the singing stopped.",
+            decision: "Slow to pause, quick to resume, and a manual lock by the operator always wins.",
+            terms: [["Ang 711", "page 711 of the granth"], ["Kirtan", "sung recitation"]]
+          },
+          {
+            id: "line", box: [13, 520, 895, 92], title: "The current line",
+            does: "Line 2 of the shabad, highlighted, with its transliteration and English translation beneath it.",
+            behind: "This is the line the application selected. Recognition only proposes candidates; the application decides which known line becomes current, and raw transcript text never reaches the display.",
+            matters: "Operator, projector and viewers all follow this one selected line."
+          },
+          {
+            id: "display", box: [353, 115, 297, 285], title: "Display controls",
+            does: "Reader or prose layout; transliteration, English, Punjabi and Larivaar toggles; size, spacing and a projector focus mode.",
+            behind: "The transliteration, English, Punjabi and Larivaar settings are part of the state sent to the projector. Larivaar shows Gurmukhi without spaces between words, as in the traditional form.",
+            matters: "The operator sets what the room reads from the same screen used to follow the line. Viewers on their own phones keep their own preferences."
+          },
+          {
+            id: "preview", box: [570, 678, 358, 139], title: "Projector preview",
+            does: "A small, live view of what the projector is showing, which can be minimised.",
+            behind: "It is the projector page itself, loaded in a frame and scaled down, not a second drawing of it.",
+            matters: "What the operator checks is exactly what the room sees."
+          }
+        ]
+      },
       mobileImage: "assets/gurmat/gurmat-mobile-editor.png",
       mobileImageAvif: "assets/gurmat/gurmat-mobile-editor.avif",
       mobileImageWebp: "assets/gurmat/gurmat-mobile-editor.webp",
@@ -453,6 +524,45 @@ export const siteConfig = {
       readinessImageWebp: "assets/opssemble/opssemble-readiness.webp",
       readinessImageWidth: 1600,
       readinessImageHeight: 1000,
+      // Sources: readiness.service (status, reason, score, rules), the readiness components
+      // and the Italian locale, and the event_members table. The interface is Italian, so
+      // each part translates what it shows.
+      inspect: {
+        image: "readiness",
+        title: "Readiness view",
+        lang: "it",
+        parts: [
+          {
+            id: "event", box: [300, 108, 1290, 154], title: "The event, and your role in it",
+            does: "The selected event, Sagra di San Rocco on 12 September 2026 in Vignola, with its status, its owner and the signed-in user's role on it.",
+            behind: "Access is scoped to each event: a member holds a role on that event (coordinator, operator or viewer), stored per event and checked by the API.",
+            matters: "The same person can coordinate one event and only view another.",
+            terms: [["Attivo", "Active"], ["Proprietario", "Owner"], ["Coordinatore", "Coordinator"], ["Apri dettagli", "Open details"]]
+          },
+          {
+            id: "summary", box: [312, 282, 1265, 413], title: "Areas, tasks and blockers",
+            does: "The event's areas by readiness, tasks completed, active blockers and open critical exceptions.",
+            behind: "Each area gets its own readiness from its tasks and exceptions, and the server returns these counts with the event's verdict.",
+            matters: "They show where the event is stuck: here one blocked area, one blocked task and one critical exception still open.",
+            terms: [["Aree pronte · in corso · bloccate · non iniziate", "Areas ready · in progress · blocked · not started"], ["Task completati", "Tasks completed"], ["Blocchi attivi · 1 task bloccato", "Active blockers · 1 blocked task"], ["Eccezioni critiche · 2 aperte totali", "Critical exceptions · 2 open in total"]]
+          },
+          {
+            id: "verdict", box: [300, 735, 575, 230], title: "The verdict and its score",
+            does: "The overall readiness, Blocked, with its reason in one sentence and a score.",
+            behind: "Status, reason and score come from the server. An open critical exception or a blocked task blocks readiness; the score drops for each of them and for open high-severity work, and only a Ready event can reach 100%.",
+            matters: "The status says what has to happen next. A score on its own would not.",
+            decision: "Readiness is computed on the server from tasks and exceptions, not set by hand.",
+            terms: [["Readiness complessiva", "Overall readiness"], ["Bloccato", "Blocked"], ["Un'eccezione critica aperta sul Palco blocca la preparazione dell'evento", "An open critical exception on the Stage blocks the event's preparation"], ["punteggio", "score"]]
+          },
+          {
+            id: "rules", box: [885, 780, 695, 178], title: "The rules applied",
+            does: "The rules behind the verdict, listed beside it.",
+            behind: "They match what the server computes: an open critical exception or a blocked task blocks; unfinished high or critical tasks keep the event in preparation; Ready needs every task done and no open critical or high exception. The score loses 35 per critical exception, 25 per blocked task, 10 per unfinished high or critical task and 5 per high exception, each capped.",
+            matters: "A coordinator can check why an event is blocked instead of trusting a number.",
+            terms: [["Regole applicate", "Applied rules"], ["Un'eccezione critica aperta blocca l'evento", "An open critical exception blocks the event"], ["Un'attività bloccata blocca l'evento", "A blocked task blocks the event"], ["Pronto solo con tutte le attività completate…", "Ready only with every task complete…"]]
+          }
+        ]
+      },
       readinessImageAlt: "Opssemble readiness view: areas ready, in progress and blocked, completed tasks, active blockers, and the applied rules that make the event blocked",
       readinessImageCaption: "The readiness view of a fixture event: one area blocked, two of six tasks done, and a 62% score marked “Bloccato” (blocked). Beside it, the rules that decided it, starting with “a critical open exception blocks the event”. Captured by the project's screenshot script; the interface is Italian.",
       qrImage: "assets/opssemble/opssemble-qr-area-mobile.png",

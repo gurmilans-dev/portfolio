@@ -18,6 +18,7 @@
     {{> head-boot}}
     <link rel="expect" href="#case-title" blocking="render" />
     <script src="assets/script.js" defer></script>
+    <script src="assets/inspect.js" defer></script>
   </head>
   <body class="page-maintops page-case">
     <a class="skip-link" href="#main-content">Skip to content</a>
@@ -36,7 +37,7 @@
 
 <section class="case-proof" aria-label="Evidence">
         <div class="frame proof-grid has-facts">
-          <figure class="evidence-media"><a class="media-open" href="{{projects.maintops.primaryImage}}" {{> vt-shot maintops}} target="_blank" rel="noopener noreferrer"><picture><source srcset="{{projects.maintops.primaryImageAvif}}" type="image/avif" /><source srcset="{{projects.maintops.primaryImageWebp}}" type="image/webp" /><img src="{{projects.maintops.primaryImage}}" width="{{projects.maintops.primaryImageWidth}}" height="{{projects.maintops.primaryImageHeight}}" loading="eager" decoding="async" alt="{{projects.maintops.primaryImageAlt}}" /></picture><span class="media-enlarge" aria-hidden="true">Full size ↗</span><span class="sr-only"> (full size, opens in a new tab)</span></a><figcaption>{{projects.maintops.primaryImageCaption}}</figcaption></figure>
+          <figure class="evidence-media" data-inspect="maintops"><a class="media-open" href="{{projects.maintops.primaryImage}}" {{> vt-shot maintops}} target="_blank" rel="noopener noreferrer"><picture><source srcset="{{projects.maintops.primaryImageAvif}}" type="image/avif" /><source srcset="{{projects.maintops.primaryImageWebp}}" type="image/webp" /><img src="{{projects.maintops.primaryImage}}" width="{{projects.maintops.primaryImageWidth}}" height="{{projects.maintops.primaryImageHeight}}" loading="eager" decoding="async" alt="{{projects.maintops.primaryImageAlt}}" /></picture><span class="media-enlarge" aria-hidden="true">Full size ↗</span><span class="sr-only"> (full size, opens in a new tab)</span></a><figcaption>{{projects.maintops.primaryImageCaption}}</figcaption>{{> inspect maintops}}</figure>
           <dl class="proof-facts"><div><dt>On hold</dt><dd>Putting work on hold is recorded on the ticket, but the resolution clock keeps running, so an ageing held ticket stays visible. <a href="#lifecycle">The lifecycle</a></dd></div><div><dt>Reopened</dt><dd>A reopened ticket starts a new numbered SLA cycle instead of reviving the old one: resolved once and reopened twice reads as three measured attempts.</dd></div></dl>
         </div>
       </section>

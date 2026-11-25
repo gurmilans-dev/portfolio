@@ -65,6 +65,36 @@
   lightQuery.addEventListener?.("change", () => { if (!savedTheme()) switchTheme(systemTheme()); });
   addEventListener("storage", event => { if (event.key === THEME_KEY) switchTheme(savedTheme() || systemTheme()); });
 
+  /* ---------- Command palette: the entry points ----------
+     The palette itself (assets/palette.js) and its index load on first use, or a moment
+     earlier when the Search button is hovered or focused. Ctrl+K (Cmd+K on a Mac) opens it
+     from anywhere except over another open dialog; no other shortcut is taken. */
+  const paletteButtons = [...document.querySelectorAll("[data-palette-open]")];
+  const isMac = /mac|iphone|ipad/i.test(navigator.userAgentData?.platform || navigator.platform || "");
+  let paletteLoad = null;
+  const loadPalette = () => paletteLoad ||= new Promise((resolve, reject) => {
+    const script = Object.assign(document.createElement("script"), { src: "/assets/palette.js" });
+    script.onload = () => (window.Palette ? resolve(window.Palette) : reject(new Error("palette")));
+    script.onerror = () => { paletteLoad = null; script.remove(); reject(new Error("palette")); };
+    document.head.append(script);
+  });
+  const openPalette = (from) => loadPalette().then((palette) => palette.open({ trigger: from })).catch(() => {});
+  paletteButtons.forEach(button => {
+    button.hidden = false;
+    button.setAttribute("aria-keyshortcuts", isMac ? "Meta+K" : "Control+K");
+    button.querySelectorAll("[data-palette-kbd]").forEach(kbd => { kbd.textContent = isMac ? "⌘K" : "Ctrl K"; });
+    button.addEventListener("click", () => openPalette(button));
+    for (const type of ["pointerenter", "focus"]) button.addEventListener(type, () => loadPalette().then(palette => palette.preload()).catch(() => {}), { once: true });
+  });
+  if (paletteButtons.length) {
+    document.addEventListener("keydown", event => {
+      if (event.key?.toLowerCase() !== "k" || event.altKey || event.shiftKey || !(isMac ? event.metaKey : event.ctrlKey || event.metaKey)) return;
+      if (document.querySelector("dialog[open]:not(.palette)")) return;
+      event.preventDefault();
+      openPalette(document.activeElement);
+    });
+  }
+
   /* ---------- Navigation sheet (small screens) ---------- */
   const header = document.querySelector("[data-header]");
   const menuToggle = document.querySelector("[data-menu-toggle]");

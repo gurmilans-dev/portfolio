@@ -70,12 +70,12 @@
       if (!timer) return;
       clearInterval(timer);
       timer = 0;
-      act.play.setAttribute("aria-pressed", "false");
+      act.play.classList.remove("is-playing");
       act.play.textContent = "Play";
     }
     function play() {
       if (step === last()) go(0);
-      act.play.setAttribute("aria-pressed", "true");
+      act.play.classList.add("is-playing");
       act.play.textContent = "Pause";
       timer = setInterval(() => go(step + 1), 1700);
     }
