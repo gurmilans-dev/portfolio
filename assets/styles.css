@@ -1593,23 +1593,22 @@ code { font-family: var(--mono); font-size: .86em; padding: .08em .36em; backgro
 .ops-exception-rail .ops-notify { border-style: dashed; }
 .ops-qr-strip em:not(:last-child)::after { content: "→"; margin-left: 8px; color: var(--text-4); }
 
-/* ---------- Case end: contact + pager ---------- */
+/* ---------- Case end: where to go next ----------
+   A case study ends on its project navigation, under one full-width rule like the footer's.
+   Contact is not repeated here (the header and the footer carry it). Phones stack the three
+   choices compactly; from 720px they sit side by side. */
 .case-end { border-top: 1px solid var(--line); }
-.case-end-grid { display: grid; gap: 24px; padding-block: clamp(48px, 7vw, 88px); }
-.case-end-title { max-width: 22ch; font-size: var(--t-h2); line-height: 1.08; letter-spacing: -.03em; }
-.case-end-copy { display: grid; gap: 12px; }
-.case-end-actions { display: flex; flex-wrap: wrap; gap: 10px; align-content: end; }
-.case-pager { display: grid; gap: 0; border-top: 1px solid var(--line); }
-.pager-card { display: grid; gap: 4px; padding: 22px 0; border-bottom: 1px solid var(--line); text-decoration: none; transition: background-color .25s; }
+.case-pager { display: grid; }
+.pager-card { display: grid; gap: 3px; padding: 16px 0; border-bottom: 1px solid var(--line); text-decoration: none; transition: background-color .25s; }
+.pager-card:last-child { border-bottom: 0; }
 .pager-dir { font: 500 11px var(--mono); letter-spacing: .08em; text-transform: uppercase; color: var(--text-4); }
-.pager-card strong { font-size: clamp(1.25rem, 2vw, 1.6rem); letter-spacing: -.02em; }
+.pager-card strong { font-size: clamp(1.15rem, 1.8vw, 1.45rem); letter-spacing: -.02em; }
 .pager-card > span:last-child { font-size: 14px; color: var(--text-3); }
 .pager-card:hover { color: var(--text); }
 .pager-card:hover .pager-dir, .pager-card:hover strong { color: var(--accent); }
-@media (min-width: 860px) {
-  .case-end-grid { grid-template-columns: minmax(0, 1fr) auto; align-items: end; }
+@media (min-width: 720px) {
   .case-pager { grid-template-columns: repeat(3, minmax(0, 1fr)); }
-  .pager-card { padding: 26px 24px; border-bottom: 0; border-left: 1px solid var(--line); }
+  .pager-card { padding: 22px 20px; border-bottom: 0; border-left: 1px solid var(--line); }
   .pager-card:first-child { padding-left: 0; border-left: 0; }
   .pager-home { text-align: center; }
   .pager-next { text-align: right; padding-right: 0; }

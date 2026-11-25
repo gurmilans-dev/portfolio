@@ -469,18 +469,15 @@ export function caseEnd(key) {
   const card = (project, dir, cls, step) => `<a class="pager-card ${cls}" href="${project.caseStudy}" data-vt-dir="${step}"><span class="pager-dir">${dir}</span><strong data-vt="title" style="--vt-title: vt-title-${project.key}">${esc(project.shortTitle)}</strong><span>${esc(project.category)}</span></a>`;
   // Back to the explorer on the same system (or to the register, for an "Also built" entry).
   const home = typeof current.order === "number" ? `href="index.html#work" data-wb-select="${current.key}"` : `href="index.html#also-built"`;
-  const subject = encodeURIComponent(`About ${current.shortTitle}`);
-  return `<section class="case-end" aria-labelledby="case-end-title">
-        <div class="frame case-end-grid">
-          <div class="case-end-copy"><p class="label">Discuss this work</p><h2 id="case-end-title" class="case-end-title">Questions about ${esc(current.shortTitle)}, or a role where this experience fits?</h2></div>
-          <div class="case-end-actions"><a class="btn btn-primary" href="mailto:${profile.email}?subject=${subject}">Email me about ${esc(current.shortTitle)}<span aria-hidden="true">→</span></a><a class="btn btn-line" href="${profile.resume}" target="_blank" rel="noopener noreferrer" download>Download CV<span class="sr-only"> (PDF)</span>${icons.download}</a></div>
-        </div>
+  // A case study ends on where to go next. Contact is not repeated here: the header carries
+  // Contact and the CV on every page, and the footer right below has email, GitHub and LinkedIn.
+  return `<div class="case-end">
         <nav class="frame case-pager" aria-label="Project navigation">
           ${card(prev, "<span aria-hidden=\"true\">←</span> Previous system", "pager-prev", "prev")}
           <a class="pager-card pager-home" ${home}><span class="pager-dir">All systems</span><strong>Selected work</strong><span>Back to the explorer</span></a>
           ${card(next, "Next system <span aria-hidden=\"true\">→</span>", "pager-next", "next")}
         </nav>
-      </section>`;
+      </div>`;
 }
 
 /* The case index in a case study's eyebrow: its place among the six, or "Also built". */
