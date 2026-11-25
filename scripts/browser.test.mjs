@@ -233,6 +233,32 @@ test("short windows: the stage controls can be brought fully into view", async (
   }
 });
 
+test("stage: Explode parts the floors further than the pointer over the stage does, and back", async () => {
+  await withPage({ width: 1440, height: 900 }, async (page) => {
+    await page.goto(`${base}/#work`);
+    await page.waitFor(`document.documentElement.classList.contains("workbench-ready")`);
+    const top = `document.querySelector('[data-stage-scene] .plane[data-plane="0"]').getBoundingClientRect().top`;
+    // Until the floors have finished moving (their own transitions, not the stack's drift).
+    const settled = () => page.waitFor(`document.querySelector("[data-stack]").getAnimations({ subtree: true }).every((animation) => !(animation instanceof CSSTransition) || animation.playState !== "running")`, { timeout: 4000 });
+    // The button is only ever pressed with the pointer over the stage, which parts the floors a little.
+    const { x, y } = await page.point("[data-explode]", { scroll: false });
+    await page.call("Input.dispatchMouseEvent", { type: "mouseMoved", x, y });
+    await page.evaluate(drawFrames);
+    await settled();
+    const hovered = await page.evaluate(top);
+    await page.click("[data-explode]", { scroll: false });
+    await page.evaluate(drawFrames);
+    await settled();
+    const exploded = await page.evaluate(top);
+    assert.ok(hovered - exploded > 20, `pressing Explode lifts the top floor further: ${hovered.toFixed(1)}px -> ${exploded.toFixed(1)}px`);
+    await page.click("[data-explode]", { scroll: false });
+    await page.evaluate(drawFrames);
+    await settled();
+    assert.ok(Math.abs((await page.evaluate(top)) - hovered) < 1, "and pressing it again brings the floors back");
+    assert.deepEqual(page.errors(), []);
+  });
+});
+
 test("stage: Reset view restores the angle and closes the exploded stack", async () => {
   await withPage({ width: 1440, height: 900 }, async (page) => {
     await page.goto(`${base}/`);

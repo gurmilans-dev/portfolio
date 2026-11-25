@@ -849,8 +849,11 @@ code { font-family: var(--mono); font-size: .86em; padding: .08em .36em; backgro
 @keyframes drift { 0%, 100% { transform: rotateZ(-4deg); } 50% { transform: rotateZ(4deg); } }
 .stack.is-dragging .stack-spin, .is-offscreen .stack-spin, .is-offscreen .packet, .mini-scene .stack-spin { animation-play-state: paused; }
 .mini-scene .stack-spin { animation: none; }
-.stack.is-exploded { --gap: calc(var(--s) * .36); }
-@media (hover: hover) and (pointer: fine) { [data-wb-stage]:hover .stack { --gap: calc(var(--s) * .36); } }
+/* A mouse over the stage parts the floors a little; Explode parts them fully, and stays the
+   wider of the two (the button is only ever pressed with the mouse over the stage, so the two
+   must differ, or pressing it would change nothing). */
+@media (hover: hover) and (pointer: fine) { [data-wb-stage]:hover .stack { --gap: calc(var(--s) * .3); } }
+.stack.is-exploded, [data-wb-stage]:hover .stack.is-exploded { --gap: calc(var(--s) * .36); }
 .plane { position: absolute; inset: 0; transform-style: preserve-3d; transform: translateZ(calc(var(--z) * var(--gap))); border: 1px solid var(--plane-edge); background-color: var(--plane-fill); background-image: linear-gradient(var(--plane-grid) 1px, transparent 1px), linear-gradient(90deg, var(--plane-grid) 1px, transparent 1px); background-size: calc(var(--s) / 12) calc(var(--s) / 12); transition: transform 1s var(--ease), border-color .3s, background-color .3s; }
 .plane.is-active { border-color: var(--accent); background-color: rgb(var(--accent-rgb) / .13); }
 .plane-label { position: absolute; left: 3.5%; bottom: 3.2%; font: 700 max(10.5px, calc(var(--s) * .036))/1 var(--mono); letter-spacing: .08em; text-transform: uppercase; color: var(--plane-label); white-space: nowrap; transition: color .3s; }
