@@ -38,6 +38,12 @@ export async function launchBrowser() {
   const args = [
     "--headless=new", "--remote-debugging-port=0", `--user-data-dir=${profile}`, "--no-first-run", "--no-default-browser-check",
     "--disable-gpu", "--hide-scrollbars", "--mute-audio", "--disable-extensions", "--disable-background-timer-throttling",
+    // A desktop page is a desktop with a mouse, whatever the host has plugged in. Chrome takes
+    // (hover) and (pointer) from the machine's input devices, so a CI runner with none reports
+    // hover: none and pointer: none, and every hover-only style is off. These are Blink's own
+    // values for a mouse (hover = 2, fine = 4). Pages opened with `mobile` still get touch
+    // emulation, which overrides them with hover: none and pointer: coarse.
+    "--blink-settings=primaryHoverType=2,availableHoverTypes=2,primaryPointerType=4,availablePointerTypes=4",
     ...(process.env.CI ? ["--no-sandbox"] : []), "about:blank"
   ];
   const child = spawn(executable, args, { stdio: ["ignore", "ignore", "pipe"] });

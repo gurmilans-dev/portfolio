@@ -1060,6 +1060,7 @@ test("inspect mode: opens from its button and from the screenshot, explains each
   await withPage({ width: 1440, height: 900 }, async (page) => {
     await page.goto(`${base}/maintops`);
     await page.waitFor(`document.documentElement.classList.contains("inspect-ready")`);
+    assert.ok(await page.evaluate(`matchMedia("(hover: hover) and (pointer: fine)").matches`), "a desktop page has a mouse (the browser is launched with one; see launchBrowser)");
     const { x, y } = await page.point('[data-inspect] .inspect-hint[data-index="2"]');
     await page.call("Input.dispatchMouseEvent", { type: "mouseMoved", x, y });
     await page.waitFor(`getComputedStyle(document.querySelector(".inspect-hints")).opacity === "1"`, { message: "the parts outline themselves on hover" });
