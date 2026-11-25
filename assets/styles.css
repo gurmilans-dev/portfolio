@@ -885,6 +885,74 @@ code { font-family: var(--mono); font-size: .86em; padding: .08em .36em; backgro
 }
 @media (min-width: 900px) { .stage-controls { left: 22px; right: 22px; bottom: 20px; } }
 
+/* ---------- One stack, one story: the hero's drawing becomes the explorer's model ----------
+   Fig. 00 draws the four layers as an elevation: four cards, each naming what it is built
+   with. Fig. 01 is the model of the same four layers, seen from above, with each system cut
+   through them. On wide screens the one becomes the other as the page scrolls: workbench.js
+   lays a copy of the plates over the drawing (.stack-morph, aria-hidden and inert), and with
+   the scroll each card tips back, turns a quarter and squares into a floor; its technologies
+   drain into the selected system's socket, the plan's grid and labels come up, and the floors
+   come to rest exactly where the stage's own stack is, which then takes over and draws the cut
+   (.is-arriving). While it runs (.is-morphing) the real drawing and model are only made
+   transparent, so links, controls and reading order never change. Each plate is a point (no
+   box of its own) that carries the 3D pose; the card, its face and the floor are centred on it
+   at fixed sizes, and the script changes only their transforms and opacity, on the few elements
+   that move, so a frame of scroll lays nothing out again. */
+/* Built ahead and kept transparent until it runs (opacity, unlike visibility, is not inherited,
+   so switching it restyles only the layer). */
+.stack-morph { position: fixed; inset: 0; z-index: 1; pointer-events: none; opacity: 0; contain: layout size style; }
+.is-morphing .stack-morph { opacity: 1; }
+.stack-morph * { animation: none !important; transition: none !important; }
+.morph-plate { position: absolute; left: 0; top: 0; width: 0; height: 0; transform-origin: 0 0; }
+/* The card: the drawing's plate, as it was (face and content copied from it). The face is
+   scaled, not resized, from the card's shape to the floor's. */
+.morph-face { position: absolute; left: 0; top: 0; border: 1px solid var(--line-3); background: var(--bg-1); transform: translate(-50%, -50%); }
+.morph-plate + .morph-plate .morph-face::before, .morph-plate + .morph-plate .morph-face::after { content: ""; position: absolute; bottom: 100%; width: 1px; height: var(--morph-gap, 20px); background: var(--line-3); opacity: var(--standoff, 1); }
+.morph-plate + .morph-plate .morph-face::before { left: 22px; }
+.morph-plate + .morph-plate .morph-face::after { right: 22px; }
+.morph-card { position: absolute; display: grid; border: 1px solid transparent; container: plate / inline-size; }
+/* The technologies drain together: their list shrinks into the selected system's socket. */
+.morph-card .plate-chips { transform-origin: 0 0; }
+/* The floor: the model's plane, as the stage draws it (label, sockets and cut copied from it). */
+.stack-morph .plane { inset: auto; left: 0; top: 0; width: var(--s); height: var(--s); transform-style: flat; transform: translate(-50%, -50%); opacity: 0; }
+/* The sockets and the system's tag come up together, in one box over the whole floor. */
+.morph-detail { position: absolute; inset: 0; opacity: 0; }
+/* While it runs: the drawing and the model are there but transparent, their links and sockets
+   take no pointer input (the stage's own handlers stand aside too, in workbench.js), and
+   everything written stays above the travelling stack. Only the links are switched off, not
+   the figures: pointer-events is inherited, and switching a whole figure restyles all of it. */
+.is-morphing .hero-figure { opacity: 0; }
+.is-morphing .hero-figure .plate-link { pointer-events: none; }
+.is-morphing .wb-stage .stage-scene { opacity: 0; }
+.is-morphing [data-wb-stage]:hover .stack { --gap: calc(var(--s) * .26); }
+/* Where it can run (the same query as workbench.js), set up for good rather than at the start
+   of the scroll: the blocks written over the stack are raised (switching position would restyle
+   and lay them out), and the copy is kept painted while it is transparent (a fully transparent
+   layer is otherwise not painted, and the first visible frame would paint all four floors). */
+@media (min-width: 960px) and (min-height: 560px) {
+  .js :is(.hero-head, .hero-copy, .proof, .wb-intro, .wb-index, .wb-files) { position: relative; z-index: 2; }
+  .stack-morph { will-change: opacity; }
+}
+/* The systems and the selected system's file stand beside or above the stage, and the
+   floors pass under them on their way in, not through their text. */
+.is-morphing :is(.wb-index, .wb-files) { background: var(--bg); }
+/* Measuring the real figures' layout (workbench.js), without their pose or a transition. */
+.is-measuring, .is-measuring .plate { transform: none !important; translate: none !important; }
+.stack.is-flat { transform: none !important; }
+.is-steady, .is-steady .plate, .is-steady.stack, .is-steady .plane { transition: none !important; }
+/* Narrower layouts, the same gesture in place. The drawing folds as it leaves: the figure tips
+   back towards a plan, its cards part into floors and their technologies fade. The stage's
+   floors close up as it arrives, and the cut is drawn through them as they do. workbench.js
+   writes the transforms and opacity on the few elements that move (a custom property changing
+   on the figure or a floor would restyle everything inside it, every frame); while it does,
+   their transitions are off. */
+.hero-figure.is-folding, .is-folding .plate, .wb-stage.is-settling :is(.plane, .beam) { transition: none; }
+
+/* Arrival: the stage's stack takes over and draws the cut through the floors. */
+.stack.is-arriving .beam { animation: beam-cut .7s var(--ease) both; }
+@keyframes beam-cut { from { scale: 1 1 0; opacity: 0; } }
+.wb-stage.is-held .stack-spin { animation-play-state: paused; }
+
 /* ---------- Case-file drawer ---------- */
 .drawer { position: fixed; inset: 0 0 0 auto; width: min(780px, 62vw); max-width: 100%; height: 100%; max-height: 100dvh; margin: 0; padding: 0; border: 0; border-left: 1px solid var(--line-2); background: var(--bg-1); color: var(--text); box-shadow: -40px 0 80px var(--shadow); flex-direction: column; overflow: hidden; transform: translateX(102%); transition: transform .6s var(--ease); }
 .drawer[open] { display: flex; }
@@ -1973,7 +2041,7 @@ code { font-family: var(--mono); font-size: .86em; padding: .08em .36em; backgro
   body { background: #fff; color: #111; }
   .site-header, .theme-switch, .scroll-progress, .wb-stage, .stage-controls, .hero-visual, .case-cut .cut-visual, .contact-form, .copy-btn, .drawer, .menu-toggle, .media-hotspots, .media-enlarge, .case-aside { display: none !important; }
   :is(.wb-pending, .workbench-ready) .workbench .system-file, :is(.wb-pending, .workbench-ready) .wb-files .sf-dossier, :is(.wb-pending, .workbench-ready) .wb-files .sf-shot { display: grid !important; }
-  .sf-peek, .ab-toggle, .ab-names, .form-trace { display: none !important; }
+  .sf-peek, .ab-toggle, .ab-names, .form-trace, .stack-morph { display: none !important; }
   .sim-live { display: none !important; }
   .sim-static { display: grid !important; }
   .also-built .ab-list { display: grid !important; }

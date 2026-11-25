@@ -239,7 +239,10 @@ test("stage: Reset view restores the angle and closes the exploded stack", async
     await page.waitFor(`document.querySelector("[data-workbench]").classList.contains("wb-ready")`);
     await page.click("[data-explode]");
     assert.equal(await page.evaluate(`document.querySelector("[data-explode]").getAttribute("aria-pressed")`), "true");
-    const { x, y } = await page.point("[data-stage-scene]");
+    // The stage where it is used: settled under the header (above that, on wide screens, the
+    // hero's drawing is still turning into it, and the stage takes no input).
+    await page.evaluate(`(() => { const stage = document.querySelector("[data-wb-stage]"); scrollTo({ top: stage.getBoundingClientRect().top + scrollY - ${headerBottom} + 1, behavior: "instant" }); })()`);
+    const { x, y } = await page.point("[data-stage-scene]", { scroll: false });
     await page.call("Input.dispatchMouseEvent", { type: "mousePressed", x, y, button: "left", buttons: 1, clickCount: 1 });
     for (let step = 1; step <= 6; step++) await page.call("Input.dispatchMouseEvent", { type: "mouseMoved", x: x + step * 25, y: y + step * 6, button: "left", buttons: 1 });
     await page.call("Input.dispatchMouseEvent", { type: "mouseReleased", x: x + 150, y: y + 36, button: "left", clickCount: 1 });
@@ -673,7 +676,11 @@ test("a click during a transition reaches its target instead of being lost", asy
     await page.waitFor(ready);
     await page.animationRate(0.05);
     await page.click(`#work-erp .sf-actions a[href="/erp-case-study"]`);
-    await page.waitFor(`location.pathname === "/erp-case-study" && document.documentElement.matches(":active-view-transition")`, { timeout: 8000 });
+    // Chrome marks the arriving document's transition as active from the moment the navigation
+    // commits, before its body is parsed, so wait for the breadcrumb itself too (still during
+    // the transition, which the slowed animations keep running for seconds).
+    await page.waitFor(`location.pathname === "/erp-case-study" && document.documentElement.matches(":active-view-transition") && !!document.querySelector('.breadcrumbs a[href="/"]')`, { timeout: 8000 });
+    assert.ok(await page.evaluate(`document.documentElement.matches(":active-view-transition")`), "the breadcrumb is pressed while the case study is still arriving");
     await page.click(`.breadcrumbs a[href="/"]`, { scroll: false });
     await page.animationRate(1);
     await page.waitFor(`location.pathname === "/" && document.readyState === "complete"`, { timeout: 8000, message: "the breadcrumb click during the transition was lost" });
@@ -1448,5 +1455,342 @@ test("command palette: the overlay fits every width and height, in both themes",
   await withPage({ width: 1440, height: 900, javaScript: false }, async (page) => {
     await page.goto(`${base}/`);
     assert.equal(await page.evaluate(`getComputedStyle(document.querySelector("[data-palette-open]")).display`), "none", "no Search control without JavaScript");
+  });
+});
+
+/* ---------- One stack, one story: the hero's drawing becomes the explorer's model ----------
+   On wide screens a copy of the hero's four plates (aria-hidden, inert) turns into the stage's
+   four floors with the scroll; narrower screens fold the drawing in place instead. */
+
+const drawFrames = `new Promise((resolve) => { let n = 0; (function step() { if (++n > 3) resolve(true); else requestAnimationFrame(step); })(); })`;
+// Scroll at once to y, then let the page draw three frames.
+async function scrollToY(page, y) {
+  await page.evaluate(`scrollTo({ top: ${y}, behavior: "instant" }); ${drawFrames}`);
+}
+// The stretch it runs over: from the first pixels of scroll to where the stage settles under the
+// header, or where a link to #work lands, if that is earlier.
+const morphRange = `(() => { const top = (s) => document.querySelector(s).getBoundingClientRect().top + scrollY - document.querySelector("[data-header]").offsetHeight; const end = Math.min(top("[data-workbench]"), top("#work")) - 2; return { y0: Math.min(48, end / 6), y1: end }; })()`;
+const morphState = `(() => { const opacity = (s) => { const el = document.querySelector(s); return el ? Number(getComputedStyle(el).opacity) : null; }; return { morphing: document.documentElement.classList.contains("is-morphing"), hero: opacity(".hero-figure"), model: opacity("[data-stage-scene]"), copy: opacity(".stack-morph"), caption: Number(document.querySelector(".hero-figure .fig-cap").style.opacity || 1) }; })()`;
+const boxes = (selector) => `[...document.querySelectorAll(${JSON.stringify(selector)})].map((el) => { const r = el.getBoundingClientRect(); return [r.left, r.top, r.right, r.bottom]; })`;
+const worstGap = (a, b) => Math.max(...a.flatMap((box, i) => box.map((value, k) => Math.abs(value - b[i][k]))));
+const shifted = (list, dy) => list.map(([l, t, r, b]) => [l, t + dy, r, b + dy]);
+const selectedSystem = `document.querySelector('[role="tab"][aria-selected="true"]').dataset.wbTab`;
+// The active floor and the selected socket on each floor, in the stage or in the copy.
+const floorsShown = (scope) => `[...document.querySelectorAll(${JSON.stringify(scope + " .plane")})].map((plane) => [plane.classList.contains("is-active"), plane.querySelector(".socket.is-sel")?.dataset.socket])`;
+// A finger drag, as raw touch events (a synthetic scroll gesture does not scroll by touch in
+// headless Chrome), repeated until the page has scrolled past `target` in that direction.
+async function swipeTo(page, target) {
+  const { width, height } = await page.evaluate("({ width: innerWidth, height: innerHeight })");
+  const touch = (type, y) => page.call("Input.dispatchTouchEvent", { type, touchPoints: type === "touchEnd" ? [] : [{ x: Math.round(width / 2), y, id: 1 }] });
+  const down = target > (await page.evaluate("scrollY"));
+  for (let i = 0; i < 12; i++) {
+    const y = await page.evaluate("scrollY");
+    if (down ? y >= target : y <= target) break;
+    const [from, to] = down ? [Math.round(height * .8), Math.round(height * .25)] : [Math.round(height * .25), Math.round(height * .8)];
+    await touch("touchStart", from);
+    for (let at = from; down ? at > to : at < to; at += down ? -12 : 12) { await touch("touchMove", at); await new Promise((resolve) => setTimeout(resolve, 8)); }
+    await touch("touchEnd", to);
+    await page.evaluate(drawFrames);
+  }
+}
+async function readyToMorph(page) {
+  await page.waitFor(`document.documentElement.classList.contains("workbench-ready") && !!document.querySelector(".stack-morph .morph-card > *")`, { timeout: 8000, message: "the copy was not built ahead of the scroll" });
+  // The drawing's own entrance (its plates assemble on load) is over, so it holds still to be measured.
+  await page.waitFor(`document.querySelector(".hero-figure").getAnimations({ subtree: true }).every((animation) => animation.effect.getComputedTiming().iterations === Infinity || animation.playState === "finished")`, { timeout: 8000 });
+}
+// Until the scroll position has stood still for ten frames (a link's landing included).
+const scrollSettled = `new Promise((resolve) => { let last = -1, same = 0; (function step() { if (scrollY === last) same++; else { same = 0; last = scrollY; } if (same >= 10) resolve(true); else requestAnimationFrame(step); })(); })`;
+
+test("hero to explorer: the drawing turns into the model with the scroll, both ways, and hands over exactly", async () => {
+  for (const [width, height] of [[1440, 900], [1024, 768], [1280, 600], [2560, 1300]]) {
+    await withPage({ width, height }, async (page) => {
+      const at = `${width}×${height}`;
+      await page.goto(`${base}/`);
+      await readyToMorph(page);
+      const range = await page.evaluate(morphRange);
+      const y0 = Math.ceil(range.y0);
+      const y1 = Math.floor(range.y1);
+      // The copy is decoration: hidden from assistive technology, inert, nothing in it to focus or follow.
+      assert.deepEqual(await page.evaluate(`(() => { const layer = document.querySelector(".stack-morph"); return [layer.getAttribute("aria-hidden"), layer.inert, layer.querySelectorAll("a, button, input, select, textarea, [tabindex], [id], [href]").length]; })()`), ["true", true, 0], `${at}: the copy is aria-hidden and inert, with nothing focusable`);
+      let state = await page.evaluate(morphState);
+      assert.ok(!state.morphing && state.hero === 1 && state.copy === 0, `${at}: at the top, the drawing as it is: ${JSON.stringify(state)}`);
+      // Start: the copy's cards lie exactly where the drawing's plates were.
+      await scrollToY(page, y0);
+      assert.ok(!(await page.evaluate(morphState)).morphing, `${at}: not yet at ${y0}px`);
+      const plates = await page.evaluate(boxes(".hero-stack > .plate"));
+      await scrollToY(page, y0 + 1);
+      state = await page.evaluate(morphState);
+      assert.ok(state.morphing && state.hero === 0 && state.copy === 1, `${at}: running one pixel later: ${JSON.stringify(state)}`);
+      const cards = shifted(await page.evaluate(boxes(".morph-face")), 1);
+      assert.ok(worstGap(cards, plates) < 0.5, `${at}: the cards start ${worstGap(cards, plates).toFixed(2)}px off the plates`);
+      // Middle: both real figures transparent, the copy in between, no sideways overflow.
+      await scrollToY(page, Math.round((y0 + y1) / 2));
+      state = await page.evaluate(morphState);
+      assert.ok(state.morphing && state.hero === 0 && state.model === 0 && state.copy === 1, `${at}: half way: ${JSON.stringify(state)}`);
+      assert.ok((await page.evaluate("document.documentElement.scrollWidth - innerWidth")) <= 0, `${at}: overflow half way`);
+      // End: the copy's floors lie exactly where the stage's floors are, and the stage takes over.
+      await scrollToY(page, y1 - 1);
+      const floors = shifted(await page.evaluate(boxes(".stack-morph .plane")), -1);
+      await scrollToY(page, y1 + 1);
+      state = await page.evaluate(morphState);
+      assert.ok(!state.morphing && state.model === 1 && state.copy === 0, `${at}: handed over at ${y1 + 1}px: ${JSON.stringify(state)}`);
+      const model = shifted(await page.evaluate(boxes("[data-stage-scene] .plane")), 1);
+      assert.ok(worstGap(floors, model) < 1, `${at}: the floors end ${worstGap(floors, model).toFixed(2)}px off the stage's floors`);
+      // And back: it runs again on the way up, and the drawing is whole at the top.
+      await scrollToY(page, Math.round((y0 + y1) / 2));
+      assert.ok((await page.evaluate(morphState)).morphing, `${at}: runs again on the way back`);
+      await scrollToY(page, 0);
+      state = await page.evaluate(morphState);
+      assert.ok(!state.morphing && state.hero === 1 && state.caption === 1, `${at}: back at the top: ${JSON.stringify(state)}`);
+      assert.deepEqual(page.errors(), [], `${at}: errors`);
+    });
+  }
+});
+
+test("hero to explorer: a fast scroll or a jump lands where it lands, and a link to #work opens on the explorer", async () => {
+  await withPage({ width: 1440, height: 900 }, async (page) => {
+    await page.goto(`${base}/`);
+    await readyToMorph(page);
+    const { y0, y1 } = await page.evaluate(morphRange);
+    // A fast wheel scroll past the explorer's top, then straight back to the top.
+    await page.call("Input.synthesizeScrollGesture", { x: 720, y: 450, yDistance: -Math.round(y1 + 400), speed: 8000, gestureSourceType: "mouse" });
+    await page.evaluate(drawFrames);
+    let state = await page.evaluate(morphState);
+    assert.ok(!state.morphing && state.model === 1, `after a fast scroll down: ${JSON.stringify(state)}`);
+    await page.call("Input.synthesizeScrollGesture", { x: 720, y: 450, yDistance: Math.round(y1 + 800), speed: 8000, gestureSourceType: "mouse" });
+    await page.evaluate(drawFrames);
+    state = await page.evaluate(morphState);
+    assert.ok(!state.morphing && state.hero === 1 && (await page.evaluate("scrollY")) === 0, `after a fast scroll back up: ${JSON.stringify(state)}`);
+    // Jumps: into the middle, then past the end within one frame.
+    await scrollToY(page, Math.round((y0 + y1) / 2));
+    assert.ok((await page.evaluate(morphState)).morphing, "a jump into the middle lands in the middle");
+    await page.evaluate(`scrollTo({ top: ${Math.round((y0 + y1) / 3)}, behavior: "instant" }); scrollTo({ top: ${Math.round(y1 + 300)}, behavior: "instant" }); ${drawFrames}`);
+    state = await page.evaluate(morphState);
+    assert.ok(!state.morphing && state.model === 1, `a jump past the end: ${JSON.stringify(state)}`);
+    assert.deepEqual(page.errors(), []);
+  });
+  // Straight to the explorer: no transformation in the way, the explorer at the top of the window.
+  await withPage({ width: 1440, height: 900 }, async (page) => {
+    await page.goto(`${base}/#work`);
+    await page.waitFor(`document.documentElement.classList.contains("workbench-ready")`);
+    await page.evaluate(scrollSettled);
+    const state = await page.evaluate(morphState);
+    assert.ok(!state.morphing && state.model === 1, `#work: ${JSON.stringify(state)}`);
+    const gap = await page.evaluate(`document.getElementById("work").getBoundingClientRect().top - ${headerBottom}`);
+    assert.ok(Math.abs(gap) <= 2, `#work starts ${gap}px from the header`);
+    await page.click("#tab-procbeacon");
+    await page.waitFor(`${selectedSystem} === "procbeacon"`);
+    assert.deepEqual(page.errors(), []);
+  });
+});
+
+test("hero to explorer: after it, choosing a system and a quick look work; during it, the transparent model takes no input", async () => {
+  await withPage({ width: 1440, height: 900 }, async (page) => {
+    await page.goto(`${base}/`);
+    await readyToMorph(page);
+    const { y0, y1 } = await page.evaluate(morphRange);
+    // During: a real click on the transparent model's sockets or floors changes nothing.
+    await scrollToY(page, Math.round(y0 + (y1 - y0) * .7));
+    assert.ok((await page.evaluate(morphState)).morphing);
+    const before = await page.evaluate(selectedSystem);
+    const target = await page.evaluate(`(() => { const top = ${headerBottom}; const scene = document.querySelector("[data-stage-scene]"); for (const el of scene.querySelectorAll(".socket:not(.is-sel), .plane")) { const r = el.getBoundingClientRect(); const x = r.left + r.width / 2, y = r.top + r.height / 2; if (y > top + 4 && y < innerHeight - 4 && x > 0 && x < innerWidth && scene.contains(document.elementFromPoint(x, y))) return { x, y }; } return null; })()`);
+    assert.ok(target, "a point on the transparent model is in view");
+    await page.call("Input.dispatchMouseEvent", { type: "mouseMoved", x: target.x, y: target.y });
+    await page.call("Input.dispatchMouseEvent", { type: "mousePressed", x: target.x, y: target.y, button: "left", buttons: 1, clickCount: 1 });
+    await page.call("Input.dispatchMouseEvent", { type: "mouseReleased", x: target.x, y: target.y, button: "left", clickCount: 1 });
+    await page.evaluate(drawFrames);
+    assert.equal(await page.evaluate(selectedSystem), before, "the system did not change");
+    assert.ok(!(await page.evaluate(`document.querySelector("[data-drawer]").open`)), "no quick look opened");
+    // After: choose a system, the copy follows it, and its quick look opens and closes as ever.
+    await scrollToY(page, Math.ceil(y1) + 1);
+    await page.click("#tab-flowbank");
+    await page.waitFor(`${selectedSystem} === "flowbank"`);
+    await scrollToY(page, Math.round((y0 + y1) / 2));
+    assert.deepEqual(await page.evaluate(floorsShown(".stack-morph")), await page.evaluate(floorsShown("[data-stage-scene]")), "the copy shows the chosen system and layer");
+    await scrollToY(page, Math.ceil(y1) + 1);
+    await page.click("#work-flowbank [data-open-file]");
+    await page.waitFor(`document.querySelector("[data-drawer]").open && document.querySelector("[data-drawer]").contains(document.activeElement)`);
+    await page.key("Escape");
+    await page.waitFor(`!document.querySelector("[data-drawer]").open`);
+    await page.waitFor(focused("#work-flowbank [data-open-file]"), { message: "focus did not return to the Quick look button" });
+    assert.deepEqual(page.errors(), []);
+  });
+});
+
+test("hero to explorer: a deep link and Back keep the chosen system, and the copy shows it", async () => {
+  await withPage({ width: 1440, height: 900 }, async (page) => {
+    await page.goto(`${base}/#work-maintops`);
+    await page.waitFor(`document.documentElement.classList.contains("workbench-ready") && ${selectedSystem} === "maintops"`);
+    await scrollToY(page, 0);
+    await readyToMorph(page);
+    const { y0, y1 } = await page.evaluate(morphRange);
+    await scrollToY(page, Math.round((y0 + y1) / 2));
+    assert.ok((await page.evaluate(morphState)).morphing);
+    assert.deepEqual(await page.evaluate(floorsShown(".stack-morph")), await page.evaluate(floorsShown("[data-stage-scene]")), "the copy shows the linked system");
+    // To a case study and Back: the same system, and the transformation runs again.
+    await page.evaluate(`location.href = "/opssemble"`);
+    await page.waitFor(`location.pathname === "/opssemble" && document.readyState === "complete"`, { timeout: 8000 });
+    await page.evaluate("history.back()");
+    await page.waitFor(`location.pathname === "/" && document.documentElement.classList.contains("workbench-ready")`, { timeout: 8000 });
+    assert.equal(await page.evaluate(selectedSystem), "maintops", "Back keeps the chosen system");
+    await scrollToY(page, 0);
+    await readyToMorph(page);
+    await scrollToY(page, Math.round((y0 + y1) / 2));
+    assert.ok((await page.evaluate(morphState)).morphing, "runs again after Back");
+    assert.deepEqual(await page.evaluate(floorsShown(".stack-morph")), await page.evaluate(floorsShown("[data-stage-scene]")));
+    assert.deepEqual(page.errors(), []);
+  });
+});
+
+test("hero to explorer: reduced motion, no JavaScript, and missing browser APIs leave both figures as they are", async () => {
+  const still = async (page, label, { scripts = true } = {}) => {
+    const { y0, y1 } = await page.evaluate(morphRange);
+    // Without page scripts no animation frame callback runs, so wait out a few frames instead.
+    if (scripts) await scrollToY(page, Math.round((y0 + y1) / 2));
+    else { await page.evaluate(`scrollTo({ top: ${Math.round((y0 + y1) / 2)}, behavior: "instant" })`); await new Promise((resolve) => setTimeout(resolve, 200)); }
+    const state = await page.evaluate(morphState);
+    assert.ok(!state.morphing && state.hero === 1 && state.model === 1 && state.copy === null && state.caption === 1, `${label}: ${JSON.stringify(state)}`);
+  };
+  await withPage({ width: 1440, height: 900, reducedMotion: true }, async (page) => {
+    await page.goto(`${base}/`, { settle: 1500 });
+    await still(page, "reduced motion");
+    assert.deepEqual(page.errors(), []);
+  });
+  await withPage({ width: 1440, height: 900, javaScript: false }, async (page) => {
+    await page.goto(`${base}/`);
+    await still(page, "no JavaScript", { scripts: false });
+  });
+  // A browser without DOMMatrix: no copy, and the explorer works as before.
+  await withPage({ width: 1440, height: 900 }, async (page) => {
+    await page.addInitScript("delete window.DOMMatrix;");
+    await page.goto(`${base}/`, { settle: 1500 });
+    await still(page, "without DOMMatrix");
+    await page.click("#tab-flowbank");
+    await page.waitFor(`${selectedSystem} === "flowbank"`);
+    assert.deepEqual(page.errors(), []);
+  });
+  // Without requestIdleCallback or ResizeObserver it still runs (a timer builds the copy).
+  await withPage({ width: 1440, height: 900 }, async (page) => {
+    await page.addInitScript("delete window.requestIdleCallback; delete window.ResizeObserver;");
+    await page.goto(`${base}/`);
+    await readyToMorph(page);
+    const { y0, y1 } = await page.evaluate(morphRange);
+    await scrollToY(page, Math.round((y0 + y1) / 2));
+    assert.ok((await page.evaluate(morphState)).morphing, "runs without requestIdleCallback and ResizeObserver");
+    assert.deepEqual(page.errors(), []);
+  });
+});
+
+test("hero to explorer: where the browser lays the stage's floors on one plane, both figures stay as they are", async () => {
+  // As Playwright's WebKit build does: it accepts preserve-3d, but draws the four floors in one
+  // place, so the copy's floors would have nothing to land on. Here the stage's 3D is made flat.
+  await withPage({ width: 1440, height: 900 }, async (page) => {
+    await page.addInitScript(`document.addEventListener("DOMContentLoaded", () => document.head.append(Object.assign(document.createElement("style"), { textContent: "[data-stage-scene] :is(.stack, .stack-spin, .plane) { transform-style: flat !important; }" })));`);
+    await page.goto(`${base}/`);
+    await page.waitFor(`document.documentElement.classList.contains("workbench-ready")`);
+    assert.ok(await page.evaluate(`(() => { const tops = [...document.querySelectorAll("[data-stage-scene] .plane")].map((plane) => plane.getBoundingClientRect().top); return Math.max(...tops) - Math.min(...tops) < 1; })()`), "the floors are drawn in one place");
+    const { y0, y1 } = await page.evaluate(morphRange);
+    // Straight away (found out as the scroll starts), and on every pass after that.
+    for (const pass of ["first", "second"]) {
+      for (const y of [Math.round(y0 + 1), Math.round((y0 + y1) / 2), Math.round(y1 - 1)]) {
+        await scrollToY(page, y);
+        const state = await page.evaluate(morphState);
+        assert.ok(!state.morphing && state.hero === 1 && state.model === 1 && state.caption === 1, `${pass} pass at ${y}px: ${JSON.stringify(state)}`);
+      }
+      await scrollToY(page, 0);
+    }
+    // The explorer works as ever.
+    await scrollToY(page, Math.ceil(y1) + 1);
+    await page.click("#tab-maintops");
+    await page.waitFor(`${selectedSystem} === "maintops"`);
+    assert.deepEqual(page.errors(), []);
+  });
+});
+
+test("hero to explorer: the copy wears the theme; narrower and short windows fold the drawing in place instead, by touch too", async () => {
+  for (const scheme of ["dark", "light"]) {
+    await withPage({ width: 1440, height: 900, scheme }, async (page) => {
+      await page.goto(`${base}/`);
+      await readyToMorph(page);
+      const { y0, y1 } = await page.evaluate(morphRange);
+      await scrollToY(page, Math.round(y0 + (y1 - y0) * .1));
+      const colours = (selector) => `(() => { const cs = getComputedStyle(document.querySelector(${JSON.stringify(selector)})); return [cs.backgroundColor, cs.borderTopColor]; })()`;
+      assert.deepEqual(await page.evaluate(colours(".stack-morph .morph-face")), await page.evaluate(colours(".hero-stack > .plate")), `${scheme}: the cards are the plates' colours`);
+      assert.deepEqual(await page.evaluate(colours(".stack-morph .plane:not(.is-active)")), await page.evaluate(colours("[data-stage-scene] .plane:not(.is-active)")), `${scheme}: the floors are the stage's colours`);
+      assert.deepEqual(page.errors(), []);
+    });
+  }
+  for (const [width, height, mobile] of [[320, 640, true], [390, 844, true], [600, 900, true], [820, 1180, true], [900, 1000, false], [1280, 540, false]]) {
+    await withPage({ width, height, mobile }, async (page) => {
+      const at = `${width}×${height}`;
+      await page.goto(`${base}/`, { settle: 1200 });
+      // The drawing folds as it leaves the window; the stage's floors close up as they arrive.
+      const marks = await page.evaluate(`(() => { const fig = document.querySelector(".hero-figure").getBoundingClientRect(); const stage = document.querySelector("[data-wb-stage]").getBoundingClientRect(); const head = document.querySelector("[data-header]").offsetHeight; return { fold: Math.round(fig.top + scrollY + fig.height * .7 - head), settle: Math.round(stage.top + scrollY - innerHeight * .75) }; })()`);
+      await scrollToY(page, marks.fold);
+      assert.ok(await page.evaluate(`document.querySelector(".hero-figure").classList.contains("is-folding") && document.querySelector(".hero-figure").style.transform.startsWith("rotateX")`), `${at}: the drawing folds as it leaves`);
+      await scrollToY(page, marks.settle);
+      assert.ok(await page.evaluate(`document.querySelector("[data-wb-stage]").classList.contains("is-settling")`), `${at}: the stage's floors close up as they arrive`);
+      await scrollToY(page, 0);
+      assert.ok(!(await page.evaluate(`document.querySelector(".hero-figure").classList.contains("is-folding")`)), `${at}: unfolded at the top`);
+      const state = await page.evaluate(morphState);
+      assert.ok(!state.morphing && state.copy === null, `${at}: no copy here: ${JSON.stringify(state)}`);
+      assert.ok((await page.evaluate("document.documentElement.scrollWidth - innerWidth")) <= 0, `${at}: overflow`);
+      // By touch: swiping down the page folds it, swiping back to the top unfolds it.
+      if (mobile) {
+        await swipeTo(page, marks.fold);
+        assert.ok(await page.evaluate(`document.querySelector(".hero-figure").classList.contains("is-folding")`), `${at}: a swipe folds it (scrolled to ${await page.evaluate("scrollY")}px of ${marks.fold}px)`);
+        await swipeTo(page, 0);
+        assert.ok(!(await page.evaluate(`document.querySelector(".hero-figure").classList.contains("is-folding")`)), `${at}: a swipe back unfolds it`);
+      }
+      assert.deepEqual(page.errors(), [], `${at}: errors`);
+    });
+  }
+});
+
+test("hero to explorer: nothing shifts while it runs, a keyboard visitor on a hero plate keeps the drawing, and a slow device keeps both figures", async () => {
+  for (const [width, height, mobile] of [[1440, 900, false], [1024, 768, false], [390, 844, true]]) {
+    await withPage({ width, height, mobile }, async (page) => {
+      await page.addInitScript(`window.__cls = 0; new PerformanceObserver((list) => { for (const entry of list.getEntries()) if (!entry.hadRecentInput) window.__cls += entry.value; }).observe({ type: "layout-shift", buffered: true });`);
+      await page.goto(`${base}/`, { settle: 1200 });
+      if (!mobile) await readyToMorph(page);
+      const start = await page.evaluate("window.__cls");
+      const { y1 } = await page.evaluate(morphRange);
+      if (mobile) await swipeTo(page, Math.round(y1 + 200));
+      else await page.call("Input.synthesizeScrollGesture", { x: Math.round(width / 2), y: Math.round(height / 2), yDistance: -Math.round(y1 + 200), speed: 1500, gestureSourceType: "mouse" });
+      await page.evaluate(drawFrames);
+      assert.ok((await page.evaluate("scrollY")) >= y1, `${width}×${height}: scrolled through`);
+      const shift = (await page.evaluate("window.__cls")) - start;
+      assert.ok(shift < 0.001, `${width}×${height}: layout shift during the scroll ${shift.toFixed(4)}`);
+    });
+  }
+  // A keyboard visitor on a hero plate sees the drawing itself, wherever the page is.
+  await withPage({ width: 1440, height: 900 }, async (page) => {
+    await page.goto(`${base}/`);
+    await readyToMorph(page);
+    const { y0, y1 } = await page.evaluate(morphRange);
+    await scrollToY(page, Math.round((y0 + y1) / 2));
+    assert.ok((await page.evaluate(morphState)).morphing);
+    await page.evaluate(`document.querySelector(".hero-stack .plate-link").focus({ preventScroll: true }); ${drawFrames}`);
+    let state = await page.evaluate(morphState);
+    assert.ok(!state.morphing && state.hero === 1, `a focused plate keeps the drawing: ${JSON.stringify(state)}`);
+    await page.evaluate(`document.activeElement.blur(); ${drawFrames}`);
+    state = await page.evaluate(morphState);
+    assert.ok(state.morphing, "it runs again when the plate loses focus");
+  });
+  // A device too slow to build the copy quickly (here, copying a plate's content is made slow):
+  // the first pass goes by without the change, and so does every later one.
+  await withPage({ width: 1440, height: 900 }, async (page) => {
+    await page.addInitScript(`(() => { const clone = Node.prototype.cloneNode; Node.prototype.cloneNode = function (deep) { if (this.parentElement?.closest?.(".hero-stack")) { const until = performance.now() + 25; while (performance.now() < until); } return clone.call(this, deep); }; })();`);
+    await page.goto(`${base}/`, { settle: 100 });
+    await page.waitFor(`document.documentElement.classList.contains("workbench-ready")`);
+    const { y0, y1 } = await page.evaluate(morphRange);
+    for (const wait of [0, 3500]) {
+      await new Promise((resolve) => setTimeout(resolve, wait));
+      await scrollToY(page, Math.round((y0 + y1) / 2));
+      const state = await page.evaluate(morphState);
+      assert.ok(!state.morphing && state.hero === 1 && state.model === 1 && state.caption === 1, `slow device, after ${wait}ms: ${JSON.stringify(state)}`);
+      await scrollToY(page, 0);
+    }
+    assert.deepEqual(page.errors(), []);
   });
 });

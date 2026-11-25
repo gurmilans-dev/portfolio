@@ -29,7 +29,8 @@
       heroStack.style.setProperty("--lean-y", `${(nx * 6).toFixed(2)}deg`);
     };
     hero.addEventListener("pointermove", event => {
-      if (!finePointer.matches || motionQuery.matches) return;
+      // Not while the drawing is transparent and a copy stands in for it (see the morph below).
+      if (!finePointer.matches || motionQuery.matches || root.classList.contains("is-morphing")) return;
       const rect = hero.getBoundingClientRect();
       nx = (event.clientX - rect.left) / rect.width - .5;
       ny = (event.clientY - rect.top) / rect.height - .5;
@@ -79,6 +80,7 @@
   const canDrawer = Boolean(drawer && drawerBody && typeof drawer.showModal === "function");
 
   const VIEW = { rx: 58, rz: -45 };
+  let morph = null; // the hero-to-explorer transformation, set up below
   const state = { selected: 0, layer: 0, rx: VIEW.rx, rz: VIEW.rz, exploded: false };
 
   const fileFor = key => files.get(key);
@@ -130,6 +132,7 @@
     planes.forEach((plane, i) => plane.classList.toggle("is-active", i === state.layer));
     layerButtons.forEach((button, i) => button.setAttribute("aria-pressed", String(i === state.layer)));
     syncRows();
+    morph?.sync();
   }
 
   function select(index, { focus = false, remember = true } = {}) {
@@ -160,6 +163,7 @@
     if (fig) fig.textContent = `Fig. ${String(state.selected + 1).padStart(2, "0")} — ${titleOf(key)}`;
     if (figSub) figSub.textContent = `Cut through ${planes.length} layers · ${statusOf(key)}`;
     syncRows();
+    morph?.sync();
   }
 
   function applyView() {
@@ -227,6 +231,7 @@
     state.exploded = on;
     stack?.classList.toggle("is-exploded", on);
     explodeButton?.setAttribute("aria-pressed", String(on));
+    morph?.sync();
   }
   explodeButton?.addEventListener("click", () => setExploded(!state.exploded));
   // "Reset view" means the whole view: the resting angle and the closed stack. The selected
@@ -243,10 +248,13 @@
   if (scene && stack) {
     let drag = null;
     let dragged = false;
+    // While the drawing turns into the model (the morph below), the real model is transparent
+    // and takes no input.
+    const away = () => root.classList.contains("is-morphing");
     planes.forEach((plane, index) => {
-      plane.addEventListener("pointerenter", () => { if (!drag) hoverLayer(index); });
+      plane.addEventListener("pointerenter", () => { if (!drag && !away()) hoverLayer(index); });
       plane.addEventListener("click", event => {
-        if (dragged) return;
+        if (dragged || away()) return;
         const socket = event.target instanceof Element ? event.target.closest("[data-socket]") : null;
         if (socket) { select(Number(socket.dataset.socket)); return; }
         if (finePointer.matches && canDrawer) openFile(featured[state.selected], tabs[state.selected]);
@@ -254,7 +262,7 @@
       });
     });
     scene.addEventListener("pointerdown", event => {
-      if (event.button !== 0) return;
+      if (event.button !== 0 || away()) return;
       dragged = false;
       drag = { id: event.pointerId, x: event.clientX, y: event.clientY, rx: state.rx, rz: state.rz, touch: event.pointerType !== "mouse" };
     });
@@ -495,6 +503,435 @@
     const index = hint && Date.now() - hint.t < 8000 ? featured.indexOf(hint.key) : -1;
     if (index >= 0) select(index);
   }
+
+  /* ---------- One stack, one story ----------
+     On wide screens the drawing does not just scroll away: it turns into the explorer's model,
+     travelling to wherever the stage is (the middle column from 1280px, under the systems from
+     960px). From the first few pixels of scroll until the stage settles under the header, a
+     copy of the four plates (aria-hidden, inert, never focusable or clickable) lies exactly over the
+     drawing, and with the scroll each plate tips back, turns and squares into a floor until it
+     lies exactly over the stage's own stack, which then takes over. The copy is built and the
+     still parts of both figures measured while the page is idle (again after a resize); the
+     start of the scroll only reads what can change from moment to moment (the drawing's lean,
+     the model's angle). On scroll, in one animation frame, only transforms and opacity change,
+     written on the few elements that move and only when they change, so a frame lays nothing
+     out. The real figures stay in the page throughout, only transparent. Scrolling back plays
+     it back; a fast scroll or a jump just lands where it lands. Reduced motion, narrower
+     layouts, a focused hero plate and a device too slow for it keep the two figures as they are
+     (narrower layouts fold the drawing in place instead, below). */
+  morph = (() => {
+    const heroVisual = document.querySelector("[data-hero-visual]");
+    const heroPlates = heroStack ? [...heroStack.querySelectorAll(".hero-stack > .plate")] : [];
+    const spin = stack?.querySelector(".stack-spin");
+    const header = document.querySelector("[data-header]");
+    // Without DOMMatrix (a very old browser) both figures simply stay as they are.
+    if (!hero || !heroStack || !heroVisual || !stage || !scene || !stack || !spin || heroPlates.length !== planes.length || typeof DOMMatrix !== "function") return null;
+    const wide = matchMedia("(min-width: 960px) and (min-height: 560px)");
+    const num = value => parseFloat(value) || 0;
+
+    // The layer for the copy, made the first time it is built (never, on a phone or with reduced
+    // motion). In the stage, under its caption and controls: fixed to the window, it is not
+    // clipped by the stage, and it paints above the stage's background but below everything written.
+    let layer = null;
+    let plates = [];
+    function makeLayer() {
+      layer = Object.assign(document.createElement("div"), { className: "stack-morph", inert: true });
+      layer.setAttribute("aria-hidden", "true");
+      plates = heroPlates.map((_, i) => {
+        const plate = Object.assign(document.createElement("div"), { className: "morph-plate" });
+        plate.style.zIndex = String(planes.length - i);
+        plate.innerHTML = '<div class="morph-face"></div><div class="morph-card"></div><div class="plane"></div>';
+        layer.append(plate);
+        return plate;
+      });
+      stage.prepend(layer);
+    }
+
+    let geo = null;
+    let span = null;
+    let passed = false; // this pass through the range goes by without the change
+    let active = false;
+    let frame = 0;
+    let focusHeld = false;
+    let arriving = 0;
+
+    // A layout box without the element's pose: drop the transform, read, put it back without a
+    // transition (three style passes in one task, so nothing is ever painted flat).
+    function unposed(el, flatClass, read) {
+      el.classList.add("is-steady", flatClass);
+      const value = read();
+      el.classList.remove(flatClass);
+      void el.offsetWidth;
+      el.classList.remove("is-steady");
+      return value;
+    }
+
+    // The copies: each card with the drawing's plate content, each floor with the stage's plane.
+    // They are built while the page is idle (again after a resize or a new system), so the start
+    // of the scroll only has to pose them, and a frame of scroll only moves and fades them.
+    let parts = [];
+    let built = null;
+    // A device that cannot build the copy quickly will not move it smoothly either. The first
+    // build (cloning, then the copy's first styles and layout) takes about 10 ms on an ordinary
+    // laptop. Where it takes longer than about three frames, the copy is built once more a moment
+    // later (warm, that is about half as long), and if that one is still slow, the figures stay
+    // as they are, as with reduced motion. The decision falls before the scroll that needs it.
+    const BUDGET = { first: 45, again: 30 };
+    let builds = 0;
+    let suspect = false;
+    let slow = false;
+    let bx = .5;
+    let by = .5;
+    function build() {
+      const began = performance.now();
+      if (!layer) makeLayer();
+      // Every read first, then every write, so the browser lays the page out once. Sizes come
+      // from the computed width and height (layout sizes, without any pose), so nothing in the
+      // page is touched while it is idle.
+      const gap = getComputedStyle(heroStack).getPropertyValue("--gap");
+      const S = num(getComputedStyle(stack).width);
+      const reads = heroPlates.map(real => {
+        const cs = getComputedStyle(real);
+        const list = real.querySelector(".plate-chips");
+        return { w: num(cs.width), h: num(cs.height), padding: cs.padding, gap: cs.rowGap, list: list ? { x: list.offsetLeft, y: list.offsetTop } : null };
+      });
+      bx = num(stack.style.getPropertyValue("--bx")) / 100 || .5;
+      by = num(stack.style.getPropertyValue("--by")) / 100 || .5;
+      layer.style.setProperty("--s", `${S}px`);
+      layer.style.setProperty("--morph-gap", gap);
+      parts = heroPlates.map((real, i) => {
+        const [face, card, plane] = plates[i].children;
+        const { w, h } = reads[i];
+        Object.assign(face.style, { width: `${w}px`, height: `${h}px` });
+        Object.assign(card.style, { left: `${-w / 2}px`, top: `${-h / 2}px`, width: `${w}px`, padding: reads[i].padding, gap: reads[i].gap });
+        card.replaceChildren(...[...real.children].filter(child => !child.classList.contains("plate-wire")).map(child => child.cloneNode(true)));
+        card.querySelectorAll("a, [id]").forEach(el => { el.removeAttribute("id"); if (el.tagName === "A") el.replaceWith(Object.assign(document.createElement("span"), { className: el.className, innerHTML: el.innerHTML })); });
+        const list = card.querySelector(".plate-chips");
+        const chips = list && reads[i].list ? { el: list, ...reads[i].list } : null;
+        plane.className = `plane${planes[i].classList.contains("is-active") ? " is-active" : ""}`;
+        plane.innerHTML = planes[i].innerHTML;
+        const detail = Object.assign(document.createElement("div"), { className: "morph-detail" });
+        detail.append(...plane.querySelectorAll(".socket, .plane-tag"));
+        plane.append(detail);
+        return { face, plane, detail, chips, w, h, texts: [...card.children].filter(child => !child.classList.contains("plate-chips")) };
+      });
+      built = { S };
+      // Already in the drawing's look, so the start of the scroll only has to pose the plates.
+      const rest = looks(0);
+      parts.forEach(part => shape(part, part.w, part.h, rest));
+      dress();
+      void layer.offsetWidth;
+      const took = performance.now() - began;
+      builds++;
+      if (builds === 1) suspect = took > BUDGET.first;
+      else if (builds === 2 && suspect) slow = took > BUDGET.again;
+    }
+    // Built for the figures as they are now (to within half a pixel)?
+    const fits = () => built && Math.abs(built.S - geo.S) < .5 && geo.from.every((plate, i) => Math.abs(plate.w - parts[i].w) < .5 && Math.abs(plate.h - parts[i].h) < .5);
+    // At the start, each card's face as the drawing shows it at that moment (a hovered plate is lit).
+    function dress() {
+      const faces = heroPlates.map(real => getComputedStyle(real)).map(cs => [cs.borderTopColor, cs.backgroundColor, cs.boxShadow]);
+      parts.forEach(({ face }, i) => { put(face, "border-color", faces[i][0]); put(face, "background-color", faces[i][1]); put(face, "box-shadow", faces[i][2]); });
+    }
+
+    // A style is written only when its value changes, so a frame touches only what moves.
+    const written = new WeakMap();
+    function put(el, property, value) {
+      let last = written.get(el);
+      if (!last) written.set(el, last = {});
+      if (last[property] === value) return;
+      last[property] = value;
+      el.style.setProperty(property, value);
+    }
+
+    // What the scroll does not change: the figures' layout boxes without their pose, both
+    // perspectives, where the stage is. Measured while the page is idle, so the start of the
+    // scroll does not have to, and again after a resize. Not while either figure is in a
+    // transition (measuring sets it steady, which would cut the transition short), and not while
+    // the stage is stuck under the header (its place in the page would read wrong).
+    let still = null;
+    // Whether this browser draws the stage's floors apart in depth. Some engines accept the
+    // stack's preserve-3d (CSS.supports and the computed style both say so) but lay all four
+    // floors on one plane; Playwright's WebKit build does. The copy's four floors could not land
+    // on one, so there the change stands aside, and both figures stay as they are. Read from the
+    // floors themselves, so it follows what the browser actually does, not what it claims.
+    let flat = false;
+    const inTransition = el => typeof CSSTransition === "function" && el.getAnimations?.({ subtree: true }).some(animation => animation instanceof CSSTransition);
+    const settled = () => !inTransition(heroStack) && !inTransition(stack);
+    function measureStill() {
+      const x = scrollX;
+      const y = scrollY;
+      const visualBox = heroVisual.getBoundingClientRect();
+      const visualStyle = getComputedStyle(heroVisual);
+      const [vox, voy] = visualStyle.perspectiveOrigin.split(" ").map(num);
+      const figStyle = getComputedStyle(heroStack);
+      const [ftx = 0, fty = 0] = figStyle.translate === "none" ? [] : figStyle.translate.split(" ").map(num);
+      const tilt = { x: num(figStyle.getPropertyValue("--tilt-x")), y: num(figStyle.getPropertyValue("--tilt-y")), z: num(figStyle.getPropertyValue("--tilt-z")) };
+      const sceneBox = scene.getBoundingClientRect();
+      const sceneStyle = getComputedStyle(scene);
+      const [sox, soy] = sceneStyle.perspectiveOrigin.split(" ").map(num);
+      const { fig, boxes } = unposed(heroStack, "is-measuring", () => ({ fig: heroStack.getBoundingClientRect(), boxes: heroPlates.map(plate => plate.getBoundingClientRect()) }));
+      const stackBox = unposed(stack, "is-flat", () => stack.getBoundingClientRect());
+      const S = stackBox.width;
+      stack.classList.add("is-steady");
+      const tops = planes.map(plane => plane.getBoundingClientRect().top);
+      stack.classList.remove("is-steady");
+      flat = Math.max(...tops) - Math.min(...tops) < Math.max(1, S * .01);
+      still = {
+        tilt, S,
+        figure: { x: fig.left + ftx + fig.width / 2 + x, y: fig.top + fty + fig.height / 2 + y },
+        plates: boxes.map(box => ({ x: box.left + box.width / 2 - fig.left - fig.width / 2, y: box.top + box.height / 2 - fig.top - fig.height / 2, w: box.width, h: box.height })),
+        model: { x: stackBox.left + S / 2 + x, y: stackBox.top + S / 2 + y },
+        P0: num(visualStyle.perspective), P1: num(sceneStyle.perspective),
+        O0: { x: visualBox.left + vox + x, y: visualBox.top + voy + y },
+        O1: { x: sceneBox.left + sox + x, y: sceneBox.top + soy + y }
+      };
+    }
+
+    // What can change from one moment to the next, read in one go at the start: the lean the
+    // pointer gives the drawing, a plate lifted under the pointer, the view the model is turned
+    // to, the angle it has drifted to and the spacing of its floors.
+    function measure() {
+      if (!still) measureStill();
+      const lifts = heroPlates.map(plate => {
+        const cs = getComputedStyle(plate);
+        const m = cs.transform === "none" ? new DOMMatrix() : new DOMMatrix(cs.transform);
+        const [tx = 0, ty = 0, tz = 0] = cs.translate === "none" ? [] : cs.translate.split(" ").map(num);
+        return { x: m.m41 + tx, y: m.m42 + ty, z: m.m43 + tz };
+      });
+      const stackStyle = getComputedStyle(stack);
+      const rx = num(stackStyle.getPropertyValue("--rx")) || VIEW.rx;
+      const rz = num(stackStyle.getPropertyValue("--rz")) || VIEW.rz;
+      const turn = new DOMMatrix(getComputedStyle(spin).transform);
+      const spun = Math.atan2(turn.b, turn.a) * 180 / Math.PI;
+      const floors = planes.map(plane => new DOMMatrix(getComputedStyle(plane).transform).m43);
+      const ax = still.tilt.x + num(heroStack.style.getPropertyValue("--lean-x"));
+      const ay = still.tilt.y + num(heroStack.style.getPropertyValue("--lean-y"));
+      const az = still.tilt.z;
+      const R0 = new DOMMatrix(`rotateX(${ax}deg) rotateY(${ay}deg) rotateZ(${az}deg)`);
+      const R1 = new DOMMatrix(`rotateX(${rx}deg) rotateZ(${rz}deg) rotateZ(${spun}deg)`);
+      const { S, figure, model } = still;
+      geo = {
+        S, P0: still.P0, P1: still.P1, O0: still.O0, O1: still.O1,
+        from: still.plates.map((plate, i) => {
+          const d = R0.transformPoint({ x: plate.x + lifts[i].x, y: plate.y + lifts[i].y, z: lifts[i].z });
+          return { x: figure.x + d.x, y: figure.y + d.y, z: d.z, ax, ay, az, w: plate.w, h: plate.h };
+        }),
+        to: floors.map(z => {
+          const d = R1.transformPoint({ x: 0, y: 0, z });
+          return { x: model.x + d.x, y: model.y + d.y, z: d.z, ax: rx, ay: 0, az: rz + spun, w: S, h: S };
+        })
+      };
+    }
+
+    // Each part of the change has its own stretch of the scroll: the plates turn first, then
+    // square into floors; position and perspective follow the whole way.
+    const stretch = (t, from, to) => { const u = Math.min(1, Math.max(0, (t - from) / (to - from))); return u * u * (3 - 2 * u); };
+    // A linear ramp from 0 to 1 that starts at `from` and climbs at `rate` per unit of progress.
+    const ramp = (t, from, rate) => Math.min(1, Math.max(0, (t - from) * rate)).toFixed(3);
+    // The card's lines go first, its technologies drain into the selected system's socket, the
+    // face gives way to the floor, and the floor's sockets and label come up last.
+    const looks = t => ({
+      standoff: (1 - ramp(t, 0, 8)).toFixed(3),
+      text: (1 - ramp(t, .06, 4.5)).toFixed(3),
+      drain: +ramp(t, .08, 2.6),
+      chip: (1 - ramp(t, .3, 4)).toFixed(3),
+      face: (1 - ramp(t, .3, 3.4)).toFixed(3),
+      floor: ramp(t, .25, 3.4),
+      detail: ramp(t, .6, 3)
+    });
+    // One plate's copy at a size between the card's and the floor's, and a look.
+    function shape(part, w, h, { standoff, text, drain, chip, face, floor, detail }) {
+      put(part.face, "transform", `translate(-50%, -50%) scale(${(w / part.w).toFixed(4)}, ${(h / part.h).toFixed(4)})`);
+      put(part.face, "opacity", face);
+      put(part.face, "--standoff", standoff);
+      part.texts.forEach(el => put(el, "opacity", text));
+      if (part.chips) {
+        const { el, x, y } = part.chips;
+        put(el, "opacity", chip);
+        if (chip !== "0.000") {
+          // The socket, in the list's own coordinates (the card stays the drawing's size), and
+          // the list scaled about it.
+          const sx = ((bx - .5) * w + part.w / 2 - x).toFixed(2);
+          const sy = ((by - .5) * h + part.h / 2 - y).toFixed(2);
+          put(el, "transform", drain ? `translate(${sx}px, ${sy}px) scale(${(1 - drain * .8).toFixed(3)}) translate(${-sx}px, ${-sy}px)` : "none");
+        }
+      }
+      put(part.plane, "transform", `translate(-50%, -50%) scale(${(w / built.S).toFixed(4)}, ${(h / built.S).toFixed(4)})`);
+      put(part.plane, "opacity", floor);
+      put(part.detail, "opacity", detail);
+    }
+    // y and x are read before anything is written in the frame: reading the scroll offset after
+    // a write makes the browser bring styles up to date first.
+    function render(y, x) {
+      if (!span) span = range();
+      const t = Math.min(1, Math.max(0, (y - span.y0) / (span.y1 - span.y0)));
+      const turn = stretch(t, 0, .75);
+      const square = stretch(t, .3, 1);
+      const p = stretch(t, 0, 1);
+      const mix = (a, b, k = p) => a + (b - a) * k;
+      const look = looks(t);
+      put(layer, "perspective", `${mix(geo.P0, geo.P1).toFixed(1)}px`);
+      put(layer, "perspective-origin", `${(mix(geo.O0.x, geo.O1.x) - x).toFixed(2)}px ${(mix(geo.O0.y, geo.O1.y) - y).toFixed(2)}px`);
+      plates.forEach((plate, i) => {
+        const a = geo.from[i];
+        const b = geo.to[i];
+        put(plate, "transform", `translate3d(${(mix(a.x, b.x) - x).toFixed(2)}px, ${(mix(a.y, b.y) - y).toFixed(2)}px, ${mix(a.z, b.z).toFixed(2)}px) rotateX(${mix(a.ax, b.ax, turn).toFixed(3)}deg) rotateY(${mix(a.ay, b.ay, turn).toFixed(3)}deg) rotateZ(${mix(a.az, b.az, turn).toFixed(3)}deg)`);
+        shape(parts[i], mix(a.w, b.w, square), mix(a.h, b.h, square), look);
+      });
+    }
+
+    // Where it runs: from the first few pixels of scroll until the workbench's top reaches the
+    // header, where the stage settles, or until a link to #work lands, if that is a little
+    // earlier (so "View work", the header's Work link and project links always land on the
+    // stage itself). Ending earlier changes nothing at the hand-over: the stage only sticks
+    // once the workbench reaches the header, so until then it is where it was measured.
+    function range() {
+      const top = (el) => el.getBoundingClientRect().top + scrollY - (header?.offsetHeight || 0);
+      const work = document.getElementById("work");
+      // Two pixels to spare, for a landing rounded down.
+      const end = Math.min(top(bench), work ? top(work) : Infinity) - 2;
+      return { y0: Math.min(48, end / 6), y1: end };
+    }
+    // Before it starts, the request trace and the caption leave the drawing over those first
+    // pixels, so only the plates travel.
+    const leadOut = [...heroStack.querySelectorAll(".plate-wire, .fig-cap")];
+    // While the page is idle, the copies are built ahead of the scroll that needs them.
+    let idle = 0;
+    const later = "requestIdleCallback" in window ? fn => requestIdleCallback(fn, { timeout: 1500 }) : fn => setTimeout(fn, 300);
+    function prepare(y) {
+      // A resize may have just cleared the range; find it again.
+      if (!span) span = range();
+      if (idle || (built && (still || y >= span.y1))) return;
+      idle = later(() => {
+        idle = 0;
+        if (active || !allowed()) return;
+        if (!span) span = range();
+        // The still parts first: measuring them also tells whether this browser draws the floors
+        // apart at all, and if it does not, nothing needs building.
+        const pending = !still && scrollY < span.y1;
+        if (pending && settled()) measureStill();
+        if (!allowed()) return;
+        if (!built) build();
+        // One slow build may be a cold start or a passing hiccup: build once more, a moment later.
+        if (suspect && builds === 1) { built = null; idle = setTimeout(() => { idle = 0; if (!active && allowed()) prepare(scrollY); }, 250); return; }
+        // Still in a transition (the stage settles for a moment after load, a plate may be
+        // lifting under the pointer): measure once it is over.
+        if (pending && !still) idle = setTimeout(() => { idle = 0; if (!active && allowed()) prepare(scrollY); }, 600);
+      });
+    }
+
+    const allowed = () => wide.matches && !motionQuery.matches && !focusHeld && !slow && !flat && root.classList.contains("workbench-ready");
+
+    function start() {
+      // Not built ahead (a scroll straight after load): build now, and if that was slow, let this
+      // pass go by without the change rather than run it badly (see BUDGET).
+      if (!built) {
+        build();
+        if (suspect) return false;
+      }
+      // The stage's stack holds still while it is being stood in for, so it is found exactly
+      // where the copy left it.
+      stage.classList.add("is-held");
+      measure();
+      if (flat) { stage.classList.remove("is-held"); return false; }
+      if (!fits()) build();
+      dress();
+      active = true;
+      root.classList.add("is-morphing");
+      return true;
+    }
+    function stop(y) {
+      const landed = !!span && y >= span.y1;
+      active = false;
+      root.classList.remove("is-morphing");
+      stage.classList.remove("is-held");
+      if (landed) {
+        clearTimeout(arriving);
+        stack.classList.add("is-arriving");
+        arriving = setTimeout(() => stack.classList.remove("is-arriving"), 800);
+      }
+    }
+
+    /* Narrower layouts (the explorer's stage far below the selected system): the same gesture,
+       in place. As the drawing leaves the screen its cards tip back and part into floors
+       (.is-folding), and as the stage comes into view its floors close up from apart and the cut
+       is drawn through them (.is-settling). Both follow the scroll and run backwards with it. */
+    let folds = null;
+    // The elements that move, written directly (the tilt and the floor spacing stay the CSS's own).
+    const fading = [...heroStack.querySelectorAll(".hero-stack > .plate .plate-chips, .hero-stack > .plate .plate-title")];
+    const beams = [...stack.querySelectorAll(".beam")];
+    function pose(f, s) {
+      put(heroStack, "transform", f ? `rotateX(calc(var(--tilt-x) + ${(f * 32).toFixed(2)}deg)) rotateY(calc(var(--tilt-y) * ${(1 - f).toFixed(3)})) rotateZ(calc(var(--tilt-z) - ${(f * 22).toFixed(2)}deg))` : "");
+      heroPlates.forEach((plate, i) => put(plate, "transform", f ? `translateZ(${(1 + (3 - i) * f * 22).toFixed(2)}px)` : ""));
+      fading.forEach(el => put(el, "opacity", f ? Math.max(0, 1 - f * 1.4).toFixed(3) : ""));
+      planes.forEach(plane => put(plane, "transform", s ? `translateZ(calc(var(--z) * var(--gap) * ${(1 + (1 - s) * 1.1).toFixed(4)}))` : ""));
+      beams.forEach(beam => put(beam, "scale", s ? `1 1 ${s.toFixed(3)}` : ""));
+    }
+    const stretchOf = (value, from, length) => Math.min(1, Math.max(0, (value - from) / length));
+    function fold(y) {
+      if (!folds) {
+        const fig = unposed(heroStack, "is-measuring", () => heroStack.getBoundingClientRect());
+        const box = stage.getBoundingClientRect();
+        folds = { top: fig.top + y, height: fig.height, stage: box.top + y };
+      }
+      const headerH = header?.offsetHeight || 0;
+      const f = stretchOf(y + headerH, folds.top + folds.height * .35, folds.height * .65);
+      const s = stretchOf(y + innerHeight, folds.stage, innerHeight * .55);
+      const settles = s > 0 && s < 1;
+      heroStack.classList.toggle("is-folding", f > 0);
+      stage.classList.toggle("is-settling", settles);
+      pose(f > 0 ? f : 0, settles ? s : 0);
+    }
+    function unfold() {
+      pose(0, 0);
+      heroStack.classList.remove("is-folding");
+      stage.classList.remove("is-settling");
+    }
+
+    function update() {
+      frame = 0;
+      const y = scrollY;
+      const x = scrollX;
+      const calm = motionQuery.matches || !root.classList.contains("workbench-ready");
+      if (!wide.matches && !calm) fold(y);
+      else unfold();
+      if (!allowed()) {
+        if (active) stop(0);
+        leadOut.forEach(el => put(el, "opacity", ""));
+        return;
+      }
+      if (!span) span = range();
+      const inside = y > span.y0 && y < span.y1;
+      if (!inside) passed = false;
+      if (inside && !active && !passed) passed = !start();
+      else if (!inside && active) stop(y);
+      // A pass that goes by without the change keeps the whole drawing.
+      const lead = passed ? "" : (1 - Math.min(1, Math.max(0, y / span.y0))).toFixed(3);
+      leadOut.forEach(el => put(el, "opacity", lead));
+      if (active) render(y, x);
+      else prepare(y);
+    }
+    const schedule = () => { if (!frame) frame = requestAnimationFrame(update); };
+    const remeasure = () => { span = null; folds = null; built = null; still = null; if (active) { measure(); build(); dress(); } schedule(); };
+
+    addEventListener("scroll", schedule, { passive: true });
+    wide.addEventListener?.("change", remeasure);
+    motionQuery.addEventListener?.("change", schedule);
+    if ("ResizeObserver" in window) {
+      const observer = new ResizeObserver(remeasure);
+      observer.observe(hero);
+      observer.observe(bench);
+    }
+    document.fonts?.ready.then(remeasure);
+    // A keyboard visitor on a hero plate sees the drawing itself, wherever the page is.
+    heroStack.addEventListener("focusin", () => { focusHeld = true; schedule(); });
+    heroStack.addEventListener("focusout", () => { focusHeld = false; schedule(); });
+    addEventListener("pagehide", () => { if (active) stop(0); });
+    schedule();
+    // A new system, layer or view while it runs: copy the floors again, and find the stack anew.
+    return { sync() { built = null; if (active) { measure(); build(); dress(); render(scrollY, scrollX); } } };
+  })();
 
   bench.classList.add("wb-ready");
   select(0, { remember: false });
