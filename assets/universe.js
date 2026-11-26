@@ -26,6 +26,7 @@
   "use strict";
 
   const DATA = "%UNIVERSE_DATA%";
+  const STYLES = "%UNIVERSE_CSS%"; // assets/universe.css, minified
   const NS = "http://www.w3.org/2000/svg";
   const GROUND = -170;
   const HOME = { yaw: .31, pitch: .42, zoom: 1 };
@@ -38,6 +39,10 @@
   const r1 = (value) => Math.round(value * 10) / 10;
   const esc = (value) => String(value).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
   const degrees = (radians) => Math.round(radians * 180 / Math.PI);
+  // The camera's arrows, drawn rather than set in type: the curved ones are in few fonts, and the
+  // browser's search for one that has them made the view's first layout three times as long.
+  const icon = (d) => `<svg viewBox="0 0 16 16" aria-hidden="true" focusable="false"><path d="${d}"/></svg>`;
+  const ICON = { left: icon("M12.5 10A4.5 4.5 0 0 0 3.5 10M1.5 8 3.5 10.5 5.5 8"), right: icon("M3.5 10A4.5 4.5 0 0 1 12.5 10M10.5 8 12.5 10.5 14.5 8"), up: icon("M8 13V3M4.5 6.5 8 3l3.5 3.5"), down: icon("M8 3v10M4.5 9.5 8 13l3.5-3.5") };
 
   // An attribute is written only when its value changes.
   const written = new WeakMap();
@@ -48,6 +53,11 @@
       const value = String(attrs[name]);
       if (last[name] !== value) { last[name] = value; el.setAttribute(name, value); }
     }
+  }
+  // The drawing's hot path: one attribute, written only when its value changes (kept on the element).
+  function attr(el, name, value) {
+    const last = el.__uv || (el.__uv = {});
+    if (last[name] !== value) { last[name] = value; el.setAttribute(name, value); }
   }
   function svgEl(tag, attrs, parent) {
     const el = document.createElementNS(NS, tag);
@@ -69,7 +79,7 @@
     const state = { selected: listed[0].key, filter: "all", lit: null, all: false };
     const cam = { ...HOME };
     const goal = { ...HOME };
-    const view = { w: 0, h: 0, k: 1, narrow: false };
+    const view = { w: 0, h: 0, k: 1, oy: 0, narrow: false };
     const reduced = () => motion.matches;
     const fine = matchMedia("(hover: hover) and (pointer: fine)").matches;
     let shown = false;
@@ -78,7 +88,15 @@
     let frame = 0;
     let last = 0;
     let dragging = false; // a drag on the map is under way
+    let lean = false; // the lighter drawing, while the camera moves on a slow device
 
+    // The view's styles, added once, before anything of it exists.
+    if (!document.querySelector("style[data-uv-styles]")) {
+      const style = document.createElement("style");
+      style.setAttribute("data-uv-styles", "");
+      style.textContent = STYLES;
+      document.head.append(style);
+    }
     shell.querySelector("[data-uv-loading]")?.remove();
 
     /* ---------- The list beside the map (wide screens) ---------- */
@@ -94,15 +112,15 @@
     map.setAttribute("aria-label", "Project universe");
     map.innerHTML = `<div class="uv-bar">
         <label class="uv-jump"><span class="uv-k">Project</span><select data-uv-jump>${DATA.domains.map((domain) => `<optgroup label="${esc(domain.name)}">${listed.filter((project) => project.domain === domain.id).map((project) => `<option value="${project.key}">${esc(project.name)}</option>`).join("")}</optgroup>`).join("")}</select></label>
-        <div class="uv-filters" role="group" aria-label="Show one domain">${[{ id: "all", name: "All projects" }, ...DATA.domains].map((domain) => `<button type="button" class="uv-chip" data-uv-filter="${domain.id}" data-domain="${domain.id}" aria-pressed="${domain.id === "all"}"><i class="uv-dot" aria-hidden="true"></i>${esc(domain.name)}</button>`).join("")}</div>
+        <div class="uv-filters" role="group" aria-label="Show one domain">${[{ id: "all", name: "All" }, ...DATA.domains].map((domain) => `<button type="button" class="uv-chip" data-uv-filter="${domain.id}" data-domain="${domain.id}" aria-pressed="${domain.id === "all"}"><i class="uv-dot" aria-hidden="true"></i>${esc(domain.name)}</button>`).join("")}</div>
       </div>
       <div class="uv-hud"><p class="uv-count" data-uv-count></p><button type="button" class="uv-clear" data-uv-clear hidden>Clear highlight</button><p class="uv-cam" data-uv-cam aria-hidden="true"></p></div>
       <div class="uv-stage" data-uv-stage></div>
       <div class="uv-camera" role="group" aria-label="Camera">
-        <button type="button" class="uv-cbtn" data-uv-turn="-1" aria-label="Orbit left"><span aria-hidden="true">↶</span></button>
-        <button type="button" class="uv-cbtn" data-uv-turn="1" aria-label="Orbit right"><span aria-hidden="true">↷</span></button>
-        <button type="button" class="uv-cbtn" data-uv-tilt="1" aria-label="View from higher"><span aria-hidden="true">↑</span></button>
-        <button type="button" class="uv-cbtn" data-uv-tilt="-1" aria-label="View from lower"><span aria-hidden="true">↓</span></button>
+        <button type="button" class="uv-cbtn" data-uv-turn="-1" aria-label="Orbit left">${ICON.left}</button>
+        <button type="button" class="uv-cbtn" data-uv-turn="1" aria-label="Orbit right">${ICON.right}</button>
+        <button type="button" class="uv-cbtn" data-uv-tilt="1" aria-label="View from higher">${ICON.up}</button>
+        <button type="button" class="uv-cbtn" data-uv-tilt="-1" aria-label="View from lower">${ICON.down}</button>
         <label class="uv-zoom"><span class="uv-k">Zoom</span><input type="range" min="${ZOOM[0] * 100}" max="${ZOOM[1] * 100}" step="1" value="100" data-uv-zoom></label>
         <button type="button" class="uv-cbtn uv-text" data-uv-all aria-pressed="false">All connections</button>
         <button type="button" class="uv-cbtn uv-text" data-uv-focus>Focus</button>
@@ -153,34 +171,43 @@
     svgEl("stop", { offset: "0", class: "uv-glow-in" }, glow);
     svgEl("stop", { offset: "1", class: "uv-glow-out" }, glow);
     const grid = svgEl("path", { class: "uv-grid" }, svg);
-    const guides = [115, 210, 280].map((radius, i) => ({ radius, el: svgEl("path", { class: `uv-guide${i === 2 ? " is-outer" : ""}` }, svg) }));
+    // The circular guides: the two inner ones in one path, the dashed outer one in another.
+    const guideInner = svgEl("path", { class: "uv-guide" }, svg);
+    const guideOuter = svgEl("path", { class: "uv-guide is-outer" }, svg);
+    const SEGMENTS = 60; // a guide's segments: under a pixel from a true circle, even zoomed in
+    const RING = Array.from({ length: SEGMENTS + 1 }, (_, j) => [Math.cos(j / SEGMENTS * Math.PI * 2), Math.sin(j / SEGMENTS * Math.PI * 2)]);
     const linkLayer = svgEl("g", { class: "uv-links" }, svg);
     const nodeLayer = svgEl("g", { class: "uv-nodes" }, svg);
     const labelLayer = svgEl("g", { class: "uv-labels" }, svg);
     const links = DATA.connections.map((link) => {
       const g = svgEl("g", { class: "uv-link" }, linkLayer);
-      return { ...link, g, halo: svgEl("line", { class: "uv-halo" }, g), line: svgEl("line", { class: "uv-line" }, g), dot: null, run: null, ends: "" };
+      return { ...link, g, halo: svgEl("path", { class: "uv-halo" }, g), line: svgEl("path", { class: "uv-line" }, g), dot: null, run: null, ends: "" };
     });
+    // A node: its stem and its foot on the ground, and its body (the selected project's glow and
+    // dashed ring, the cube, the target under the pointer), moved as one by its transform. The
+    // cube is drawn once, at the reference's size, and scaled with its distance; its edges keep
+    // their width (non-scaling stroke).
+    const CUBE = { left: "-8.5,-3.23 0,1.87 0,8.5 -8.5,3.4", right: "0,1.87 8.5,-3.23 8.5,3.4 0,8.5", top: "0,-8.5 8.5,-3.23 0,1.87 -8.5,-3.23" };
     const nodes = new Map(projects.map((project) => {
-      const g = svgEl("g", { class: "uv-node", "data-key": project.key, "data-domain": project.domain });
-      return [project.key, {
-        g,
-        stem: svgEl("line", { class: "uv-stem" }, g),
-        foot: svgEl("ellipse", { class: "uv-foot", rx: 10, ry: 3.5 }, g),
-        glow: svgEl("circle", { class: "uv-halo-glow", r: 48 }, g),
-        ring: svgEl("circle", { class: "uv-ring" }, g),
-        left: svgEl("polygon", { class: "uv-face uv-left" }, g),
-        right: svgEl("polygon", { class: "uv-face uv-right" }, g),
-        top: svgEl("polygon", { class: "uv-face uv-top" }, g),
-        hit: svgEl("circle", { class: "uv-hit" }, g)
-      }];
+      const g = svgEl("g", { class: "uv-node", "data-key": project.key, "data-domain": project.domain }, nodeLayer);
+      const stem = svgEl("path", { class: "uv-stem" }, g);
+      const foot = svgEl("ellipse", { class: "uv-foot", rx: 10, ry: 3.5 }, g);
+      const body = svgEl("g", { class: "uv-body" }, g);
+      svgEl("circle", { class: "uv-halo-glow", r: 48 }, body);
+      const ring = svgEl("circle", { class: "uv-ring", r: 23 }, body);
+      const cube = svgEl("g", { class: "uv-cube" }, body);
+      for (const face of ["left", "right", "top"]) svgEl("polygon", { class: `uv-face uv-${face}`, points: CUBE[face] }, cube);
+      const hit = svgEl("circle", { class: "uv-hit" }, body);
+      return [project.key, { g, stem, foot, body, ring, cube, hit }];
     }));
+    // A label: its tag and name, moved as one by its transform, and the tie back to its node.
     const labels = new Map(projects.map((project) => {
-      const g = svgEl("g", { class: "uv-label", "data-key": project.key, "data-domain": project.domain }, labelLayer);
-      const label = { g, tie: svgEl("line", { class: "uv-tie" }, g), tag: svgEl("rect", { class: "uv-tag", rx: 3, height: 22 }, g), text: svgEl("text", { class: "uv-name" }, g), spot: -1 };
+      const g = svgEl("g", { class: "uv-label is-hidden", "data-key": project.key, "data-domain": project.domain }, labelLayer);
+      const label = { g, tie: svgEl("path", { class: "uv-tie" }, g), tag: svgEl("rect", { class: "uv-tag", rx: 3, height: 22 }, g), text: svgEl("text", { class: "uv-name", x: 9 }, g), spot: -1 };
       label.text.textContent = project.name;
       return [project.key, label];
     }));
+    let topLabel = null; // the label drawn last, over the others: the selected project's
 
     // A label's width, from the text as the page's monospace face sets it.
     const measure = document.createElement("canvas").getContext("2d");
@@ -195,42 +222,49 @@
       return widths.get(id);
     }
 
-    function project3d([x, y, z]) {
-      const cy = Math.cos(cam.yaw), sy = Math.sin(cam.yaw), cp = Math.cos(cam.pitch), sp = Math.sin(cam.pitch);
+    // The camera's rotation, worked out once a drawing; a point then projects with a few products.
+    let cy = 1, sy = 0, cp = 1, sp = 0;
+    function aim() { cy = Math.cos(cam.yaw); sy = Math.sin(cam.yaw); cp = Math.cos(cam.pitch); sp = Math.sin(cam.pitch); }
+    function project3d(x, y, z) {
       const x1 = x * cy - z * sy;
       const z1 = x * sy + z * cy;
       const y1 = y * cp - z1 * sp;
       const z2 = y * sp + z1 * cp;
       const s = DEPTH / (DEPTH - z2) * cam.zoom * view.k;
-      return { x: view.w / 2 + x1 * s, y: view.h / 2 - y1 * s, z: z2, s };
+      return { x: view.w / 2 + x1 * s, y: view.h / 2 + view.oy - y1 * s, z: z2, s };
+    }
+    function circle(radius) {
+      let d = "";
+      for (let j = 0; j < RING.length; j++) {
+        const p = project3d(RING[j][0] * radius, GROUND, RING[j][1] * radius);
+        d += `${j ? "L" : "M"}${r1(p.x)} ${r1(p.y)}`;
+      }
+      return d;
     }
 
     const isOut = (key) => state.filter !== "all" && byKey.get(key).domain !== state.filter;
     const litKeys = () => (state.lit ? sharing(state.lit.kind, state.lit.id) : null);
     let nodeOrder = "";
-    let labelOrder = "";
+    let shownCam = "";
 
+    // The drawing, from the camera as it is. Everything that moves is positioned by one attribute
+    // each (a transform, or a path), written only when it changes; nothing is rebuilt, and only
+    // the nodes whose depth order changed move in the document.
     function draw() {
       if (!shown || !view.w || !view.h) return;
       const W = view.w, H = view.h;
+      aim();
       // The ground: a grid and three circular guides.
       let d = "";
       for (let k = -280; k <= 280; k += 40) {
-        const a = project3d([k, GROUND, -260]), b = project3d([k, GROUND, 260]), c = project3d([-280, GROUND, k]), e = project3d([280, GROUND, k]);
+        const a = project3d(k, GROUND, -260), b = project3d(k, GROUND, 260), c = project3d(-280, GROUND, k), e = project3d(280, GROUND, k);
         d += `M${r1(a.x)} ${r1(a.y)}L${r1(b.x)} ${r1(b.y)}M${r1(c.x)} ${r1(c.y)}L${r1(e.x)} ${r1(e.y)}`;
       }
-      set(grid, { d });
-      for (const { radius, el } of guides) {
-        let path = "";
-        for (let j = 0; j <= 72; j++) {
-          const angle = j / 72 * Math.PI * 2;
-          const p = project3d([Math.cos(angle) * radius, GROUND, Math.sin(angle) * radius]);
-          path += `${j ? "L" : "M"}${r1(p.x)} ${r1(p.y)}`;
-        }
-        set(el, { d: path });
-      }
+      attr(grid, "d", d);
+      attr(guideInner, "d", circle(115) + circle(210));
+      attr(guideOuter, "d", circle(280));
 
-      const points = new Map(projects.map((project) => [project.key, project3d(project.position)]));
+      const points = new Map(projects.map((project) => [project.key, project3d(project.position[0], project.position[1], project.position[2])]));
       const lit = litKeys();
       set(svg, { class: `uv-svg${lit ? " is-lit" : ""}${dragging ? " is-dragging" : ""}` });
 
@@ -244,36 +278,41 @@
         // The signal runs from the selected project outward.
         const from = points.get(on && link.b === state.selected ? link.b : link.a);
         const to = points.get(on && link.b === state.selected ? link.a : link.b);
-        const line = { x1: r1(from.x), y1: r1(from.y), x2: r1(to.x), y2: r1(to.y) };
-        set(link.halo, line);
-        set(link.line, line);
-        if (on) signal(link, reduced() ? null : line);
+        const ends = [r1(from.x), r1(from.y), r1(to.x), r1(to.y)];
+        const path = `M${ends[0]} ${ends[1]}L${ends[2]} ${ends[3]}`;
+        attr(link.halo, "d", path);
+        attr(link.line, "d", path);
+        if (on) signal(link, reduced() ? null : ends);
       }
 
       // Nodes, far to near.
       const order = [...points.entries()].sort((a, b) => a[1].z - b[1].z).map(([key]) => key);
       const orderKey = order.join();
-      if (orderKey !== nodeOrder) { order.forEach((key) => nodeLayer.append(nodes.get(key).g)); nodeOrder = orderKey; }
+      if (orderKey !== nodeOrder) {
+        let next = nodeLayer.firstChild;
+        for (const key of order) {
+          const g = nodes.get(key).g;
+          if (g === next) next = next.nextSibling;
+          else nodeLayer.insertBefore(g, next);
+        }
+        nodeOrder = orderKey;
+      }
+      const size = view.narrow ? .9 : 1;
       for (const project of projects) {
         const key = project.key;
         const node = nodes.get(key);
         const pt = points.get(key);
         const sel = key === state.selected;
-        const out = isOut(key);
-        set(node.g, { class: `uv-node${sel ? " is-sel" : ""}${out ? " is-out" : ""}${lit && lit.includes(key) ? " is-lit" : ""}` });
-        const foot = project3d([project.position[0], GROUND, project.position[2]]);
-        set(node.stem, { x1: r1(foot.x), y1: r1(foot.y), x2: r1(pt.x), y2: r1(pt.y) });
-        set(node.foot, { cx: r1(foot.x), cy: r1(foot.y) });
-        const r = (view.narrow ? 9 : 10) * clamp(pt.s, .7, 1.35);
-        const s = r * .85;
-        const top = [pt.x, pt.y - s], right = [pt.x + s, pt.y - s * .38], bottom = [pt.x, pt.y + s * .22], left = [pt.x - s, pt.y - s * .38];
-        const down = ([x, y]) => [x, y + s * .78];
-        const pts = (list) => list.map(([x, y]) => `${r1(x)},${r1(y)}`).join(" ");
-        set(node.left, { points: pts([left, bottom, down(bottom), down(left)]) });
-        set(node.right, { points: pts([bottom, right, down(right), down(bottom)]) });
-        set(node.top, { points: pts([top, right, bottom, left]) });
-        if (sel) { set(node.glow, { cx: r1(pt.x), cy: r1(pt.y) }); set(node.ring, { cx: r1(pt.x), cy: r1(pt.y), r: r1(r + 13) }); }
-        set(node.hit, { cx: r1(pt.x), cy: r1(pt.y), r: r1(Math.max(fine ? 15 : 22, r + 6)) });
+        set(node.g, { class: `uv-node${sel ? " is-sel" : ""}${isOut(key) ? " is-out" : ""}${lit && lit.includes(key) ? " is-lit" : ""}` });
+        const foot = project3d(project.position[0], GROUND, project.position[2]);
+        const x = r1(pt.x), y = r1(pt.y), fx = r1(foot.x), fy = r1(foot.y);
+        attr(node.stem, "d", `M${fx} ${fy}L${x} ${y}`);
+        attr(node.foot, "transform", `translate(${fx} ${fy})`);
+        attr(node.body, "transform", `translate(${x} ${y})`);
+        const q = Math.round(size * clamp(pt.s, .7, 1.35) * 100) / 100;
+        attr(node.cube, "transform", `scale(${q})`);
+        attr(node.hit, "r", Math.round(Math.max(fine ? 15 : 22, 10 * q + 6)));
+        if (sel) attr(node.ring, "r", r1(10 * q + 13));
       }
 
       // Labels: the selected project's first, then near to far, each where it overlaps no other
@@ -282,7 +321,6 @@
       // a domain's few projects), and while highlighting, the highlighted ones.
       const related = new Set(relations(state.selected).map((link) => link.other));
       const placed = [];
-      const drawnLabels = [];
       for (const key of [state.selected, ...order.slice().reverse().filter((other) => other !== state.selected)]) {
         const label = labels.get(key);
         const sel = key === state.selected;
@@ -295,27 +333,34 @@
         const tries = label.spot >= 0 ? [label.spot, ...spots.keys()].filter((i, n, all) => all.indexOf(i) === n) : [...spots.keys()];
         let box = null;
         for (const i of tries) {
-          const candidate = { x: clamp(p.x + spots[i][0], 6, W - w - 6), y: clamp(p.y + spots[i][1], 7, H - h - 7), w, h };
-          const overlaps = placed.some((other) => candidate.x < other.x + other.w + 3 && candidate.x + w + 3 > other.x && candidate.y < other.y + other.h + 3 && candidate.y + h + 3 > other.y);
-          const covers = projects.some((other) => other.key !== key && !isOut(other.key) && (() => { const q = points.get(other.key); return q.x > candidate.x - 6 && q.x < candidate.x + w + 6 && q.y > candidate.y - 6 && q.y < candidate.y + h + 6; })());
-          if (!overlaps && !covers) { box = candidate; label.spot = i; break; }
+          const bx = clamp(p.x + spots[i][0], 6, W - w - 6);
+          const by = clamp(p.y + spots[i][1], 7, H - h - 7);
+          if (placed.some((other) => bx < other.x + other.w + 3 && bx + w + 3 > other.x && by < other.y + other.h + 3 && by + h + 3 > other.y)) continue;
+          let covers = false;
+          for (const other of projects) {
+            if (other.key === key || isOut(other.key)) continue;
+            const q = points.get(other.key);
+            if (q.x > bx - 6 && q.x < bx + w + 6 && q.y > by - 6 && q.y < by + h + 6) { covers = true; break; }
+          }
+          if (!covers) { box = { x: bx, y: by, w, h }; label.spot = i; break; }
         }
         if (!box) {
           if (!sel) { set(label.g, { class: "uv-label is-hidden" }); label.spot = -1; continue; }
           box = { x: clamp(p.x + 14, 6, W - w - 6), y: clamp(p.y - 29, 7, H - h - 7), w, h };
         }
         placed.push(box);
-        drawnLabels.push(key);
+        const bx = r1(box.x), by = r1(box.y);
         set(label.g, { class: `uv-label${sel ? " is-sel" : ""}` });
-        set(label.tie, { x1: r1(p.x), y1: r1(p.y), x2: r1(clamp(p.x, box.x, box.x + w)), y2: r1(clamp(p.y, box.y, box.y + h)) });
-        set(label.tag, { x: r1(box.x), y: r1(box.y), width: r1(w) });
-        set(label.text, { x: r1(box.x + 9), y: r1(box.y + (sel ? 15 : 14.5)) });
+        attr(label.g, "transform", `translate(${bx} ${by})`);
+        attr(label.tie, "d", `M${r1(p.x - bx)} ${r1(p.y - by)}L${r1(clamp(p.x, bx, bx + w) - bx)} ${r1(clamp(p.y, by, by + h) - by)}`);
+        attr(label.tag, "width", r1(w));
+        attr(label.text, "y", sel ? 15 : 14.5);
       }
-      // Drawn in reverse, so the selected label lies on top.
-      const labelKey = drawnLabels.join();
-      if (labelKey !== labelOrder) { drawnLabels.slice().reverse().forEach((key) => labelLayer.append(labels.get(key).g)); labelOrder = labelKey; }
+      // The selected project's label lies over the others (they never overlap one another).
+      if (topLabel !== state.selected) { labelLayer.append(labels.get(state.selected).g); topLabel = state.selected; }
 
-      camText.textContent = `AZ ${((degrees(cam.yaw) % 360) + 360) % 360}° / EL ${degrees(cam.pitch)}°`;
+      const camera = `AZ ${((degrees(cam.yaw) % 360) + 360) % 360}° / EL ${degrees(cam.pitch)}°`;
+      if (camera !== shownCam) { camText.textContent = camera; shownCam = camera; }
     }
 
     // A signal along one of the selected project's connections, outward: a dot the compositor
@@ -326,10 +371,11 @@
         if (link.dot) { link.run.cancel(); link.dot.remove(); link.dot = link.run = null; link.ends = ""; }
         return;
       }
-      const ends = `${line.x1},${line.y1},${line.x2},${line.y2}`;
+      if (lean && link.dot) return; // hidden while the lighter drawing moves; aimed again when it stops
+      const ends = line.join();
       if (ends === link.ends) return;
       link.ends = ends;
-      const frames = [{ transform: `translate(${line.x1}px, ${line.y1}px)` }, { transform: `translate(${line.x2}px, ${line.y2}px)` }];
+      const frames = [{ transform: `translate(${line[0]}px, ${line[1]}px)` }, { transform: `translate(${line[2]}px, ${line[3]}px)` }];
       if (link.dot) { link.run.effect.setKeyframes(frames); return; }
       link.dot = document.createElement("i");
       link.dot.className = "uv-signal";
@@ -339,10 +385,23 @@
     }
 
     /* ---------- The camera ---------- */
+    // A device that cannot redraw the whole map at about 30 frames a second while the camera moves
+    // (measured on the camera's own frames) gets a lighter drawing while it moves, and only then:
+    // dashed lines drawn solid and fainter, the signals waiting. On a capable device it never happens.
+    let pace = 16.7; // ms a camera frame takes, smoothed
+    let slow = false;
+    function setLean(on) {
+      if (on === lean) return;
+      lean = on;
+      stage.classList.toggle("is-lean", on);
+    }
     function tick(time) {
       frame = 0;
-      const dt = clamp((time - last) / 1000, .008, .064);
+      const ms = time - last;
+      const dt = clamp(ms / 1000, .008, .064);
       last = time;
+      pace = pace * .7 + Math.min(ms, 200) * .3;
+      if (pace > 34) slow = true;
       const k = reduced() ? 1 : 1 - Math.exp(-dt / TAU);
       let moving = false;
       for (const name of ["yaw", "pitch", "zoom"]) {
@@ -350,12 +409,13 @@
         if (Math.abs(gap) < .0015) cam[name] = goal[name];
         else { cam[name] += gap * k; moving = true; }
       }
+      setLean(slow && moving);
       draw();
       if (moving && shown) frame = requestAnimationFrame(tick);
     }
     function wake() {
       if (!shown) return;
-      if (reduced() || !onScreen || document.hidden) { cancelAnimationFrame(frame); frame = 0; Object.assign(cam, goal); draw(); return; }
+      if (reduced() || !onScreen || document.hidden) { cancelAnimationFrame(frame); frame = 0; Object.assign(cam, goal); setLean(false); draw(); return; }
       if (!frame) { last = performance.now(); frame = requestAnimationFrame(tick); }
     }
     function syncZoom() { zoomInput.value = String(Math.round(goal.zoom * 100)); }
@@ -524,6 +584,18 @@
       view.narrow = view.w < 520;
       // The reference composition is 760 x 530; a narrow map is drawn a little larger for its width.
       view.k = view.narrow ? .68 * view.w / 440 : .93 * Math.min(view.w / 760, view.h / 530);
+      // Framing: in a map taller than the reference, the constellation is raised so that its
+      // highest label stands about as far below the top as in the reference (14.5% of the
+      // height), but never so far that the ground grid stops reaching the bottom edge. Worked out
+      // from the opening camera, and kept as the map turns.
+      view.oy = 0;
+      const now = { ...cam };
+      Object.assign(cam, HOME);
+      aim();
+      const top = Math.min(...projects.map((project) => project3d(project.position[0], project.position[1], project.position[2]).y)) - 45;
+      const ground = Math.max(...[[-280, -260], [280, -260], [-280, 260], [280, 260]].map(([x, z]) => project3d(x, GROUND, z).y));
+      Object.assign(cam, now);
+      view.oy = Math.min(0, Math.max(view.h - ground, view.h * .145 - top));
       set(svg, { viewBox: `0 0 ${view.w} ${view.h}` });
       draw();
     }
@@ -534,7 +606,7 @@
       const on = seen();
       shell.classList.toggle("is-live", on);
       for (const link of links) if (link.run) { if (on) link.run.play(); else link.run.pause(); }
-      if (!on && frame) { cancelAnimationFrame(frame); frame = 0; Object.assign(cam, goal); draw(); }
+      if (!on && frame) { cancelAnimationFrame(frame); frame = 0; Object.assign(cam, goal); setLean(false); draw(); }
     }
     if ("IntersectionObserver" in window) new IntersectionObserver(([entry]) => { onScreen = entry.isIntersecting; setLive(); }).observe(map);
     document.addEventListener("visibilitychange", setLive);
@@ -554,7 +626,7 @@
       hide() {
         shown = false;
         setLive();
-        if (frame) { cancelAnimationFrame(frame); frame = 0; Object.assign(cam, goal); }
+        if (frame) { cancelAnimationFrame(frame); frame = 0; Object.assign(cam, goal); setLean(false); }
       },
       select
     };

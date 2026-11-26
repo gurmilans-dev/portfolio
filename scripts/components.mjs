@@ -137,9 +137,11 @@ export function headBoot() {
       if (t === "light") document.querySelector('meta[name="theme-color"]').content = "#f4f4f1";
       d.classList.add("js", "nav-pending", "wb-pending", "sim-pending", "inspect-pending");
       try { if (localStorage.getItem("portfolio-also-built") === "folded") d.classList.add("ab-folded"); } catch (e) {}
+      /* A direct link to the explorer's Universe view: its place is laid out from the first frame. */
+      if (location.hash === "#work-universe") d.classList.add("wb-universe-pending");
       document.addEventListener("DOMContentLoaded", function () {
         if (!d.classList.contains("nav-ready")) d.classList.remove("nav-pending");
-        if (!d.classList.contains("workbench-ready")) d.classList.remove("wb-pending", "ab-folded");
+        if (!d.classList.contains("workbench-ready")) d.classList.remove("wb-pending", "ab-folded", "wb-universe-pending");
         if (!d.classList.contains("sims-ready")) d.classList.remove("sim-pending");
         if (!d.classList.contains("inspect-ready")) d.classList.remove("inspect-pending");
       });
@@ -399,12 +401,8 @@ export function workbenchStage() {
    system's file) and Universe (a 3D map of every project and what they share). The switch and the
    Universe exist only with JavaScript: workbench.js reveals the switch, and loads
    assets/universe.js into the shell the first time Universe is chosen. */
-const NUMBER_WORDS = ["Zero", "One", "Two", "Three", "Four", "Five", "Six", "Seven", "Eight", "Nine", "Ten", "Eleven", "Twelve", "Thirteen", "Fourteen", "Fifteen", "Sixteen", "Seventeen", "Eighteen", "Nineteen", "Twenty"];
 export function workbenchMode() {
-  // The section's heading while Universe is shown (workbench.js swaps it in and back).
-  const total = featuredProjects.length + alsoProjects.length;
-  const universeTitle = `${NUMBER_WORDS[total] || total} projects, and what they share.`;
-  return `<div class="wb-mode" role="group" aria-label="Explorer view" data-wb-mode data-universe-title="${universeTitle}" hidden><button type="button" class="wm-btn" data-wb-view="architecture" aria-pressed="true">Architecture</button><button type="button" class="wm-btn" data-wb-view="universe" aria-pressed="false">Universe</button></div>`;
+  return `<div class="wb-mode" role="group" aria-label="Explorer view" data-wb-mode hidden><button type="button" class="wm-btn" data-wb-view="architecture" aria-pressed="true">Architecture</button><button type="button" class="wm-btn" data-wb-view="universe" aria-pressed="false">Universe</button></div>`;
 }
 
 export function workbenchUniverse() {

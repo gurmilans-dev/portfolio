@@ -161,14 +161,15 @@ async function build() {
     const source = await fs.readFile(path.join(ROOT, file), "utf8");
     await fs.writeFile(path.join(OUT, file), minifyJs(source));
   }
-  // Project Universe: its script with its data (scripts/universe-data.mjs) written in, after
-  // minifying, so nothing in the data can be mistaken for a comment. workbench.js loads it only
-  // when a visitor opens the Universe view.
+  // Project Universe: its script with its data (scripts/universe-data.mjs) and its styles
+  // (assets/universe.css) written in, after minifying, so nothing in either can be mistaken for a
+  // comment. workbench.js loads it only when a visitor opens the Universe view.
   {
     const source = minifyJs(await fs.readFile(path.join(ROOT, "assets/universe.js"), "utf8"));
     const data = buildUniverseData({ siteConfig, projects: [...featuredProjects, ...alsoProjects], routeOf: (file) => ROUTES.get(file) });
-    if (source.split('"%UNIVERSE_DATA%"').length !== 2) throw new Error("assets/universe.js: expected one \"%UNIVERSE_DATA%\" placeholder");
-    await fs.writeFile(path.join(OUT, "assets/universe.js"), source.replace('"%UNIVERSE_DATA%"', () => JSON.stringify(data)));
+    const css = minifyCss(await fs.readFile(path.join(ROOT, "assets/universe.css"), "utf8"));
+    for (const token of ['"%UNIVERSE_DATA%"', '"%UNIVERSE_CSS%"']) if (source.split(token).length !== 2) throw new Error(`assets/universe.js: expected one ${token} placeholder`);
+    await fs.writeFile(path.join(OUT, "assets/universe.js"), source.replace('"%UNIVERSE_DATA%"', () => JSON.stringify(data)).replace('"%UNIVERSE_CSS%"', () => JSON.stringify(css)));
   }
 
   const built = new Map();

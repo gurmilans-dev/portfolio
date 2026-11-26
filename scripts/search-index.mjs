@@ -62,14 +62,17 @@ function homePlaces(html, featured, also) {
   // their heading and the names of what they hold.
   const places = [
     { id: "work", title: "Selected work", names: featured },
+    // The explorer's Universe view (opened by its address): described here, since it is drawn
+    // only when opened.
+    { id: "work-universe", title: "Project Universe", text: `A 3D map of all ${featured.length + also.length} projects by engineering domain, with the technologies and engineering concerns they share. ${[...featured, ...also].map((project) => project.shortTitle).join(" · ")}` },
     { id: "also-built", title: "Also built", names: also },
     { id: "experience", title: "Experience" },
     { id: "contact", title: "Contact" }
   ];
-  return places.map(({ id, title, names }) => {
+  return places.map(({ id, title, names, text: given }) => {
     const node = byId(id);
     if (!node) throw new Error(`search index: the homepage has no #${id}`);
-    const text = names ? `${textOf(first(node, (child) => ["h2", "h3"].includes(child.tagName)) || { nodeName: "#text", value: "" })} ${names.map((project) => project.title).join(" · ")}` : textOf(node);
+    const text = given || (names ? `${textOf(first(node, (child) => ["h2", "h3"].includes(child.tagName)) || { nodeName: "#text", value: "" })} ${names.map((project) => project.title).join(" · ")}` : textOf(node));
     return { type: "place", title, url: `/#${id}`, text: clean(text) };
   });
 }

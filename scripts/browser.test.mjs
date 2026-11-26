@@ -1914,7 +1914,7 @@ test("universe: Architecture stays the default; the switch opens all thirteen pr
     assert.deepEqual(await page.evaluate(`["[data-wb-stage]", ".wb-index", ".wb-files"].map((s) => getComputedStyle(document.querySelector(s)).display)`), ["none", "none", "none"], "the architecture steps aside");
     const mapWidth = await page.evaluate(`document.querySelector(".uv-map").getBoundingClientRect().width`);
     assert.ok(mapWidth > stageWidth + 80, `the map (${Math.round(mapWidth)}px) is wider than the model's column (${Math.round(stageWidth)}px)`);
-    assert.equal(await page.evaluate(`document.getElementById("work-title").textContent`), "Thirteen projects, and what they share.");
+    assert.equal(await page.evaluate(`document.getElementById("work-title").textContent`), heading, "the section keeps its heading");
     // The first view names every project, legibly: no label overlaps another, none leaves the map.
     assert.equal(s.labels.length, ALL_KEYS.length, `every project is named: ${s.labels.length}`);
     assert.ok(!overlapping(s.labelBoxes), "no two labels overlap");
@@ -2257,8 +2257,252 @@ test("universe: both themes colour the domains from the theme's own tokens", asy
       await page.goto(`${base}/#work`);
       await page.waitFor(`document.documentElement.classList.contains("workbench-ready")`);
       await openUniverse(page);
-      const colours = await page.evaluate(`(() => { const token = (name) => { const probe = document.createElement("i"); probe.style.color = getComputedStyle(document.documentElement).getPropertyValue(name); document.body.append(probe); const value = getComputedStyle(probe).color; probe.remove(); return value; }; return ["business", "tools", "personal", "learning"].map((domain) => [getComputedStyle(document.querySelector('.uv-node[data-domain="' + domain + '"] .uv-top')).fill, token("--uv-" + domain)]); })()`);
+      const colours = await page.evaluate(`(() => { const token = (name) => { const probe = document.createElement("i"); probe.style.color = getComputedStyle(document.documentElement).getPropertyValue(name); document.body.append(probe); const value = getComputedStyle(probe).color; probe.remove(); return value; }; return ["business", "backend", "tools", "personal", "experiments"].map((domain) => [getComputedStyle(document.querySelector('.uv-node[data-domain="' + domain + '"] .uv-top')).fill, token("--uv-" + domain)]); })()`);
       for (const [fill, token] of colours) assert.equal(fill, token, `${scheme}: a node wears its domain's colour`);
+      assert.deepEqual(page.errors(), []);
+    });
+  }
+});
+
+test("universe: five engineering domains, as configured: the filters, the list's groups and the nodes' colours", async () => {
+  await withPage({ width: 1440, height: 900 }, async (page) => {
+    await page.goto(`${base}/#work-universe`);
+    await page.waitFor(`!!document.querySelector(".uv-svg .uv-label:not(.is-hidden)")`, { message: "the universe did not open from its link" });
+    const domains = config.universe.domains;
+    assert.deepEqual(domains.map((domain) => domain.name), ["Business & operations", "Backend & data", "Developer tools", "Personal & community", "Experiments & academic"]);
+    const expected = { business: ["erp", "maintops", "opssemble", "licenceManager"], backend: ["flowbank"], tools: ["procbeacon", "azlune"], personal: ["gurmat", "esamarea", "orbit", "alfaaz"], experiments: ["tonequill", "sird"] };
+    const shown = await page.evaluate(`({
+      chips: [...document.querySelectorAll("[data-uv-filter]")].map((chip) => chip.textContent.trim()),
+      groups: [...document.querySelectorAll(".uv-group")].map((group) => [group.querySelector(".uv-group-name").textContent.trim(), [...group.querySelectorAll(".uv-item")].map((item) => item.dataset.uvKey)]),
+      nodes: Object.fromEntries([...document.querySelectorAll(".uv-node")].map((node) => [node.dataset.key, node.dataset.domain])),
+      rows: new Set([...document.querySelectorAll(".uv-chip")].map((chip) => Math.round(chip.getBoundingClientRect().top))).size
+    })`);
+    assert.deepEqual(shown.chips, ["All", ...domains.map((domain) => domain.name)]);
+    assert.deepEqual(shown.groups, domains.map((domain) => [domain.name, expected[domain.id]]), "the list, by domain");
+    for (const [domain, keys] of Object.entries(expected)) for (const key of keys) assert.equal(shown.nodes[key], domain, `${key} in ${domain}`);
+    assert.equal(shown.rows, 1, "the domains fit one row at 1440px");
+    // FlowBank One: its engineering domain, with its status still its own.
+    await page.click('.uv-item[data-uv-key="flowbank"]');
+    assert.match(await page.evaluate(`document.querySelector("[data-uv-kicker]").textContent`), /^Backend & data/);
+    assert.match(await page.evaluate(`document.querySelector("[data-uv-meta]").textContent`), /In development/);
+    await page.click('[data-uv-filter="backend"]');
+    assert.deepEqual(await page.evaluate(`[...document.querySelectorAll(".uv-node:not(.is-out)")].map((node) => node.dataset.key)`), ["flowbank"], "Backend & data holds FlowBank One");
+    assert.deepEqual(page.errors(), []);
+  });
+});
+
+test("universe: #work-universe opens it directly; choosing a view rewrites the address in place; Back and Forward move between views; project links still open Architecture", async () => {
+  await withPage({ width: 1440, height: 900 }, async (page) => {
+    const now = `({ url: location.pathname + location.hash, view: document.querySelector('[data-wb-view][aria-pressed="true"]').dataset.wbView, length: history.length, y: Math.round(scrollY), work: Math.round(document.getElementById("work").getBoundingClientRect().top) })`;
+    await page.goto(`${base}/#work-universe`);
+    await page.waitFor(`!!document.querySelector(".uv-svg .uv-label:not(.is-hidden)")`, { message: "the universe did not open from its link" });
+    let s = await page.evaluate(now);
+    assert.deepEqual([s.url, s.view], ["/#work-universe", "universe"], "a direct link opens Universe");
+    assert.ok(s.work > -40 && s.work < 80, `and lands on Selected work, as #work does: ${s.work}px`);
+    const length = s.length;
+    await page.click('[data-wb-view="architecture"]', { scroll: false });
+    s = await page.evaluate(now);
+    assert.deepEqual([s.url, s.view, s.length], ["/#work", "architecture", length], "Architecture rewrites the address in place: no new history entry");
+    const y = s.y;
+    await page.click('[data-wb-view="universe"]', { scroll: false });
+    s = await page.evaluate(now);
+    assert.deepEqual([s.url, s.view, s.length, s.y], ["/#work-universe", "universe", length, y], "and Universe again, without scrolling");
+    // A project's link: Architecture, on that system; Back returns to Universe, Forward to the system.
+    await page.evaluate(`location.hash = "#work-gurmat"`);
+    await page.waitFor(`document.querySelector('[data-wb-view="architecture"]').getAttribute("aria-pressed") === "true"`, { message: "a project link did not open Architecture" });
+    assert.equal(await page.evaluate(selectedSystem), "gurmat");
+    await page.evaluate(`history.back()`);
+    await page.waitFor(`location.hash === "#work-universe" && document.querySelector('[data-wb-view="universe"]').getAttribute("aria-pressed") === "true"`, { message: "Back did not return to Universe" });
+    await page.evaluate(`history.forward()`);
+    await page.waitFor(`location.hash === "#work-gurmat" && document.querySelector('[data-wb-view="architecture"]').getAttribute("aria-pressed") === "true"`, { message: "Forward did not return to Architecture" });
+    assert.equal(await page.evaluate(selectedSystem), "gurmat", "with its system");
+    // A plain load opens Architecture, and leaving Universe gives back the address it had.
+    await page.goto(`${base}/`);
+    await page.waitFor(`document.documentElement.classList.contains("workbench-ready")`);
+    s = await page.evaluate(now);
+    assert.deepEqual([s.url, s.view], ["/", "architecture"], "a plain load opens Architecture");
+    await openUniverse(page);
+    assert.equal(await page.evaluate("location.pathname + location.hash"), "/#work-universe");
+    await page.click('[data-wb-view="architecture"]', { scroll: false });
+    assert.equal(await page.evaluate("location.pathname + location.hash"), "/");
+    // The command palette offers it, by its address.
+    const index = await page.evaluate(`fetch("/assets/search-index.json").then((response) => response.json())`);
+    assert.ok(index.items.some((item) => item.title === "Project Universe" && item.url === "/#work-universe"), "a palette entry");
+    assert.deepEqual(page.errors(), []);
+  });
+});
+
+test("universe: a direct link lays it out from the first frame, so nothing shifts while it loads", async () => {
+  for (const [width, height, mobile, cpu] of [[1440, 900, false, 1], [1280, 720, false, 2], [820, 1180, true, 4], [390, 844, true, 4]]) {
+    await withPage({ width, height, mobile }, async (page) => {
+      await page.call("Emulation.setCPUThrottlingRate", { rate: cpu });
+      const shift = await loadShift(page, `${base}/#work-universe`);
+      assert.ok(shift < 0.05, `${width}x${height} /#work-universe: cumulative layout shift ${shift.toFixed(4)}`);
+      assert.equal(await page.evaluate(`document.querySelector('[data-wb-view="universe"]').getAttribute("aria-pressed")`), "true");
+    });
+  }
+});
+
+test("universe: the signals and the camera stop while the page is hidden, off screen or closed, and opening it again and again leaves nothing behind", async () => {
+  await withPage({ width: 1440, height: 900 }, async (page) => {
+    await page.goto(`${base}/#work`);
+    await page.waitFor(`document.documentElement.classList.contains("workbench-ready")`);
+    await openUniverse(page);
+    const state = `({ live: document.querySelector("[data-universe]").classList.contains("is-live"), running: document.querySelector(".uv-stage").getAnimations({ subtree: true }).filter((a) => a.playState === "running").length, visibility: document.visibilityState })`;
+    await page.evaluate(drawFrames);
+    let s = await page.evaluate(state);
+    assert.ok(s.live && s.running > 0, `in view, the signals run: ${JSON.stringify(s)}`);
+    // Hidden, for real: another tab in front.
+    const other = await browser.newPage({ width: 800, height: 600 });
+    await other.call("Page.bringToFront");
+    await page.waitFor(`document.visibilityState === "hidden"`, { message: "the page did not become hidden" });
+    s = await page.evaluate(state);
+    assert.deepEqual([s.live, s.running], [false, 0], "hidden, the signals stop");
+    await page.evaluate(`document.querySelector('[data-uv-turn="1"]').click()`);
+    assert.equal((await page.evaluate(universeState)).cam, "AZ 38° / EL 24°", "and the camera goes straight to where it is sent (no loop runs)");
+    await other.close();
+    await page.call("Page.bringToFront");
+    await page.waitFor(`document.visibilityState === "visible"`);
+    await page.evaluate(drawFrames);
+    s = await page.evaluate(state);
+    assert.ok(s.live && s.running > 0, "visible again, they run again");
+    // Off screen and closed: covered above, checked again here with the same counter.
+    await page.evaluate(`scrollTo({ top: 0, behavior: "instant" })`);
+    await page.evaluate(drawFrames);
+    assert.equal((await page.evaluate(state)).running, 0, "off screen");
+    await page.evaluate(toWorkbench);
+    await page.click('[data-wb-view="architecture"]', { scroll: false });
+    assert.equal((await page.evaluate(state)).running, 0, "closed");
+    // Again and again: the same listeners and the same elements.
+    await page.call("Performance.enable");
+    const metrics = async () => { const { metrics: list } = await page.call("Performance.getMetrics"); return { listeners: list.find((m) => m.name === "JSEventListeners").value, elements: await page.evaluate(`document.getElementsByTagName("*").length`) }; };
+    const first = await metrics();
+    for (let i = 0; i < 10; i++) {
+      await page.click('[data-wb-view="universe"]', { scroll: false });
+      await page.click('[data-wb-view="architecture"]', { scroll: false });
+    }
+    assert.deepEqual(await metrics(), first, "ten round trips add no listener and no element");
+    assert.deepEqual(page.errors(), []);
+  });
+});
+
+test("universe: the optimized drawing stays consistent (stems end at their nodes, ties start at them) and a camera frame rewrites only what moves", async () => {
+  await withPage({ width: 1440, height: 900 }, async (page) => {
+    await page.goto(`${base}/#work`);
+    await page.waitFor(`document.documentElement.classList.contains("workbench-ready")`);
+    await openUniverse(page);
+    await page.click('.uv-item[data-uv-key="flowbank"]');
+    const consistent = `(() => {
+      const number = "(-?[0-9.]+)";
+      const pair = (text, re) => { const m = new RegExp(re).exec(text); return m ? [Number(m[1]), Number(m[2])] : null; };
+      const svg = document.querySelector(".uv-svg");
+      const wrong = [];
+      for (const node of svg.querySelectorAll(".uv-node")) {
+        const key = node.dataset.key;
+        const at = pair(node.querySelector(".uv-body").getAttribute("transform"), "translate\\\\(" + number + " " + number + "\\\\)");
+        const stem = pair(node.querySelector(".uv-stem").getAttribute("d"), "L" + number + " " + number + "$");
+        if (!at || !stem || Math.abs(at[0] - stem[0]) > .05 || Math.abs(at[1] - stem[1]) > .05) wrong.push(key + ": stem");
+        const label = svg.querySelector('.uv-label[data-key="' + key + '"]');
+        if (label.classList.contains("is-hidden")) continue;
+        const box = pair(label.getAttribute("transform"), "translate\\\\(" + number + " " + number + "\\\\)");
+        const tie = pair(label.querySelector(".uv-tie").getAttribute("d"), "^M" + number + " " + number);
+        if (!box || !tie || Math.abs(box[0] + tie[0] - at[0]) > .15 || Math.abs(box[1] + tie[1] - at[1]) > .15) wrong.push(key + ": tie");
+      }
+      return wrong;
+    })()`;
+    assert.deepEqual(await page.evaluate(consistent), [], "at rest");
+    // Count the attributes written in each frame of a drag.
+    await page.evaluate(`(() => { window.__writes = []; let n = 0; const observer = new MutationObserver((records) => { n += records.length; }); observer.observe(document.querySelector(".uv-svg"), { attributes: true, subtree: true }); let frames = 0; (function step() { window.__writes.push(n); n = 0; if (++frames < 90) requestAnimationFrame(step); else observer.disconnect(); })(); })()`);
+    await mouseDrag(page, await page.evaluate(emptyMapPoint), 160, 40);
+    await page.evaluate(cameraSettled);
+    const writes = await page.evaluate("window.__writes");
+    const busiest = Math.max(...writes);
+    assert.ok(busiest > 0 && busiest <= 120, `at most 120 attributes rewritten in a frame of a drag: ${busiest}`);
+    assert.deepEqual(await page.evaluate(consistent), [], "and consistent where the drag left it");
+    assert.deepEqual(page.errors(), []);
+  });
+});
+
+test("universe: accessible names and states, relationships in words, contrast in both themes, and touch targets", async () => {
+  const contrast = `(() => {
+    const parse = (value) => { const m = value.match(/[0-9.]+/g).map(Number); return { rgb: m.slice(0, 3), a: m.length > 3 ? m[3] : 1 }; };
+    const over = (top, base) => top.a >= 1 ? top.rgb : top.rgb.map((c, i) => c * top.a + base[i] * (1 - top.a));
+    const lum = (rgb) => { const f = (c) => { c /= 255; return c <= .03928 ? c / 12.92 : ((c + .055) / 1.055) ** 2.4; }; return .2126 * f(rgb[0]) + .7152 * f(rgb[1]) + .0722 * f(rgb[2]); };
+    const ratio = (a, b) => { const [x, y] = [lum(a), lum(b)].sort((m, n) => n - m); return (x + .05) / (y + .05); };
+    const page = parse(getComputedStyle(document.documentElement).backgroundColor).rgb;
+    const ground = (el) => { let bg = page; const stack = []; for (let n = el; n && n !== document.documentElement; n = n.parentElement) stack.unshift(n); for (const n of stack) { const c = parse(getComputedStyle(n).backgroundColor); if (c.a > 0) bg = over(c, bg); } return bg; };
+    const results = [];
+    const check = (label, el, fg, bg) => { if (el && el.getClientRects().length) results.push([label, +ratio(fg, bg).toFixed(2)]); };
+    for (const sel of [".uv-item", '.uv-item[aria-pressed="true"]', ".uv-group-name", ".uv-chip", '.uv-chip[aria-pressed="true"]', ".uv-count", ".uv-cam", ".uv-cbtn", ".uv-hint", ".uv-k", ".uv-summary", ".uv-rel-name", ".uv-rel-why", ".uv-rel-detail", ".uv-tag-item", ".uv-kicker > span:last-child", ".uv-meta .sf-source"]) {
+      const el = document.querySelector(sel);
+      if (el) check(sel, el, parse(getComputedStyle(el).color).rgb, ground(el));
+    }
+    const kicker = document.querySelector(".uv-kicker > span");
+    check("kicker domain", kicker, parse(getComputedStyle(kicker).color).rgb, ground(kicker));
+    // The map's labels: the name on its tag, and the selected one on its domain colour.
+    for (const label of document.querySelectorAll(".uv-svg .uv-label:not(.is-hidden)")) {
+      const fill = parse(getComputedStyle(label.querySelector(".uv-tag")).fill);
+      const tag = over(fill, ground(document.querySelector(".uv-stage")));
+      check("label " + label.dataset.key, label, parse(getComputedStyle(label.querySelector(".uv-name")).fill).rgb, tag);
+    }
+    return results;
+  })()`;
+  for (const scheme of ["dark", "light"]) {
+    await withPage({ width: 1440, height: 900, scheme }, async (page) => {
+      await page.goto(`${base}/#work-universe`);
+      await page.waitFor(`!!document.querySelector(".uv-svg .uv-label:not(.is-hidden)")`);
+      for (const key of ["flowbank", "tonequill", "procbeacon", "gurmat", "erp"]) {
+        await page.evaluate(`document.querySelector('.uv-item[data-uv-key="${key}"]').click()`);
+        const low = (await page.evaluate(contrast)).filter(([, value]) => value < 4.5);
+        assert.deepEqual(low, [], `${scheme}, ${key} selected: text under 4.5:1`);
+      }
+      // Every control is named, every toggle says whether it is on, and one of each is on.
+      const controls = await page.evaluate(`[...document.querySelectorAll(".universe button, .universe select, .universe input, .universe a")].filter((el) => el.getClientRects().length).map((el) => ({ name: (el.getAttribute("aria-label") || el.textContent || el.closest("label")?.textContent || "").trim(), pressed: el.getAttribute("aria-pressed"), kind: el.className }))`);
+      assert.deepEqual(controls.filter((control) => !control.name), [], `${scheme}: unnamed controls`);
+      assert.deepEqual(await page.evaluate(`["[data-uv-filter]", ".uv-item"].map((s) => [...document.querySelectorAll(s)].filter((b) => b.getAttribute("aria-pressed") === "true").length)`), [1, 1], "one domain and one project pressed");
+      assert.deepEqual(await page.evaluate(`[document.querySelector(".uv-svg").getAttribute("aria-hidden"), document.querySelector(".uv-map").getAttribute("aria-label"), document.querySelector(".uv-panel").getAttribute("aria-labelledby"), document.querySelector("[data-uv-live]").getAttribute("aria-live")]`), ["true", "Project universe", "uv-name", "polite"], "the drawing is hidden from assistive technology; the map, the panel and the announcements are named");
+      // Each relationship is said in words: what the two share, and how each does it.
+      const related = await page.evaluate(`[...document.querySelectorAll("[data-uv-related] .uv-rel")].map((li) => [li.querySelector(".uv-rel-why").textContent, li.querySelector(".uv-rel-detail").textContent])`);
+      const expected = config.universe.connections.filter(([a, b]) => a === "erp" || b === "erp").map(([, , label, detail]) => [label, detail]);
+      assert.deepEqual(related.sort(), expected.sort(), "relationships in words");
+      assert.deepEqual(page.errors(), []);
+    });
+  }
+  // Touch: every control at least 24px (WCAG 2.5.8) on a phone, the map's targets 44px across, and
+  // a project chosen without touching the map.
+  await withPage({ width: 390, height: 844, mobile: true }, async (page) => {
+    await page.goto(`${base}/#work-universe`);
+    await page.waitFor(`!!document.querySelector(".uv-svg .uv-label:not(.is-hidden)")`);
+    const small = await page.evaluate(`[...document.querySelectorAll(".universe button, .universe select, .universe input, .universe a, .wb-mode button")].filter((el) => el.getClientRects().length).map((el) => { const r = el.getBoundingClientRect(); return [el.className || el.tagName, Math.round(r.width), Math.round(r.height)]; }).filter(([, w, h]) => w < 24 || h < 24)`);
+    assert.deepEqual(small, [], "touch targets under 24px");
+    const minButton = await page.evaluate(`Math.min(...[...document.querySelectorAll(".uv-chip, .uv-cbtn, .uv-tag-item.is-shared, .wb-mode button")].filter((el) => el.getClientRects().length).map((el) => el.getBoundingClientRect().height))`);
+    assert.ok(minButton >= 36, `buttons are at least 36px tall on touch: ${minButton}`);
+    assert.ok(await page.evaluate(`[...document.querySelectorAll(".uv-hit")].every((hit) => Number(hit.getAttribute("r")) >= 22)`), "each node takes a touch 44px across");
+    await page.evaluate(`(() => { const select = document.querySelector("[data-uv-jump]"); select.value = "alfaaz"; select.dispatchEvent(new Event("change", { bubbles: true })); })()`);
+    assert.equal((await page.evaluate(universeState)).selected, "alfaaz", "the select chooses a project");
+    assert.deepEqual(page.errors(), []);
+  });
+});
+
+test("universe: on a device too slow to redraw at a steady rate, the drawing lightens only while the camera moves; a capable device never sees it", async () => {
+  const watchLean = `(() => { window.__lean = []; const stage = document.querySelector(".uv-stage"); new MutationObserver(() => window.__lean.push(stage.classList.contains("is-lean"))).observe(stage, { attributes: true, attributeFilter: ["class"] }); })()`;
+  for (const [cpu, expectLean] of [[1, false], [8, true]]) {
+    await withPage({ width: 1440, height: 900 }, async (page) => {
+      await page.goto(`${base}/#work-universe`);
+      await page.waitFor(`!!document.querySelector(".uv-svg .uv-label:not(.is-hidden)")`);
+      await page.evaluate(watchLean);
+      await page.call("Emulation.setCPUThrottlingRate", { rate: cpu });
+      // Two turns, so a slow device has measured itself by the second.
+      for (const turn of ["1", "1"]) {
+        await page.evaluate(`document.querySelector('[data-uv-turn="${turn}"]').click()`);
+        await page.evaluate(cameraSettled);
+      }
+      await page.call("Emulation.setCPUThrottlingRate", { rate: 1 });
+      const seen = await page.evaluate("window.__lean");
+      const now = await page.evaluate(`({ lean: document.querySelector(".uv-stage").classList.contains("is-lean"), cam: document.querySelector("[data-uv-cam]").textContent, dashes: getComputedStyle(document.querySelector(".uv-stem")).strokeDasharray })`);
+      assert.equal(seen.includes(true), expectLean, `cpu x${cpu}: the lighter drawing ${expectLean ? "appears" : "never appears"} while the camera moves`);
+      assert.deepEqual([now.lean, now.cam], [false, "AZ 58° / EL 24°"], `cpu x${cpu}: when the camera stops, the full drawing is back, where it was sent`);
+      assert.notEqual(now.dashes, "none", "with its dashed stems");
       assert.deepEqual(page.errors(), []);
     });
   }

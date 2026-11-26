@@ -196,7 +196,10 @@ if ((home.match(/<div class="wb-mode" role="group" aria-label="Explorer view" da
 if ((home.match(/<div class="universe" data-universe(?:="")? hidden(?:="")?>/g) || []).length !== 1) fail("homepage: expected one Universe shell, hidden until it is chosen");
 {
   const universeJs = await fs.readFile(path.join(root, "assets/universe.js"), "utf8").catch(() => "");
-  if (!universeJs || universeJs.includes("%UNIVERSE_DATA%")) fail("assets/universe.js: missing, or built without its data");
+  if (!universeJs || universeJs.includes("%UNIVERSE_DATA%") || universeJs.includes("%UNIVERSE_CSS%")) fail("assets/universe.js: missing, or built without its data or its styles");
+  // #work-universe opens the Universe view, so no project may take "universe" as its key.
+  if ([...featuredProjects, ...alsoProjects].some((project) => project.key === "universe")) fail("site.config.mjs: the project key \"universe\" is reserved for the #work-universe link");
+  if (!/id="work-universe"/.test(home)) fail("homepage: #work-universe needs its target (the Selected work intro)");
   for (const project of [...featuredProjects, ...alsoProjects]) if (!universeJs.includes(`"key":"${project.key}"`)) fail(`assets/universe.js: ${project.shortTitle} is missing from the universe`);
 }
 if (!home.includes('<div class="stage-scene" aria-hidden="true"')) fail("homepage: the decorative stack must be hidden from assistive technology");

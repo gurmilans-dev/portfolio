@@ -491,8 +491,10 @@
     const key = keyFromHash(location.hash);
     if (!key) return;
     const index = featured.indexOf(key);
-    // A link to one of the six systems shows its file: the Architecture view.
-    if (index >= 0) { setView("architecture"); select(index); }
+    // #work-universe opens the Universe view; a link to one of the six systems shows its file,
+    // in the Architecture view. Either way the address already says so.
+    if (key === "universe") setView("universe", { address: false });
+    else if (index >= 0) { setView("architecture", { address: false }); select(index); }
     else if (order.includes(key) && canDrawer) openFile(key, null, { animate: false });
     else return;
     if (scroll) document.getElementById("work")?.scrollIntoView({ block: "start" });
@@ -949,13 +951,16 @@
      other is shown, so coming back to Architecture finds its system, layer and angle as they
      were; Universe first opens on the system selected here. While Universe is shown, the hero's
      drawing stays as it is (there is no model for it to turn into), and when Universe closes its
-     camera and signals stop. Every page load starts on Architecture. */
+     camera and signals stop.
+     Every page load starts on Architecture, unless its address ends in #work-universe (a direct
+     link to Universe, which the command palette also offers). Choosing a view rewrites the address
+     in place (#work-universe, or back to what it was before), with no new history entry and no
+     scrolling, so the address can be shared and Back comes back to the view that was showing. */
   const viewSwitch = bench.querySelector("[data-wb-mode]");
   const viewButtons = [...(viewSwitch?.querySelectorAll("[data-wb-view]") ?? [])];
   const universeShell = bench.querySelector("[data-universe]");
-  // The section's heading names what is shown: the six systems, or every project.
-  const heading = document.getElementById("work-title");
-  const architectureTitle = heading?.textContent || "";
+  const UNIVERSE_HASH = "#work-universe";
+  let hashBeforeUniverse = null; // the address's fragment before Universe took it
   let explorerView = "architecture";
   let universe = null;
   let universeLoad = null;
@@ -973,14 +978,34 @@
     universeLoad.catch(() => { universeLoad = null; }); // a later choice tries again
     return universeLoad;
   }
-  function setView(next) {
+  // The address, rewritten in place for the view chosen (never a new entry, never a scroll).
+  function rewriteAddress(on) {
+    try {
+      const url = new URL(location.href);
+      if (on) {
+        if (url.hash === UNIVERSE_HASH) return;
+        hashBeforeUniverse = url.hash;
+        url.hash = UNIVERSE_HASH;
+      } else {
+        if (url.hash !== UNIVERSE_HASH) return;
+        url.hash = hashBeforeUniverse ?? "#work";
+      }
+      history.replaceState(history.state, "", url);
+    } catch { /* the view still changes */ }
+  }
+  // `address`: false when the address already says which view (a link, Back or Forward).
+  function setView(next, { address = true } = {}) {
     if (next === explorerView || !universeShell || !viewSwitch) return;
     explorerView = next;
     const on = next === "universe";
     viewButtons.forEach(button => button.setAttribute("aria-pressed", String(button.dataset.wbView === next)));
     bench.classList.toggle("is-universe", on);
+    root.classList.remove("wb-universe-pending");
+    // Focus inside the view that closes would be lost: it moves to that view's switch button.
+    if (!on && universeShell.contains(document.activeElement)) viewButtons.find(button => button.dataset.wbView === "architecture")?.focus({ preventScroll: true });
     universeShell.hidden = !on;
-    if (heading) heading.textContent = on ? viewSwitch.dataset.universeTitle || architectureTitle : architectureTitle;
+    if (address) rewriteAddress(on);
+    if (!on) hashBeforeUniverse = null;
     if (on) loadUniverse().then(view => { if (explorerView === "universe") view.show({ initial: featured[state.selected] }); }, () => setView("architecture"));
     else universe?.hide();
     morph?.refresh();
@@ -996,7 +1021,8 @@
   select(0, { remember: false });
   // Back or Forward to this entry: the system it showed (a #work-<system> link still wins).
   const remembered = history.state?.wbSystem;
-  if (remembered && !keyFromHash(location.hash) && featured.includes(remembered)) select(featured.indexOf(remembered), { remember: false });
+  const hashKey = keyFromHash(location.hash);
+  if (remembered && (!hashKey || hashKey === "universe") && featured.includes(remembered)) select(featured.indexOf(remembered), { remember: false });
   selectFromHint();
   setLayer(0);
   applyView();
