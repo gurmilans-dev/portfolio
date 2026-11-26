@@ -4,6 +4,7 @@ import { siteConfig, featuredProjects, alsoProjects } from "./site.config.mjs";
 import { removeHtmlComments } from "./scripts/html.mjs";
 import { icons, renderPartials } from "./scripts/components.mjs";
 import { buildSearchIndex } from "./scripts/search-index.mjs";
+import { buildUniverseData } from "./scripts/universe-data.mjs";
 
 const ROOT = path.resolve(".");
 const OUT = path.join(ROOT, "dist");
@@ -159,6 +160,15 @@ async function build() {
   for (const file of SCRIPT_FILES) {
     const source = await fs.readFile(path.join(ROOT, file), "utf8");
     await fs.writeFile(path.join(OUT, file), minifyJs(source));
+  }
+  // Project Universe: its script with its data (scripts/universe-data.mjs) written in, after
+  // minifying, so nothing in the data can be mistaken for a comment. workbench.js loads it only
+  // when a visitor opens the Universe view.
+  {
+    const source = minifyJs(await fs.readFile(path.join(ROOT, "assets/universe.js"), "utf8"));
+    const data = buildUniverseData({ siteConfig, projects: [...featuredProjects, ...alsoProjects], routeOf: (file) => ROUTES.get(file) });
+    if (source.split('"%UNIVERSE_DATA%"').length !== 2) throw new Error("assets/universe.js: expected one \"%UNIVERSE_DATA%\" placeholder");
+    await fs.writeFile(path.join(OUT, "assets/universe.js"), source.replace('"%UNIVERSE_DATA%"', () => JSON.stringify(data)));
   }
 
   const built = new Map();

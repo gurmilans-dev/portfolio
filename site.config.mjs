@@ -864,6 +864,92 @@ export const siteConfig = {
         boundary: "Academic desktop project. Not a validated epidemiological model; no accuracy figures are claimed."
       }
     }
+  },
+
+  /* Project Universe: the explorer's second view, a 3D map of all thirteen projects. Only what the
+     projects above do not already say lives here: each project's domain and place in the space
+     (composed by hand, from the reference prototype), the engineering concepts it shares, and the
+     relationships drawn between projects. Names, categories, descriptions, technologies, statuses
+     and destinations are read from the project entries (scripts/universe-data.mjs), so they cannot
+     drift apart. Every concept and relationship restates something a project's own text above
+     says; the comments name it. A relationship is a shared technology or concern, never a
+     dependency: no project here uses another. */
+  universe: {
+    domains: [
+      { id: "business", name: "Business & operations" },
+      { id: "tools", name: "Developer tools" },
+      { id: "personal", name: "Personal & community" },
+      { id: "learning", name: "Learning & experiments" }
+    ],
+    concepts: {
+      authorization: "Server-side authorization",
+      workflow: "Operational workflows",
+      commercial: "Commercial software",
+      concurrency: "Concurrency",
+      idempotency: "Idempotency",
+      history: "Append-only history",
+      loadTesting: "Load testing",
+      processIdentity: "Process identity",
+      verification: "Verify before acting",
+      devTools: "Developer tooling",
+      live: "Live updates",
+      sync: "Shared state across devices",
+      speech: "Speech matching",
+      punjabi: "Punjabi text",
+      scopedAccess: "Scoped QR access",
+      planning: "Planning",
+      serverTime: "Server-owned timers",
+      keyboard: "Keyboard-first",
+      offline: "Works offline",
+      privacy: "Privacy by schema",
+      simulation: "Agent-based simulation",
+      licensing: "Licence activation"
+    },
+    // position: [x, y, z]; y is up, the ground lies at y = -170.
+    projects: {
+      // "Server-side roles", "Validation + role checks", "daily internal operations", "Commercial software".
+      erp: { domain: "business", position: [-145, 70, -145], concepts: ["authorization", "workflow", "commercial"] },
+      // "Accounts are locked in one fixed order", "transfers that cannot be applied twice", "can insert ledger rows but never rewrite them", "load tests".
+      flowbank: { domain: "learning", position: [136, 115, -118], concepts: ["concurrency", "idempotency", "history", "loadTesting"] },
+      // "checks a process's identity again before it ends it", "for developers".
+      procbeacon: { domain: "tools", position: [-205, -4, 90], concepts: ["processIdentity", "verification", "devTools"] },
+      // "request and triage through assignment ... SLA", "Services own authorization", "Lifecycle changes write immutable events".
+      maintops: { domain: "business", position: [-225, -76, -65], concepts: ["workflow", "authorization", "history"] },
+      // "follows live Punjabi recitation", "Operator, projector and viewers all follow this one selected line".
+      gurmat: { domain: "personal", position: [35, 125, 157], concepts: ["live", "sync", "speech", "punjabi"] },
+      // "readiness is computed from what is still open", "checked server-side on every write", "Server-Sent Events push changes live", "revocable QR codes".
+      opssemble: { domain: "business", position: [-100, 140, -35], concepts: ["workflow", "authorization", "live", "scopedAccess"] },
+      // "study planner", "a timer the server owns rather than the browser".
+      esamarea: { domain: "personal", position: [238, -25, -48], concepts: ["planning", "serverTime"] },
+      // "A keyboard-first new tab for developers".
+      azlune: { domain: "tools", position: [-95, 104, 177], concepts: ["devTools", "keyboard"] },
+      // "A personal planning app", "works offline first and synchronizes once you sign in".
+      orbit: { domain: "personal", position: [-18, -110, 210], concepts: ["planning", "offline", "sync"] },
+      // "Optimistic concurrency", "Readable offline as an installed web app", "English, Hindi and Punjabi", "privacy by schema".
+      alfaaz: { domain: "personal", position: [144, -5, 192], concepts: ["concurrency", "offline", "punjabi", "privacy"] },
+      // "writes the file only when every packet has arrived and the SHA-256 matches".
+      tonequill: { domain: "learning", position: [-35, -115, -175], concepts: ["verification"] },
+      // "licence activation", "Commercial software".
+      licenceManager: { domain: "business", position: [-252, 65, -170], concepts: ["commercial", "licensing"] },
+      // "Agent-based", "Java 17 · JavaFX · Maven · concurrency", "A background engine drives moving agents".
+      sird: { domain: "learning", position: [242, 108, -10], concepts: ["simulation", "concurrency"] }
+    },
+    // [project, project, what they share, how each does it]
+    connections: [
+      ["erp", "maintops", "Server-side authorization", "Both check roles on the server rather than in the browser: Business Platform's API validates input and checks roles; MaintOps runs authorization inside the same transaction as the change."],
+      ["maintops", "opssemble", "Same stack: React, Fastify, MySQL", "Built on the same stack, and both authorize writes on the server: MaintOps in its services, Opssemble against the caller's event role."],
+      ["flowbank", "maintops", "History that is never rewritten", "FlowBank can insert ledger rows but never rewrite them; MaintOps records every lifecycle change as an immutable event."],
+      ["flowbank", "alfaaz", "Colliding writes", "Both decide what happens when two writes meet: FlowBank locks accounts in one fixed order so crossed transfers cannot deadlock; Alfaaz refuses a save whose version is out of date."],
+      ["flowbank", "sird", "Java", "Both written in Java: Java 21 with Spring Boot for a server, Java 17 with JavaFX for a desktop simulation."],
+      ["procbeacon", "licenceManager", "C# and .NET", "Both built in C#/.NET: a WPF desktop tool, and a client-server component inside commercial software."],
+      ["procbeacon", "azlune", "Tools for developers", "Two tools for a developer's own working day: which process holds a port and whether it is safe to stop, and a keyboard-first new tab."],
+      ["procbeacon", "tonequill", "Verify before acting", "Neither acts on an unconfirmed result: ProcBeacon checks a process's identity again before ending it; ToneQuill writes a file only when its SHA-256 matches."],
+      ["gurmat", "orbit", "Devices kept in step", "Both keep several devices on the same state: Gurmat Saanj holds the projector and every viewer on one line; Orbit synchronizes signed-in devices through its API."],
+      ["gurmat", "alfaaz", "Punjabi text", "Both work with Punjabi: Gurmat Saanj matches recited Punjabi against known Gurbani; Alfaaz is a writing environment for English, Hindi and Punjabi."],
+      ["orbit", "alfaaz", "Works offline", "Both install as web apps that keep working offline: Orbit saves every change on the device first; Alfaaz stays readable offline."],
+      ["esamarea", "orbit", "Planners on React, TypeScript, MySQL", "Two planning apps on a similar stack: Esamarea shares one weekly study budget across exams; Orbit plans appointments, tasks and goals."],
+      ["erp", "licenceManager", "Commercial work", "Both are commercial software built for a company: a business platform in daily production use, and a licensing component."]
+    ]
   }
 };
 

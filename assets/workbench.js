@@ -3,12 +3,15 @@
  * Turns the static list of systems into the workbench: an index of tabs, a CSS-3D
  * stack with a cut through the selected system, a layer-by-layer file, and a
  * quick-look drawer. Without this script every system and its full case file is
- * still on the page as plain, linked content.
+ * still on the page as plain, linked content. It also switches the explorer between its
+ * two views, loading assets/universe.js the first time the Universe view is chosen.
  */
 (() => {
   "use strict";
 
   const root = document.documentElement;
+  // universe.js lives beside this script (read now: currentScript is only set while it first runs).
+  const universeSrc = new URL("universe.js", document.currentScript?.src || new URL("/assets/", location.href)).href;
   const Site = window.Site || { lockScroll() {}, unlockScroll() {}, closeMenu() {} };
   const motionQuery = matchMedia("(prefers-reduced-motion: reduce)");
   const finePointer = matchMedia("(hover: hover) and (pointer: fine)");
@@ -488,7 +491,8 @@
     const key = keyFromHash(location.hash);
     if (!key) return;
     const index = featured.indexOf(key);
-    if (index >= 0) select(index);
+    // A link to one of the six systems shows its file: the Architecture view.
+    if (index >= 0) { setView("architecture"); select(index); }
     else if (order.includes(key) && canDrawer) openFile(key, null, { animate: false });
     else return;
     if (scroll) document.getElementById("work")?.scrollIntoView({ block: "start" });
@@ -821,7 +825,8 @@
       });
     }
 
-    const allowed = () => wide.matches && !motionQuery.matches && !focusHeld && !slow && !flat && root.classList.contains("workbench-ready");
+    // In the Universe view the model is not there to land on: the drawing stays as it is.
+    const allowed = () => wide.matches && !motionQuery.matches && !focusHeld && !slow && !flat && root.classList.contains("workbench-ready") && !bench.classList.contains("is-universe");
 
     function start() {
       // Not built ahead (a scroll straight after load): build now, and if that was slow, let this
@@ -893,7 +898,7 @@
       frame = 0;
       const y = scrollY;
       const x = scrollX;
-      const calm = motionQuery.matches || !root.classList.contains("workbench-ready");
+      const calm = motionQuery.matches || !root.classList.contains("workbench-ready") || bench.classList.contains("is-universe");
       if (!wide.matches && !calm) fold(y);
       else unfold();
       if (!allowed()) {
@@ -929,9 +934,63 @@
     heroStack.addEventListener("focusout", () => { focusHeld = false; schedule(); });
     addEventListener("pagehide", () => { if (active) stop(0); });
     schedule();
-    // A new system, layer or view while it runs: copy the floors again, and find the stack anew.
-    return { sync() { built = null; if (active) { measure(); build(); dress(); render(scrollY, scrollX); } } };
+    return {
+      // A new system, layer or view while it runs: copy the floors again, and find the stack anew.
+      sync() { built = null; if (active) { measure(); build(); dress(); render(scrollY, scrollX); } },
+      // The explorer changed view: measure everything again (and stand aside in Universe).
+      refresh: remeasure
+    };
   })();
+
+  /* ---------- Two views: Architecture and Universe ----------
+     Architecture is the explorer above, exactly as it is. Universe is a 3D map of every project
+     and what they share (assets/universe.js), loaded the first time it is chosen, or a moment
+     before, when the pointer or focus reaches its button. Each view keeps its own state while the
+     other is shown, so coming back to Architecture finds its system, layer and angle as they
+     were; Universe first opens on the system selected here. While Universe is shown, the hero's
+     drawing stays as it is (there is no model for it to turn into), and when Universe closes its
+     camera and signals stop. Every page load starts on Architecture. */
+  const viewSwitch = bench.querySelector("[data-wb-mode]");
+  const viewButtons = [...(viewSwitch?.querySelectorAll("[data-wb-view]") ?? [])];
+  const universeShell = bench.querySelector("[data-universe]");
+  // The section's heading names what is shown: the six systems, or every project.
+  const heading = document.getElementById("work-title");
+  const architectureTitle = heading?.textContent || "";
+  let explorerView = "architecture";
+  let universe = null;
+  let universeLoad = null;
+  function loadUniverse() {
+    if (universeLoad) return universeLoad;
+    universeLoad = new Promise((resolve, reject) => {
+      if (window.PortfolioUniverse) { resolve(); return; }
+      const script = document.createElement("script");
+      script.src = universeSrc;
+      script.async = true;
+      script.onload = () => resolve();
+      script.onerror = () => reject(new Error("universe.js did not load"));
+      document.head.append(script);
+    }).then(() => (universe = window.PortfolioUniverse.mount(universeShell, { quickLook: canDrawer, motion: motionQuery })));
+    universeLoad.catch(() => { universeLoad = null; }); // a later choice tries again
+    return universeLoad;
+  }
+  function setView(next) {
+    if (next === explorerView || !universeShell || !viewSwitch) return;
+    explorerView = next;
+    const on = next === "universe";
+    viewButtons.forEach(button => button.setAttribute("aria-pressed", String(button.dataset.wbView === next)));
+    bench.classList.toggle("is-universe", on);
+    universeShell.hidden = !on;
+    if (heading) heading.textContent = on ? viewSwitch.dataset.universeTitle || architectureTitle : architectureTitle;
+    if (on) loadUniverse().then(view => { if (explorerView === "universe") view.show({ initial: featured[state.selected] }); }, () => setView("architecture"));
+    else universe?.hide();
+    morph?.refresh();
+  }
+  if (viewSwitch && universeShell) {
+    viewSwitch.hidden = false;
+    viewButtons.forEach(button => button.addEventListener("click", () => setView(button.dataset.wbView)));
+    const universeButton = viewButtons.find(button => button.dataset.wbView === "universe");
+    for (const type of ["pointerenter", "focus", "touchstart"]) universeButton?.addEventListener(type, () => loadUniverse().catch(() => {}), { once: true, passive: true });
+  }
 
   bench.classList.add("wb-ready");
   select(0, { remember: false });

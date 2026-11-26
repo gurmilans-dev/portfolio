@@ -395,6 +395,22 @@ export function workbenchStage() {
         </div>`;
 }
 
+/* The explorer's two views: Architecture (the systems, the four-layer model and the selected
+   system's file) and Universe (a 3D map of every project and what they share). The switch and the
+   Universe exist only with JavaScript: workbench.js reveals the switch, and loads
+   assets/universe.js into the shell the first time Universe is chosen. */
+const NUMBER_WORDS = ["Zero", "One", "Two", "Three", "Four", "Five", "Six", "Seven", "Eight", "Nine", "Ten", "Eleven", "Twelve", "Thirteen", "Fourteen", "Fifteen", "Sixteen", "Seventeen", "Eighteen", "Nineteen", "Twenty"];
+export function workbenchMode() {
+  // The section's heading while Universe is shown (workbench.js swaps it in and back).
+  const total = featuredProjects.length + alsoProjects.length;
+  const universeTitle = `${NUMBER_WORDS[total] || total} projects, and what they share.`;
+  return `<div class="wb-mode" role="group" aria-label="Explorer view" data-wb-mode data-universe-title="${universeTitle}" hidden><button type="button" class="wm-btn" data-wb-view="architecture" aria-pressed="true">Architecture</button><button type="button" class="wm-btn" data-wb-view="universe" aria-pressed="false">Universe</button></div>`;
+}
+
+export function workbenchUniverse() {
+  return `<div class="universe" data-universe hidden><p class="uv-loading" data-uv-loading>Loading the project universe…</p></div>`;
+}
+
 export function workbenchFiles() {
   return `<div class="wb-files" data-wb-files>
         ${featuredProjects.map((project) => systemFile(project, true)).join("\n        ")}
@@ -508,6 +524,8 @@ const PARTIALS = {
   "wb-index": () => workbenchIndex(),
   "wb-stage": () => workbenchStage(),
   "wb-files": () => workbenchFiles(),
+  "wb-mode": () => workbenchMode(),
+  "wb-universe": () => workbenchUniverse(),
   "also-built": () => alsoBuilt(),
   drawer: () => drawer(),
   "case-cut": (arg) => caseCut(arg),

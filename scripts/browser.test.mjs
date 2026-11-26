@@ -18,6 +18,7 @@ import assert from "node:assert/strict";
 import { existsSync, readFileSync } from "node:fs";
 import { launchBrowser } from "./cdp.mjs";
 import { startServer } from "./serve.mjs";
+import { siteConfig as config, featuredProjects as featuredList, alsoProjects as alsoList } from "../site.config.mjs";
 
 const DIST = new URL("../dist/", import.meta.url);
 let browser;
@@ -1820,4 +1821,445 @@ test("hero to explorer: nothing shifts while it runs, a keyboard visitor on a he
     }
     assert.deepEqual(page.errors(), []);
   });
+});
+
+/* ---------- Project Universe ----------
+   The explorer's second view (assets/universe.js): every project in one 3D space, with what they
+   share. Architecture stays the default and comes back exactly as it was left; the map, the
+   lists and the panel stay consistent with each other; the scene turns as one; and it costs
+   nothing while it is closed, off screen or unwanted. */
+const ALL_KEYS = [...featuredList, ...alsoList].map((project) => project.key);
+const toWorkbench = `(() => { const bench = document.querySelector("[data-workbench]"); scrollTo({ top: bench.getBoundingClientRect().top + scrollY - document.querySelector("[data-header]").getBoundingClientRect().bottom, behavior: "instant" }); })()`;
+async function openUniverse(page) {
+  await page.evaluate(toWorkbench);
+  await page.click('[data-wb-view="universe"]', { scroll: false });
+  await page.waitFor(`!!document.querySelector(".uv-svg .uv-node") && !!document.querySelector(".uv-svg").getAttribute("viewBox") && document.querySelectorAll(".uv-label:not(.is-hidden)").length > 0`, { message: "the universe did not open" });
+}
+const architectureState = `({ tab: document.querySelector('[role="tab"][aria-selected="true"]').dataset.wbTab, layer: [...document.querySelectorAll("[data-layer-btn]")].findIndex((b) => b.getAttribute("aria-pressed") === "true"), exploded: document.querySelector("[data-explode]").getAttribute("aria-pressed"), stack: getComputedStyle(document.querySelector("[data-stack]")).transform, file: document.querySelector(".system-file.is-current")?.dataset.system })`;
+const universeState = `(() => {
+  const svg = document.querySelector(".uv-svg");
+  const box = (el) => { const r = el.getBoundingClientRect(); return [r.left, r.top, r.right, r.bottom]; };
+  const shownLabels = [...svg.querySelectorAll(".uv-label:not(.is-hidden)")];
+  const centre = (el) => { const r = el.getBoundingClientRect(); return [(r.left + r.right) / 2, (r.top + r.bottom) / 2]; };
+  return {
+    selected: svg.querySelector(".uv-node.is-sel")?.dataset.key,
+    title: document.querySelector("[data-uv-name]").textContent,
+    pressed: [...document.querySelectorAll('.uv-item[aria-pressed="true"]')].map((b) => b.dataset.uvKey),
+    jump: document.querySelector("[data-uv-jump]").value,
+    filter: document.querySelector('[data-uv-filter][aria-pressed="true"]').dataset.uvFilter,
+    out: [...svg.querySelectorAll(".uv-node.is-out")].map((n) => n.dataset.key).sort(),
+    lit: [...svg.querySelectorAll(".uv-node.is-lit")].map((n) => n.dataset.key).sort(),
+    links: svg.querySelectorAll(".uv-link:not(.is-hidden)").length,
+    labels: shownLabels.map((l) => l.dataset.key),
+    labelBoxes: shownLabels.map((l) => box(l.querySelector(".uv-tag"))),
+    nodes: [...svg.querySelectorAll(".uv-node")].map((n) => { const r = n.querySelector(".uv-top").getBoundingClientRect(); const [x, y] = centre(n.querySelector(".uv-top")); return { key: n.dataset.key, x, y, w: r.width }; }).sort((a, b) => (a.key < b.key ? -1 : 1)),
+    svgBox: box(svg),
+    grid: svg.querySelector(".uv-grid").getAttribute("d"),
+    related: [...document.querySelectorAll("[data-uv-related] .uv-rel-btn")].map((b) => b.dataset.uvKey),
+    details: [...document.querySelectorAll("[data-uv-related] .uv-rel-detail")].map((p) => p.textContent),
+    cam: document.querySelector("[data-uv-cam]").textContent,
+    zoom: document.querySelector("[data-uv-zoom]").value,
+    count: document.querySelector("[data-uv-count]").textContent,
+    live: document.querySelector("[data-universe]").classList.contains("is-live"),
+    said: document.querySelector("[data-uv-live]").textContent
+  };
+})()`;
+// A point where a click or tap reaches the given part of a project's node or label: the one
+// nearest its middle, in whole pixels (as some engines deliver pointer positions).
+const pointOnProject = (key, part) => `(() => {
+  const el = document.querySelector('.uv-svg [data-key="${key}"] ${part}');
+  if (!el) return null;
+  const r = el.getBoundingClientRect();
+  const points = [];
+  for (let i = 1; i < 10; i++) for (let j = 1; j < 10; j++) points.push({ x: Math.round(r.left + r.width * i / 10), y: Math.round(r.top + r.height * j / 10) });
+  const cx = r.left + r.width / 2, cy = r.top + r.height / 2;
+  points.sort((a, b) => Math.hypot(a.x - cx, a.y - cy) - Math.hypot(b.x - cx, b.y - cy));
+  return points.find(({ x, y }) => document.elementFromPoint(x, y)?.closest("[data-key]")?.getAttribute("data-key") === "${key}") || null;
+})()`;
+async function mouseClickAt(page, at) {
+  assert.ok(at, "a point to click");
+  await page.call("Input.dispatchMouseEvent", { type: "mouseMoved", x: at.x, y: at.y });
+  await page.call("Input.dispatchMouseEvent", { type: "mousePressed", x: at.x, y: at.y, button: "left", buttons: 1, clickCount: 1 });
+  await page.call("Input.dispatchMouseEvent", { type: "mouseReleased", x: at.x, y: at.y, button: "left", clickCount: 1 });
+}
+async function mouseDrag(page, from, dx, dy) {
+  assert.ok(from, "a point to drag from");
+  await page.call("Input.dispatchMouseEvent", { type: "mouseMoved", x: from.x, y: from.y });
+  await page.call("Input.dispatchMouseEvent", { type: "mousePressed", x: from.x, y: from.y, button: "left", buttons: 1, clickCount: 1 });
+  for (let i = 1; i <= 10; i++) await page.call("Input.dispatchMouseEvent", { type: "mouseMoved", x: from.x + dx * i / 10, y: from.y + dy * i / 10, button: "left", buttons: 1 });
+  await page.call("Input.dispatchMouseEvent", { type: "mouseReleased", x: from.x + dx, y: from.y + dy, button: "left", clickCount: 1 });
+}
+// Until the camera has stood still (the ground grid unchanged) for eight frames.
+const cameraSettled = `new Promise((resolve) => { let last = "", same = 0; const t0 = performance.now(); (function step() { const now = document.querySelector(".uv-svg .uv-grid").getAttribute("d") + document.querySelector("[data-uv-cam]").textContent; if (now === last) same++; else { same = 0; last = now; } if (same >= 8 || performance.now() - t0 > 4000) resolve(same >= 8); else requestAnimationFrame(step); })(); })`;
+const emptyMapPoint = `(() => { const r = document.querySelector(".uv-svg").getBoundingClientRect(); for (const [fx, fy] of [[.1, .2], [.9, .2], [.1, .5], [.5, .12], [.9, .9]]) { const x = r.left + r.width * fx, y = r.top + r.height * fy; if (y > 0 && y < innerHeight && !document.elementFromPoint(x, y)?.closest("[data-key]")) return { x, y }; } return null; })()`;
+const overlapping = (boxes) => boxes.some((a, i) => boxes.some((b, j) => j > i && a[0] < b[2] && b[0] < a[2] && a[1] < b[3] && b[1] < a[3]));
+
+test("universe: Architecture stays the default; the switch opens all thirteen projects and comes back to Architecture as it was left", async () => {
+  await withPage({ width: 1440, height: 900 }, async (page) => {
+    await page.goto(`${base}/#work`);
+    await page.waitFor(`document.documentElement.classList.contains("workbench-ready")`);
+    assert.deepEqual(await page.evaluate(`({ pressed: [...document.querySelectorAll("[data-wb-view]")].map((b) => b.getAttribute("aria-pressed")), shell: document.querySelector("[data-universe]").hidden, loaded: typeof window.PortfolioUniverse, requested: performance.getEntriesByType("resource").some((e) => /universe\\.js/.test(e.name)) })`), { pressed: ["true", "false"], shell: true, loaded: "undefined", requested: false }, "Architecture by default, and nothing of Universe loaded");
+    // Architecture as a visitor leaves it: another system, another layer, exploded.
+    await page.evaluate(`document.getElementById("tab-procbeacon").click(); document.querySelector('[data-layer-btn="2"]').click(); document.querySelector("[data-explode]").click()`);
+    await page.evaluate(`new Promise((resolve) => setTimeout(resolve, 1200))`);
+    const before = await page.evaluate(architectureState);
+    const stageWidth = await page.evaluate(`document.querySelector("[data-wb-stage]").getBoundingClientRect().width`);
+    const heading = await page.evaluate(`document.getElementById("work-title").textContent`);
+    await openUniverse(page);
+    const s = await page.evaluate(universeState);
+    assert.equal(s.selected, "procbeacon", "Universe opens on the system selected in Architecture");
+    assert.deepEqual([s.title, s.pressed, s.jump], [config.projects.procbeacon.shortTitle, ["procbeacon"], "procbeacon"]);
+    assert.deepEqual(s.nodes.map((n) => n.key), [...ALL_KEYS].sort(), "all thirteen projects are in the space");
+    assert.equal(await page.evaluate(`document.querySelectorAll(".uv-item").length + "/" + document.querySelectorAll("[data-uv-jump] option").length`), `${ALL_KEYS.length}/${ALL_KEYS.length}`, "and in the list and the select");
+    assert.deepEqual(await page.evaluate(`["[data-wb-stage]", ".wb-index", ".wb-files"].map((s) => getComputedStyle(document.querySelector(s)).display)`), ["none", "none", "none"], "the architecture steps aside");
+    const mapWidth = await page.evaluate(`document.querySelector(".uv-map").getBoundingClientRect().width`);
+    assert.ok(mapWidth > stageWidth + 80, `the map (${Math.round(mapWidth)}px) is wider than the model's column (${Math.round(stageWidth)}px)`);
+    assert.equal(await page.evaluate(`document.getElementById("work-title").textContent`), "Thirteen projects, and what they share.");
+    // The first view names every project, legibly: no label overlaps another, none leaves the map.
+    assert.equal(s.labels.length, ALL_KEYS.length, `every project is named: ${s.labels.length}`);
+    assert.ok(!overlapping(s.labelBoxes), "no two labels overlap");
+    assert.ok(s.labelBoxes.every(([l, t, r, b]) => l >= s.svgBox[0] && r <= s.svgBox[2] && t >= s.svgBox[1] && b <= s.svgBox[3]), "every label lies inside the map");
+    assert.ok(s.nodes.every((n) => n.x > s.svgBox[0] && n.x < s.svgBox[2] && n.y > s.svgBox[1] && n.y < s.svgBox[3]), "every node lies inside the map");
+    // Back to Architecture: exactly as it was.
+    await page.click('[data-wb-view="architecture"]', { scroll: false });
+    assert.deepEqual(await page.evaluate(architectureState), before, "the system, the layer, the spacing and the angle are as they were");
+    assert.equal(await page.evaluate(`document.getElementById("work-title").textContent`), heading);
+    assert.deepEqual(await page.evaluate(`({ shell: document.querySelector("[data-universe]").hidden, live: document.querySelector("[data-universe]").classList.contains("is-live"), stage: getComputedStyle(document.querySelector("[data-wb-stage]")).display })`), { shell: true, live: false, stage: "block" });
+    // Over and over: one map, one script, and each choice acts once.
+    for (let i = 0; i < 4; i++) {
+      await page.click('[data-wb-view="universe"]', { scroll: false });
+      await page.click('[data-wb-view="architecture"]', { scroll: false });
+    }
+    await page.click('[data-wb-view="universe"]', { scroll: false });
+    await page.evaluate(`document.querySelector('.uv-item[data-uv-key="gurmat"]').click()`);
+    assert.equal(await page.evaluate(`document.querySelectorAll(".uv-svg").length + "/" + document.querySelectorAll('script[src*="universe.js"]').length + "/" + document.querySelectorAll(".uv-node.is-sel").length`), "1/1/1");
+    assert.equal((await page.evaluate(universeState)).selected, "gurmat", "Universe kept its own state, and the list still selects");
+    // A link to one of the six systems (the command palette's, say) shows its file: Architecture.
+    await page.evaluate(`location.hash = "#work-opssemble"`);
+    await page.waitFor(`document.querySelector('[data-wb-view="architecture"]').getAttribute("aria-pressed") === "true"`, { message: "a #work- link did not bring back Architecture" });
+    assert.deepEqual([await page.evaluate(selectedSystem), await page.evaluate(`document.querySelector("[data-universe]").hidden`)], ["opssemble", true]);
+    assert.deepEqual(page.errors(), []);
+  });
+});
+
+test("universe: a project is selected on its node, its label, the list or a related project; the panel follows, and its quick look and links lead where the project does", async () => {
+  await withPage({ width: 1440, height: 900 }, async (page) => {
+    await page.goto(`${base}/#work`);
+    await page.waitFor(`document.documentElement.classList.contains("workbench-ready")`);
+    await openUniverse(page);
+    await mouseClickAt(page, await page.evaluate(pointOnProject("gurmat", ".uv-hit")));
+    let s = await page.evaluate(universeState);
+    assert.deepEqual([s.selected, s.title, s.pressed], ["gurmat", "Gurmat Saanj", ["gurmat"]], "selected on its node");
+    await page.evaluate(drawFrames);
+    assert.match((await page.evaluate(universeState)).said, /^Gurmat Saanj selected\. Related: .+\.$/, "and said, with what it relates to");
+    await mouseClickAt(page, await page.evaluate(pointOnProject("esamarea", ".uv-tag")));
+    assert.equal((await page.evaluate(universeState)).selected, "esamarea", "selected on its label");
+    await page.click('.uv-item[data-uv-key="flowbank"]');
+    s = await page.evaluate(universeState);
+    assert.equal(s.selected, "flowbank", "selected in the list");
+    // Its relationships, each with what the two share and how, as configured.
+    const expected = config.universe.connections.filter(([a, b]) => a === "flowbank" || b === "flowbank");
+    assert.deepEqual(s.related.sort(), expected.map(([a, b]) => (a === "flowbank" ? b : a)).sort());
+    assert.deepEqual(s.details.sort(), expected.map((link) => link[3]).sort());
+    // A related project: selected, and focus moves to its name.
+    await page.click(`[data-uv-related] .uv-rel-btn[data-uv-key="alfaaz"]`);
+    assert.equal((await page.evaluate(universeState)).selected, "alfaaz");
+    assert.ok(await page.evaluate(`document.activeElement === document.querySelector("[data-uv-name]")`), "focus lands on the newly selected project's name");
+    // Its quick look opens in the drawer, and closing it returns focus to the button.
+    await page.click(".uv-quick");
+    await page.waitFor(`document.querySelector("[data-drawer]").open && document.querySelector("[data-drawer] .sf-title")?.textContent.trim() === "Alfaaz"`, { message: "the quick look did not open on Alfaaz" });
+    await page.key("Escape");
+    await page.waitFor(`!document.querySelector("[data-drawer]").open`);
+    await page.waitFor(focused(".uv-quick"), { message: "focus did not return to Quick look" });
+    // Every project's destinations, and only those it has.
+    for (const key of ALL_KEYS) {
+      await page.evaluate(`document.querySelector('.uv-item[data-uv-key="${key}"]').click()`);
+      const links = await page.evaluate(`[...document.querySelectorAll("[data-uv-actions] a")].map((a) => a.getAttribute("href"))`);
+      const project = config.projects[key];
+      const want = [project.caseStudy ? `/${project.caseStudy.replace(/\.html$/, "")}` : null, project.store || null, project.repository || null].filter(Boolean);
+      assert.deepEqual(links, want, `${key}: its case study, store and source, and nothing more`);
+      assert.ok(await page.evaluate(`!!document.querySelector('[data-uv-actions] [data-open-file="${key}"]')`), `${key}: a quick look`);
+    }
+    for (const key of ["flowbank", "procbeacon", "orbit"]) {
+      await page.evaluate(`document.querySelector('.uv-item[data-uv-key="${key}"]').click()`);
+      assert.equal(await page.evaluate(`document.querySelectorAll('[data-uv-actions] a[href*="github.com"]').length`), 0, `${key}: no GitHub link`);
+    }
+    assert.deepEqual(page.errors(), []);
+  });
+});
+
+test("universe: domains, connections and shared technologies keep the map, the lists and the panel consistent", async () => {
+  await withPage({ width: 1440, height: 900 }, async (page) => {
+    await page.goto(`${base}/#work`);
+    await page.waitFor(`document.documentElement.classList.contains("workbench-ready")`);
+    await openUniverse(page);
+    const domainOf = (key) => config.universe.projects[key].domain;
+    const degree = (key) => config.universe.connections.filter(([a, b]) => a === key || b === key).length;
+    await page.click('.uv-item[data-uv-key="flowbank"]');
+    assert.equal((await page.evaluate(universeState)).links, degree("flowbank"), "by default, only the selected project's connections");
+    await page.click("[data-uv-all]");
+    assert.equal((await page.evaluate(universeState)).links, config.universe.connections.length, "or every one");
+    // A domain: only its projects are in focus, the selection follows into it, and only
+    // connections between projects in view are drawn.
+    await page.click('[data-uv-filter="tools"]');
+    let s = await page.evaluate(universeState);
+    const tools = ALL_KEYS.filter((key) => domainOf(key) === "tools");
+    assert.deepEqual(s.out, ALL_KEYS.filter((key) => domainOf(key) !== "tools").sort());
+    assert.equal(s.selected, tools[0], "the selection moves into the domain");
+    assert.equal(s.links, config.universe.connections.filter(([a, b]) => domainOf(a) === "tools" && domainOf(b) === "tools").length);
+    assert.equal(s.count, `${tools.length} projects · 3D map`);
+    // A project outside it, from the list: back to every domain.
+    await page.click('.uv-item[data-uv-key="orbit"]');
+    s = await page.evaluate(universeState);
+    assert.deepEqual([s.selected, s.filter, s.out], ["orbit", "all", []]);
+    await page.click("[data-uv-all]");
+    // A shared technology, and a shared concern, highlight exactly the projects that list it.
+    await page.click('.uv-item[data-uv-key="esamarea"]');
+    await page.click('[data-uv-lit="tech"][data-uv-id="MySQL"]');
+    s = await page.evaluate(universeState);
+    const mysql = [...featuredList, ...alsoList].filter((project) => /\bMySQL\b/.test(project.tech)).map((project) => project.key).sort();
+    assert.deepEqual(s.lit, mysql);
+    assert.equal(s.count, `MySQL · ${mysql.length} projects`);
+    assert.equal(s.links, 0, "connections step back while highlighting");
+    await page.click("[data-uv-clear]");
+    assert.deepEqual((await page.evaluate(universeState)).lit, []);
+    await page.click('.uv-item[data-uv-key="flowbank"]');
+    await page.click('[data-uv-lit="concept"][data-uv-id="concurrency"]');
+    assert.deepEqual((await page.evaluate(universeState)).lit, Object.entries(config.universe.projects).filter(([, place]) => place.concepts.includes("concurrency")).map(([key]) => key).sort());
+    await page.click('[data-uv-filter="business"]');
+    s = await page.evaluate(universeState);
+    assert.deepEqual([s.lit, s.filter], [[], "business"], "a domain clears the highlight");
+    assert.deepEqual(page.errors(), []);
+  });
+});
+
+test("universe: the whole scene orbits, tilts and zooms together; Reset and Focus; a plain wheel still scrolls the page; a still map draws nothing", async () => {
+  await withPage({ width: 1440, height: 900 }, async (page) => {
+    await page.goto(`${base}/#work`);
+    await page.waitFor(`document.documentElement.classList.contains("workbench-ready")`);
+    await openUniverse(page);
+    let s = await page.evaluate(universeState);
+    assert.deepEqual([s.cam, s.zoom], ["AZ 18° / EL 24°", "100"], "the reference's camera");
+    const before = s;
+    // A sideways drag from empty space: everything moves, and the angle by 0.008 rad a pixel.
+    await mouseDrag(page, await page.evaluate(emptyMapPoint), 100, 0);
+    await page.evaluate(cameraSettled);
+    s = await page.evaluate(universeState);
+    assert.equal(s.cam, "AZ 64° / EL 24°");
+    assert.ok(s.nodes.every((n, i) => Math.hypot(n.x - before.nodes[i].x, n.y - before.nodes[i].y) > 2) && s.grid !== before.grid, "every node and the ground turned together");
+    assert.equal(s.selected, before.selected, "a drag selects nothing");
+    await mouseDrag(page, await page.evaluate(emptyMapPoint), 0, 50);
+    await page.evaluate(cameraSettled);
+    assert.equal((await page.evaluate(universeState)).cam, "AZ 64° / EL 41°", "and a vertical drag tilts it");
+    // The buttons, the slider, and Ctrl with the wheel.
+    await page.click("[data-uv-reset]");
+    await page.evaluate(cameraSettled);
+    s = await page.evaluate(universeState);
+    assert.deepEqual([s.cam, s.zoom], ["AZ 18° / EL 24°", "100"], "Reset view");
+    await page.click('[data-uv-turn="1"]');
+    await page.click('[data-uv-tilt="1"]');
+    await page.evaluate(cameraSettled);
+    assert.equal((await page.evaluate(universeState)).cam, "AZ 38° / EL 33°");
+    const small = (await page.evaluate(universeState)).nodes;
+    await page.evaluate(`(() => { const z = document.querySelector("[data-uv-zoom]"); z.value = 140; z.dispatchEvent(new Event("input", { bubbles: true })); })()`);
+    await page.evaluate(cameraSettled);
+    const big = (await page.evaluate(universeState)).nodes;
+    assert.ok(big.every((n, i) => n.w >= small[i].w - .01) && big.some((n, i) => n.w > small[i].w * 1.2), "zooming in draws the nodes larger");
+    const at = await page.evaluate(emptyMapPoint);
+    const y = await page.evaluate("scrollY");
+    await page.call("Input.dispatchMouseEvent", { type: "mouseWheel", x: at.x, y: at.y, deltaX: 0, deltaY: 200 });
+    await page.evaluate(`new Promise((resolve) => setTimeout(resolve, 400))`);
+    assert.ok((await page.evaluate("scrollY")) > y, "a plain wheel scrolls the page");
+    assert.equal((await page.evaluate(universeState)).zoom, "140", "and does not zoom");
+    await page.evaluate(toWorkbench);
+    await page.evaluate(drawFrames);
+    const again = await page.evaluate(emptyMapPoint);
+    await page.call("Input.dispatchMouseEvent", { type: "mouseWheel", x: again.x, y: again.y, deltaX: 0, deltaY: -200, modifiers: 2 });
+    await page.evaluate(cameraSettled);
+    assert.ok(Number((await page.evaluate(universeState)).zoom) > 140, "Ctrl with the wheel zooms");
+    // Focus: the selected project turns to the front.
+    await page.click('.uv-item[data-uv-key="sird"]');
+    await page.click("[data-uv-focus]");
+    await page.evaluate(cameraSettled);
+    s = await page.evaluate(universeState);
+    const sird = s.nodes.find((n) => n.key === "sird");
+    const middle = (s.svgBox[0] + s.svgBox[2]) / 2;
+    assert.ok(Math.abs(sird.x - middle) < (s.svgBox[2] - s.svgBox[0]) * .1, `SIRD Simulator is brought to the middle: ${Math.round(sird.x - middle)}px off`);
+    // Still, the map draws nothing: no script changes it.
+    const changes = await page.evaluate(`new Promise((resolve) => { let count = 0; const observer = new MutationObserver((records) => { count += records.length; }); observer.observe(document.querySelector(".uv-svg"), { attributes: true, subtree: true, childList: true }); setTimeout(() => { observer.disconnect(); resolve(count); }, 800); })`);
+    assert.equal(changes, 0, "a still map is not redrawn");
+    assert.deepEqual(page.errors(), []);
+  });
+});
+
+test("universe: by keyboard alone, the view, the projects, the domains, the camera and the highlights", async () => {
+  await withPage({ width: 1440, height: 900 }, async (page) => {
+    await page.goto(`${base}/#work`);
+    await page.waitFor(`document.documentElement.classList.contains("workbench-ready")`);
+    await page.evaluate(toWorkbench);
+    await page.evaluate(`document.querySelector('[data-wb-view="architecture"]').focus()`);
+    await page.key("Tab");
+    assert.ok(await page.evaluate(focused('[data-wb-view="universe"]')), "Tab moves from Architecture to Universe");
+    await page.key("Enter");
+    await page.waitFor(`!!document.querySelector(".uv-svg .uv-node")`);
+    assert.ok(await page.evaluate(`document.activeElement.matches('[data-wb-view="universe"][aria-pressed="true"]')`), "Universe opens, focus stays on its button");
+    await page.evaluate(`document.querySelector('.uv-item[data-uv-key="maintops"]').focus()`);
+    await page.key("Enter");
+    assert.equal((await page.evaluate(universeState)).selected, "maintops");
+    assert.ok(await page.evaluate(`getComputedStyle(document.activeElement).outlineStyle !== "none"`), "focus is visible");
+    await page.evaluate(`document.querySelector('[data-uv-filter="personal"]').focus()`);
+    await page.key(" ");
+    assert.equal((await page.evaluate(universeState)).filter, "personal");
+    await page.evaluate(`document.querySelector('[data-uv-filter="all"]').focus()`);
+    await page.key("Enter");
+    await page.evaluate(`document.querySelector('[data-uv-turn="-1"]').focus()`);
+    await page.key("Enter");
+    await page.evaluate(cameraSettled);
+    assert.equal((await page.evaluate(universeState)).cam, "AZ 358° / EL 24°", "Orbit left, by key");
+    await page.evaluate(`document.querySelector("[data-uv-zoom]").focus()`);
+    await page.key("ArrowRight");
+    await page.evaluate(cameraSettled);
+    assert.equal((await page.evaluate(universeState)).zoom, "101", "the zoom slider takes the arrow keys");
+    await page.evaluate(`document.querySelector('.uv-item[data-uv-key="maintops"]').click(); document.querySelector('[data-uv-lit="tech"][data-uv-id="Fastify"]').focus()`);
+    await page.key("Enter");
+    assert.deepEqual((await page.evaluate(universeState)).lit, ["maintops", "opssemble"]);
+    assert.ok(await page.evaluate(`document.activeElement.matches('[data-uv-lit="tech"][data-uv-id="Fastify"][aria-pressed="true"]')`), "focus stays on the pressed technology");
+    assert.deepEqual(page.errors(), []);
+  });
+});
+
+test("universe: by touch, a tap selects, a sideways swipe orbits, a vertical swipe scrolls the page, and two fingers zoom", async () => {
+  await withPage({ width: 820, height: 1180, mobile: true }, async (page) => {
+    await page.goto(`${base}/#work`);
+    await page.waitFor(`document.documentElement.classList.contains("workbench-ready")`);
+    await page.evaluate(toWorkbench);
+    await page.tap('[data-wb-view="universe"]', { scroll: false });
+    await page.waitFor(`!!document.querySelector(".uv-svg .uv-node") && document.querySelectorAll(".uv-label:not(.is-hidden)").length > 0`);
+    await page.evaluate(`document.querySelector(".uv-svg").scrollIntoView({ block: "center", behavior: "instant" })`);
+    await page.evaluate(drawFrames);
+    const tap = async (at) => { assert.ok(at, "a point to tap"); await page.call("Input.dispatchTouchEvent", { type: "touchStart", touchPoints: [{ x: at.x, y: at.y }] }); await page.call("Input.dispatchTouchEvent", { type: "touchEnd", touchPoints: [] }); await page.evaluate(drawFrames); };
+    await tap(await page.evaluate(pointOnProject("orbit", ".uv-hit")));
+    assert.equal((await page.evaluate(universeState)).selected, "orbit", "a tap on a node selects it");
+    const touchMove = async (points) => {
+      await page.call("Input.dispatchTouchEvent", { type: "touchStart", touchPoints: points.map(([x, y], id) => ({ x, y, id })) });
+      for (let i = 1; i <= 10; i++) { await page.call("Input.dispatchTouchEvent", { type: "touchMove", touchPoints: points.map(([x, y, dx, dy], id) => ({ x: x + dx * i / 10, y: y + dy * i / 10, id })) }); await new Promise((resolve) => setTimeout(resolve, 16)); }
+      await page.call("Input.dispatchTouchEvent", { type: "touchEnd", touchPoints: [] });
+      await page.evaluate(cameraSettled);
+    };
+    const at = await page.evaluate(emptyMapPoint);
+    await touchMove([[at.x, at.y, 120, 0]]);
+    const s = await page.evaluate(universeState);
+    assert.notEqual(s.cam, "AZ 18° / EL 24°", "a sideways swipe orbits");
+    assert.equal(s.selected, "orbit", "and selects nothing");
+    const y = await page.evaluate("scrollY");
+    await touchMove([[at.x, at.y, 0, -260]]);
+    assert.ok((await page.evaluate("scrollY")) > y + 40, "a vertical swipe scrolls the page");
+    await page.evaluate(`document.querySelector(".uv-svg").scrollIntoView({ block: "center", behavior: "instant" })`);
+    await page.evaluate(drawFrames);
+    const middle = await page.evaluate(`(() => { const r = document.querySelector(".uv-svg").getBoundingClientRect(); return { x: r.left + r.width / 2, y: r.top + r.height * .15 }; })()`);
+    await touchMove([[middle.x - 40, middle.y, -60, 0], [middle.x + 40, middle.y, 60, 0]]);
+    const zoom = Number((await page.evaluate(universeState)).zoom);
+    assert.ok(zoom > 120, `two fingers spread to zoom in: ${zoom}`);
+    assert.ok((await page.evaluate("document.documentElement.scrollWidth - innerWidth")) <= 0, "no horizontal overflow");
+    assert.deepEqual(page.errors(), []);
+  });
+});
+
+test("universe: reduced motion has no signals and moves the camera at once; the signals run only while the map can be seen", async () => {
+  await withPage({ width: 1440, height: 900, reducedMotion: true }, async (page) => {
+    await page.goto(`${base}/#work`);
+    await page.waitFor(`document.documentElement.classList.contains("workbench-ready")`);
+    await openUniverse(page);
+    assert.equal(await page.evaluate(`document.querySelectorAll(".uv-signals .uv-signal").length`), 0, "no signals");
+    await page.evaluate(`document.querySelector('[data-uv-turn="1"]').click()`);
+    assert.equal((await page.evaluate(universeState)).cam, "AZ 38° / EL 24°", "the camera is there at once");
+    assert.equal(await page.evaluate(`document.querySelector("[data-workbench]").getAnimations({ subtree: true }).filter((a) => a.playState === "running").length`), 0);
+    assert.deepEqual(page.errors(), []);
+  });
+  await withPage({ width: 1440, height: 900 }, async (page) => {
+    await page.goto(`${base}/#work`);
+    await page.waitFor(`document.documentElement.classList.contains("workbench-ready")`);
+    await openUniverse(page);
+    const running = `document.querySelector(".uv-stage").getAnimations({ subtree: true }).filter((a) => a.playState === "running").length`;
+    await page.evaluate(drawFrames);
+    assert.ok((await page.evaluate(universeState)).live && (await page.evaluate(running)) > 0, "in view, the signals run");
+    await page.evaluate(`scrollTo({ top: 0, behavior: "instant" })`);
+    await page.evaluate(drawFrames);
+    assert.ok(!(await page.evaluate(universeState)).live && (await page.evaluate(running)) === 0, "off screen, they stop");
+    await page.evaluate(toWorkbench);
+    await page.evaluate(drawFrames);
+    assert.ok((await page.evaluate(universeState)).live, "and start again in view");
+    await page.click('[data-wb-view="architecture"]', { scroll: false });
+    assert.equal(await page.evaluate(`document.querySelector("[data-universe]").classList.contains("is-live")`), false, "closed, they stop");
+    assert.deepEqual(page.errors(), []);
+  });
+});
+
+test("universe: while it is shown, the hero's drawing stays as it is; back in Architecture it turns into the model again", async () => {
+  await withPage({ width: 1440, height: 900 }, async (page) => {
+    await page.goto(`${base}/`);
+    await readyToMorph(page);
+    const { y0, y1 } = await page.evaluate(morphRange);
+    await openUniverse(page);
+    await scrollToY(page, Math.round((y0 + y1) / 2));
+    let state = await page.evaluate(morphState);
+    assert.ok(!state.morphing && state.hero === 1, `no change runs and the drawing is whole: ${JSON.stringify(state)}`);
+    assert.ok(!state.copy, "no copy of the floors is shown");
+    assert.equal(await page.evaluate(`document.querySelector('[data-wb-view="universe"]').getAttribute("aria-pressed")`), "true", "and the view is still Universe");
+    await page.evaluate(toWorkbench);
+    await page.click('[data-wb-view="architecture"]', { scroll: false });
+    await scrollToY(page, 0);
+    await readyToMorph(page);
+    await scrollToY(page, Math.round((y0 + y1) / 2));
+    state = await page.evaluate(morphState);
+    assert.ok(state.morphing && state.hero === 0, `in Architecture it runs again: ${JSON.stringify(state)}`);
+    assert.deepEqual(page.errors(), []);
+  });
+});
+
+test("universe: phones, tablets, intermediate widths and short windows keep the map, its labels and its controls usable", async () => {
+  for (const [width, height, mobile] of [[390, 844, true], [600, 900, false], [820, 1180, true], [1024, 768, false], [1180, 820, false], [1280, 600, false], [1920, 1080, false]]) {
+    await withPage({ width, height, mobile }, async (page) => {
+      const at = `${width}×${height}`;
+      await page.goto(`${base}/#work`);
+      await page.waitFor(`document.documentElement.classList.contains("workbench-ready")`);
+      await openUniverse(page);
+      const s = await page.evaluate(universeState);
+      assert.ok(s.nodes.every((n) => n.x > s.svgBox[0] && n.x < s.svgBox[2] && n.y > s.svgBox[1] && n.y < s.svgBox[3]), `${at}: every node lies inside the map`);
+      assert.ok(!overlapping(s.labelBoxes), `${at}: no two labels overlap`);
+      assert.ok(s.labels.includes(s.selected), `${at}: the selected project is named`);
+      const list = width >= 1280;
+      assert.deepEqual(await page.evaluate(`[getComputedStyle(document.querySelector(".uv-index")).display !== "none", getComputedStyle(document.querySelector(".uv-jump")).display !== "none"]`), [list, !list], `${at}: ${list ? "the list" : "the select"} names every project`);
+      if (!list) {
+        await page.evaluate(`(() => { const select = document.querySelector("[data-uv-jump]"); select.value = "tonequill"; select.dispatchEvent(new Event("change", { bubbles: true })); })()`);
+        assert.equal((await page.evaluate(universeState)).selected, "tonequill", `${at}: the select selects`);
+      }
+      // The camera's controls can be brought fully into view, inside the map.
+      await page.evaluate(`document.querySelector(".uv-camera").scrollIntoView({ block: "end", behavior: "instant" })`);
+      assert.ok(await page.evaluate(`(() => { const c = document.querySelector(".uv-camera").getBoundingClientRect(); const m = document.querySelector(".uv-map").getBoundingClientRect(); return c.bottom <= innerHeight + 1 && c.top >= 0 && c.left >= m.left - 1 && c.right <= m.right + 1; })()`), `${at}: the camera controls fit`);
+      assert.ok((await page.evaluate("document.documentElement.scrollWidth - innerWidth")) <= 0, `${at}: no horizontal overflow`);
+      assert.deepEqual(page.errors(), [], `${at}: errors`);
+    });
+  }
+});
+
+test("universe: without JavaScript, neither the switch nor the map is there, and every project stays in the page", async () => {
+  await withPage({ width: 1440, height: 900, javaScript: false }, async (page) => {
+    await page.goto(`${base}/#work`);
+    assert.deepEqual(await page.evaluate(`[${visible("[data-wb-mode]")}, ${visible(".uv-loading")}, document.querySelector("[data-universe]").hidden]`), [false, false, true]);
+    assert.equal(await page.evaluate(`document.querySelectorAll(".system-file").length`), ALL_KEYS.length);
+  });
+});
+
+test("universe: both themes colour the domains from the theme's own tokens", async () => {
+  for (const scheme of ["dark", "light"]) {
+    await withPage({ width: 1440, height: 900, scheme }, async (page) => {
+      await page.goto(`${base}/#work`);
+      await page.waitFor(`document.documentElement.classList.contains("workbench-ready")`);
+      await openUniverse(page);
+      const colours = await page.evaluate(`(() => { const token = (name) => { const probe = document.createElement("i"); probe.style.color = getComputedStyle(document.documentElement).getPropertyValue(name); document.body.append(probe); const value = getComputedStyle(probe).color; probe.remove(); return value; }; return ["business", "tools", "personal", "learning"].map((domain) => [getComputedStyle(document.querySelector('.uv-node[data-domain="' + domain + '"] .uv-top')).fill, token("--uv-" + domain)]); })()`);
+      for (const [fill, token] of colours) assert.equal(fill, token, `${scheme}: a node wears its domain's colour`);
+      assert.deepEqual(page.errors(), []);
+    });
+  }
 });

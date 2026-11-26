@@ -62,6 +62,13 @@
   --panel: rgb(17 18 21 / .97);
   --lightbox: rgb(8 9 10 / .96);
   --lightbox-backdrop: rgb(0 0 0 / .6);
+  /* Project Universe: one restrained colour per engineering domain, and the ground grid. */
+  --uv-business: #ff914c;
+  --uv-tools: #a9a4e8;
+  --uv-personal: #78c9a4;
+  --uv-learning: #75b9ec;
+  --uv-grid: #3e4b56;
+  --uv-ink: #0c0d0f;
 
   --sans: "Instrument Sans", ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
   --mono: "JetBrains Mono", ui-monospace, "SFMono-Regular", Consolas, "Liberation Mono", monospace;
@@ -137,6 +144,12 @@
   --panel: rgb(251 251 249 / .97);
   --lightbox: rgb(244 244 241 / .97);
   --lightbox-backdrop: rgb(20 21 24 / .3);
+  --uv-business: #a64b1a;
+  --uv-tools: #6055a4;
+  --uv-personal: #28744d;
+  --uv-learning: #245e94;
+  --uv-grid: #aab3aa;
+  --uv-ink: #ffffff;
 }
 @media (prefers-color-scheme: light) {
   :root:not([data-theme]) {
@@ -186,6 +199,12 @@
     --panel: rgb(251 251 249 / .97);
     --lightbox: rgb(244 244 241 / .97);
     --lightbox-backdrop: rgb(20 21 24 / .3);
+    --uv-business: #a64b1a;
+    --uv-tools: #6055a4;
+    --uv-personal: #28744d;
+    --uv-learning: #245e94;
+    --uv-grid: #aab3aa;
+    --uv-ink: #ffffff;
   }
 }
 
@@ -745,6 +764,165 @@ code { font-family: var(--mono); font-size: .86em; padding: .08em .36em; backgro
 }
 @media (min-width: 2001px) { :is(.wb-pending, .workbench-ready) .workbench { border-inline: 1px solid var(--line); } }
 
+/* ---------- The explorer's two views: Architecture and Universe ----------
+   A switch under the heading chooses Architecture (the systems, the four-layer model and the
+   selected system's file, as above) or Universe (every project in one 3D space, beside a panel
+   about the selected one). From 1280px Universe takes the same places in the grid: its list
+   where the systems are, its map where the model is (wider), its panel where the file is.
+   Narrower, the map comes straight after the heading, and a select stands in for the list. Only with JavaScript (assets/universe.js,
+   loaded the first time Universe is chosen). */
+.wb-mode { display: inline-flex; justify-self: start; gap: 2px; margin-top: 2px; padding: 2px; border: 1px solid var(--line-2); }
+.wm-btn { min-height: 32px; padding: 0 12px; border: 0; background: transparent; color: var(--text-4); font: 500 11px/1 var(--mono); letter-spacing: .08em; text-transform: uppercase; transition: color .2s, background-color .2s; }
+.wm-btn:hover { color: var(--text); }
+.wm-btn[aria-pressed="true"] { background: var(--bg-3); color: var(--accent); cursor: default; }
+.wm-btn:focus-visible { outline-offset: 1px; }
+@media (pointer: coarse) { .wm-btn { min-height: 40px; padding-inline: 14px; } }
+
+.workbench.is-universe > :is(.wb-index, .wb-files, .wb-stage) { display: none; }
+:is(.wb-pending, .workbench-ready) .workbench.is-universe { grid-template-areas: "intro" "stage" "files"; }
+.universe:not([hidden]) { display: contents; }
+.uv-loading { grid-area: stage; display: grid; place-items: center; min-height: 360px; margin: 0; border-block: 1px solid var(--line); font: 500 var(--t-mono)/1.4 var(--mono); letter-spacing: .08em; text-transform: uppercase; color: var(--text-4); }
+.universe [data-domain="all"] { --c: var(--text-4); }
+.universe [data-domain="business"] { --c: var(--uv-business); }
+.universe [data-domain="tools"] { --c: var(--uv-tools); }
+.universe [data-domain="personal"] { --c: var(--uv-personal); }
+.universe [data-domain="learning"] { --c: var(--uv-learning); }
+.uv-dot { display: inline-block; flex: none; width: 7px; height: 7px; border-radius: 50%; background: var(--c, var(--text-4)); }
+.uv-k { margin: 0; font: 500 10px/1.4 var(--mono); letter-spacing: .1em; text-transform: uppercase; color: var(--text-4); }
+
+/* The list beside the map: every project, by domain. */
+.uv-index { grid-area: index; display: none; min-width: 0; }
+.uv-groups { display: grid; gap: 16px; margin: 12px 0 0; padding: 0; list-style: none; }
+.uv-group-name { display: flex; align-items: center; gap: 8px; margin: 0 0 4px; font: 500 10px/1.4 var(--mono); letter-spacing: .1em; text-transform: uppercase; color: var(--text-4); }
+.uv-items { margin: 0; padding: 0; list-style: none; }
+.uv-item { display: block; width: 100%; min-height: 32px; padding: 6px 8px 6px 14px; border: 0; border-left: 1px solid var(--line-2); background: none; color: var(--text-2); font: 500 14px/1.3 var(--sans); text-align: left; transition: color .2s, border-color .2s, background-color .2s; }
+.uv-item:hover { border-left-color: var(--line-3); color: var(--text); }
+.uv-item[aria-pressed="true"] { padding-left: 13px; border-left: 2px solid var(--c); background: rgb(var(--accent-rgb) / .06); color: var(--text); }
+.uv-item.is-out { color: var(--text-4); }
+@media (pointer: coarse) { .uv-item { min-height: 40px; } }
+
+/* The map: the domains and the connections above, the camera below. */
+.uv-map { grid-area: stage; display: flex; flex-direction: column; min-width: 0; border-block: 1px solid var(--line); background: radial-gradient(ellipse at 48% 56%, rgb(var(--accent-rgb) / .035), transparent 68%); }
+.uv-bar { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; padding: 12px 16px; border-bottom: 1px solid var(--line); }
+.uv-jump { display: flex; flex: 1 1 100%; align-items: center; gap: 10px; }
+.uv-jump select { flex: 1; min-width: 0; min-height: 40px; padding: 0 10px; border: 1px solid var(--line-2); border-radius: 0; background: var(--bg-1); color: var(--text); font: 500 14px var(--sans); }
+.uv-filters { display: flex; flex-wrap: wrap; gap: 5px; }
+.uv-chip { display: inline-flex; align-items: center; gap: 7px; min-height: 30px; padding: 0 10px; border: 1px solid var(--line-2); background: var(--bg-1); color: var(--text-3); font: 500 12.5px/1 var(--sans); white-space: nowrap; transition: color .2s, border-color .2s, background-color .2s; }
+.uv-chip:hover { border-color: var(--line-3); color: var(--text); }
+.uv-chip[aria-pressed="true"] { border-color: var(--accent); background: rgb(var(--accent-rgb) / .06); color: var(--accent); }
+@media (pointer: coarse) { .uv-chip { min-height: 38px; } }
+.uv-hud { display: flex; align-items: center; gap: 12px; min-height: 24px; padding: 12px 16px 0; font: 500 10px/1.4 var(--mono); letter-spacing: .1em; text-transform: uppercase; color: var(--text-4); }
+.uv-count, .uv-cam { margin: 0; }
+.uv-cam { margin-left: auto; font-variant-numeric: tabular-nums; }
+.uv-clear { min-height: 24px; padding: 0 8px; border: 1px solid var(--line-2); background: none; color: var(--accent); font: inherit; letter-spacing: inherit; text-transform: inherit; }
+.uv-stage { position: relative; flex: none; height: clamp(340px, 104vw, 540px); min-height: 0; }
+.uv-camera { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; padding: 8px 16px 6px; }
+.uv-cbtn { min-width: 34px; min-height: 34px; padding: 0 10px; border: 1px solid var(--line-2); background: var(--bg-1); color: var(--text-3); font: 500 13px/1 var(--mono); transition: color .2s, border-color .2s; }
+.uv-cbtn.uv-text { font-size: 11px; letter-spacing: .02em; }
+.uv-cbtn:hover { border-color: var(--line-3); color: var(--text); }
+.uv-cbtn[aria-pressed="true"] { border-color: var(--accent); background: rgb(var(--accent-rgb) / .06); color: var(--accent); }
+@media (pointer: coarse) { .uv-cbtn { min-width: 42px; min-height: 42px; } }
+.uv-zoom { display: flex; flex: 1 1 140px; align-items: center; gap: 10px; min-width: 120px; }
+.uv-zoom input { width: 100%; min-height: 30px; accent-color: var(--accent); }
+.uv-hint { margin: 0; padding: 2px 16px 14px; color: var(--text-4); font: 400 12px/1.5 var(--sans); }
+
+/* The drawing: perspective-projected, every colour from the theme. */
+.uv-svg { position: absolute; inset: 0; display: block; width: 100%; height: 100%; overflow: hidden; cursor: grab; touch-action: pan-y; user-select: none; -webkit-user-select: none; }
+.uv-svg.is-dragging { cursor: grabbing; }
+.uv-grid { fill: none; stroke: var(--uv-grid); stroke-width: .65; opacity: .28; }
+.uv-guide { fill: none; stroke: var(--uv-grid); stroke-width: .8; opacity: .48; }
+.uv-guide.is-outer { stroke-dasharray: 3 6; }
+.uv-glow-in { stop-color: var(--accent); stop-opacity: .25; }
+.uv-glow-out { stop-color: var(--accent); stop-opacity: 0; }
+.uv-node { cursor: pointer; transition: opacity .25s; }
+.uv-stem { stroke: var(--c); stroke-width: .8; stroke-dasharray: 3 5; opacity: .18; }
+.uv-foot { fill: var(--c); opacity: .11; }
+.uv-halo-glow, .uv-ring { display: none; }
+.uv-node.is-sel .uv-halo-glow { display: inline; fill: url(#uv-glow); }
+.uv-node.is-sel .uv-ring { display: inline; fill: none; stroke: var(--c); stroke-width: .8; stroke-dasharray: 3 4; opacity: .9; }
+.uv-node.is-sel .uv-stem { opacity: .5; }
+.uv-node.is-sel .uv-foot { opacity: .35; }
+.uv-face { fill: var(--c); stroke: var(--c); stroke-width: .85; stroke-linejoin: round; }
+.uv-left { fill-opacity: .16; }
+.uv-right { fill-opacity: .38; }
+.uv-top { fill-opacity: .47; stroke-width: 1; }
+.uv-node.is-sel .uv-top { fill-opacity: .8; }
+/* Unpainted, but it takes the pointer: a target a little larger than the node. */
+.uv-hit { fill: none; pointer-events: all; }
+.uv-node.is-out { opacity: .12; pointer-events: none; }
+.uv-svg.is-lit .uv-node:not(.is-lit, .is-sel) { opacity: .2; }
+.uv-label { cursor: pointer; }
+.uv-label.is-hidden, .uv-link.is-hidden { display: none; }
+.uv-tie { stroke: var(--c); stroke-width: .8; opacity: .5; }
+.uv-tag { fill: var(--bg-1); fill-opacity: .96; stroke: var(--c); stroke-width: .6; stroke-opacity: .62; }
+.uv-name { fill: var(--text); font: 400 10px var(--mono); }
+.uv-label.is-sel .uv-tie { opacity: .9; }
+.uv-label.is-sel .uv-tag { fill: var(--c); fill-opacity: 1; stroke-width: 1; stroke-opacity: 1; }
+.uv-label.is-sel .uv-name { fill: var(--uv-ink); font-size: 11px; font-weight: 600; }
+.uv-halo { stroke: var(--uv-grid); stroke-width: 1; stroke-linecap: round; opacity: .18; }
+.uv-line { stroke: var(--uv-grid); stroke-width: .65; stroke-linecap: round; stroke-dasharray: 4 5; opacity: .37; }
+.uv-link.is-on .uv-halo { stroke: var(--accent); stroke-width: 5; opacity: .065; }
+.uv-link.is-on .uv-line { stroke: var(--accent); stroke-width: 1.5; stroke-dasharray: none; opacity: .8; }
+/* A signal travels outward along each of the selected project's connections: a dot under the
+   drawing that universe.js moves by its transform alone (the compositor runs it, so the drawing
+   is never repainted for it), only while the map can be seen, and not at all with reduced motion. */
+.uv-signals { position: absolute; inset: 0; overflow: hidden; pointer-events: none; }
+.uv-signal { position: absolute; left: -2.6px; top: -2.6px; width: 5.2px; height: 5.2px; border-radius: 50%; background: var(--accent); opacity: .9; will-change: transform; }
+@media (prefers-reduced-motion: reduce) { .uv-signals { display: none; } }
+
+/* The panel: the selected project, what it is made of and what it shares. */
+.uv-panel { grid-area: files; min-width: 0; padding: 26px var(--pad) 44px; }
+.uv-kicker { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 8px; margin: 0; font: 500 10px/1.5 var(--mono); letter-spacing: .1em; text-transform: uppercase; color: var(--c); }
+.uv-sep { color: var(--text-5); }
+.uv-kicker > span:last-child { color: var(--text-4); }
+.uv-title { margin: 12px 0 0; font: 600 clamp(1.55rem, 2.1vw, 1.95rem)/1.08 var(--sans); letter-spacing: -.025em; }
+.uv-title:focus { outline: none; }
+.uv-meta { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 14px; margin: 12px 0 0; }
+.uv-meta .sf-source { font: 500 11px/1.2 var(--mono); color: var(--text-4); }
+.uv-summary { max-width: 48ch; margin: 14px 0 0; color: var(--text-2); font-size: .95rem; line-height: 1.6; }
+.uv-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 16px; margin: 18px 0 0; }
+.uv-actions .btn { min-height: 40px; padding-inline: 14px; font-size: 14px; }
+.uv-panel > .uv-k { margin-top: 24px; }
+.uv-tags { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 9px; }
+.uv-tag-item { display: inline-flex; align-items: center; gap: 7px; min-height: 28px; padding: 0 8px; border: 1px solid var(--line-2); background: transparent; color: var(--text-3); font: 400 11px/1 var(--mono); }
+button.uv-tag-item { color: var(--text-2); transition: color .2s, border-color .2s; }
+button.uv-tag-item:hover { border-color: var(--line-3); color: var(--text); }
+.uv-tag-item[aria-pressed="true"] { border-color: var(--accent); color: var(--accent); }
+.uv-n { color: var(--text-4); font-size: 10px; }
+.uv-tag-item[aria-pressed="true"] .uv-n { color: inherit; }
+@media (pointer: coarse) { .uv-tag-item { min-height: 36px; } }
+.uv-related { display: grid; gap: 6px; margin: 10px 0 0; padding: 0; list-style: none; }
+.uv-rel { border: 1px solid var(--line-2); background: var(--bg-1); transition: border-color .2s; }
+.uv-rel:hover { border-color: var(--line-3); }
+.uv-rel-btn { display: grid; gap: 4px; width: 100%; padding: 10px 12px 4px; border: 0; background: none; color: var(--text); font: 500 14px/1.3 var(--sans); text-align: left; }
+.uv-rel-name { display: flex; align-items: center; gap: 8px; }
+.uv-rel-why { color: var(--accent); font: 500 10.5px/1.4 var(--mono); letter-spacing: .02em; }
+.uv-rel-detail { margin: 0; padding: 0 12px 10px; color: var(--text-3); font-size: .82rem; line-height: 1.5; }
+
+/* Under 600px the domains are one row that scrolls sideways, so the map starts sooner. */
+@media (max-width: 599px) {
+  .uv-filters { flex-wrap: nowrap; overflow-x: auto; margin-inline: -16px; padding-inline: 16px; scrollbar-width: none; }
+  .uv-filters::-webkit-scrollbar { display: none; }
+}
+@media (min-width: 900px) { .uv-stage { flex: 1 1 auto; height: auto; } }
+/* 900-1279px: the heading, then the map beside the panel (the select names every project). */
+@media (min-width: 900px) and (max-width: 1279px) {
+  :is(.wb-pending, .workbench-ready) .workbench.is-universe { grid-template-columns: minmax(0, 1fr) clamp(280px, 32vw, 340px); grid-template-areas: "intro intro" "stage files"; }
+  .uv-map { height: min(calc(100svh - var(--header-h)), 760px); border-right: 1px solid var(--line); }
+  .uv-panel { padding: 26px 24px 44px; border-top: 1px solid var(--line); }
+}
+/* 1280px and up: the list, the map (wider than the model's column) and the panel side by side;
+   the map stays under the header as the page scrolls, like the stage. */
+@media (min-width: 1280px) {
+  .uv-jump { display: none; }
+  .uv-index { display: block; }
+  :is(.wb-pending, .workbench-ready) .workbench.is-universe { grid-template-columns: clamp(280px, 21vw, 360px) minmax(0, 1fr) clamp(300px, 23vw, 380px); grid-template-rows: auto 1fr; grid-template-areas: "intro stage files" "index stage files"; }
+  .uv-index { padding: 0 30px 32px clamp(24px, 2.2vw, 36px); }
+  .uv-map { position: sticky; top: var(--header-h); align-self: start; height: calc(100svh - var(--header-h)); border-block: 0; border-inline: 1px solid var(--line); }
+  .uv-panel { padding: clamp(28px, 5vh, 48px) clamp(20px, 2vw, 30px) 48px; }
+}
+@media (min-width: 900px) and (max-height: 520px) { .uv-map { position: relative; top: auto; height: 520px; } }
+
 /* ---------- First paint ----------
    A visitor with JavaScript gets the explorer composition from the very first frame: the head
    script marks the page .wb-pending, the first system is current in the markup, and the
@@ -754,6 +932,7 @@ code { font-family: var(--mono); font-size: .86em; padding: .08em .36em; backgro
    .nav-pending: the theme switch, the copy button and the contact trace. */
 .wb-pending .sf-peek[hidden] { display: grid !important; }
 .wb-pending .ab-toggle[hidden] { display: inline-flex !important; }
+.wb-pending .wb-mode[hidden] { display: inline-flex !important; }
 .wb-pending .wb-list > li:first-child > .wb-item { color: var(--text); }
 .wb-pending .wb-list > li:first-child > .wb-item .wi-no { color: var(--accent); }
 .nav-pending .theme-switch[hidden] { display: inline-flex !important; }

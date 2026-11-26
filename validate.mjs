@@ -190,6 +190,15 @@ if ((home.match(/data-wb-stage/g) || []).length !== 1) fail("homepage: expected 
 if ((home.match(/data-plane="/g) || []).length !== siteConfig.layers.length) fail("homepage: stage plane count does not match the configured layers");
 if ((home.match(/data-socket="/g) || []).length !== siteConfig.layers.length * featuredProjects.length) fail("homepage: every plane needs one socket per featured system");
 if ((home.match(/<dialog class="drawer" data-drawer/g) || []).length !== 1) fail("homepage: expected one case-file drawer");
+// Project Universe: the view switch and the map's shell are in the page only for workbench.js to
+// reveal (hidden without JavaScript), and the built universe.js carries every project.
+if ((home.match(/<div class="wb-mode" role="group" aria-label="Explorer view" data-wb-mode(?:="")? [^>]*\bhidden(?:="")?>/g) || []).length !== 1) fail("homepage: expected one explorer view switch, hidden until workbench.js reveals it");
+if ((home.match(/<div class="universe" data-universe(?:="")? hidden(?:="")?>/g) || []).length !== 1) fail("homepage: expected one Universe shell, hidden until it is chosen");
+{
+  const universeJs = await fs.readFile(path.join(root, "assets/universe.js"), "utf8").catch(() => "");
+  if (!universeJs || universeJs.includes("%UNIVERSE_DATA%")) fail("assets/universe.js: missing, or built without its data");
+  for (const project of [...featuredProjects, ...alsoProjects]) if (!universeJs.includes(`"key":"${project.key}"`)) fail(`assets/universe.js: ${project.shortTitle} is missing from the universe`);
+}
 if (!home.includes('<div class="stage-scene" aria-hidden="true"')) fail("homepage: the decorative stack must be hidden from assistive technology");
 if (/live demo|public demo available|production-ready|enterprise-grade|battle-tested|% ?uptime|99\.\d|\d+[,\d]* (active )?users|customers|downloads/i.test(home)) fail("homepage: unsupported usage, availability or maturity claim");
 
