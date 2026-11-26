@@ -66,7 +66,7 @@
     return el;
   }
 
-  function mount(shell, { quickLook = false, motion = matchMedia("(prefers-reduced-motion: reduce)") } = {}) {
+  function mount(shell, { quickLook = false, motion = matchMedia("(prefers-reduced-motion: reduce)"), architecture = null } = {}) {
     const projects = DATA.projects;
     const byKey = new Map(projects.map((project) => [project.key, project]));
     const domains = new Map(DATA.domains.map((domain) => [domain.id, domain]));
@@ -89,6 +89,7 @@
     let last = 0;
     let dragging = false; // a drag on the map is under way
     let lean = false; // the lighter drawing, while the camera moves on a slow device
+    let bridge = null; // the model turning into the map, or back, while it runs (see the end)
 
     // The view's styles, added once, before anything of it exists.
     if (!document.querySelector("style[data-uv-styles]")) {
@@ -170,6 +171,8 @@
     const glow = svgEl("radialGradient", { id: "uv-glow" }, defs);
     svgEl("stop", { offset: "0", class: "uv-glow-in" }, glow);
     svgEl("stop", { offset: "1", class: "uv-glow-out" }, glow);
+    // The map's own edges, for the ground while the bridge lets the rest of the drawing out of them.
+    const frameRect = svgEl("rect", { x: 0, y: 0, width: 0, height: 0 }, svgEl("clipPath", { id: "uv-frame" }, defs));
     const grid = svgEl("path", { class: "uv-grid" }, svg);
     // The circular guides: the two inner ones in one path, the dashed outer one in another.
     const guideInner = svgEl("path", { class: "uv-guide" }, svg);
@@ -193,12 +196,12 @@
       const stem = svgEl("path", { class: "uv-stem" }, g);
       const foot = svgEl("ellipse", { class: "uv-foot", rx: 10, ry: 3.5 }, g);
       const body = svgEl("g", { class: "uv-body" }, g);
-      svgEl("circle", { class: "uv-halo-glow", r: 48 }, body);
+      const glow = svgEl("circle", { class: "uv-halo-glow", r: 48 }, body);
       const ring = svgEl("circle", { class: "uv-ring", r: 23 }, body);
       const cube = svgEl("g", { class: "uv-cube" }, body);
       for (const face of ["left", "right", "top"]) svgEl("polygon", { class: `uv-face uv-${face}`, points: CUBE[face] }, cube);
       const hit = svgEl("circle", { class: "uv-hit" }, body);
-      return [project.key, { g, stem, foot, body, ring, cube, hit }];
+      return [project.key, { g, stem, foot, body, glow, ring, cube, hit }];
     }));
     // A label: its tag and name, moved as one by its transform, and the tie back to its node.
     const labels = new Map(projects.map((project) => {
@@ -251,7 +254,8 @@
     // each (a transform, or a path), written only when it changes; nothing is rebuilt, and only
     // the nodes whose depth order changed move in the document.
     function draw() {
-      if (!shown || !view.w || !view.h) return;
+      // While the model turns into the map (or back) the bridge below draws, and draws this last.
+      if (!shown || !view.w || !view.h || bridge) return;
       const W = view.w, H = view.h;
       aim();
       // The ground: a grid and three circular guides.
@@ -579,6 +583,9 @@
 
     /* ---------- Size and visibility ---------- */
     function fit(width, height) {
+      // The map changing size under a change between the views (its fonts arriving, say): the
+      // change ends, where it was going, before the map is drawn at its new size.
+      if (bridge && (Math.round(width) !== view.w || Math.round(height) !== view.h)) bridge.finish();
       view.w = Math.round(width);
       view.h = Math.round(height);
       view.narrow = view.w < 520;
@@ -613,6 +620,505 @@
     motion.addEventListener?.("change", wake);
     document.fonts?.ready.then(() => { widths.clear(); draw(); });
 
+    /* ---------- From the model to the map, and back ----------
+       On wide screens, choosing Universe turns the explorer's model into this map, and choosing
+       Architecture turns it back. The floors part and the top floor's sockets light up; the six
+       systems leave their sockets and arc out to their places; the upper floors rise and fade,
+       and the lowest becomes the ground: its grid is the first cells of the map's own, and it
+       unfolds into it, carrying the other projects up out of it, where they stand. Last come the
+       names, the connections and the map's controls. Back is the same, in reverse.
+       It is one function of its progress (p: 0 is the model, 1 the map), so a new choice midway
+       turns it round from wherever it has got to, and its two ends are the two views exactly:
+       the model as it was left, and this drawing as draw() makes it, which draw() takes over.
+       While it runs, the page is laid out as Universe; the model, the systems and the selected
+       system's file stand exactly where they were (workbench.js hands them over), under this
+       drawing, which the bridge draws on the elements it always has (nothing is copied or
+       rebuilt), and everything they need held still is. Every style and attribute it writes is
+       taken away at the end.
+       Under 1280px the two views do not share a place (the model is beside or below the file,
+       the map right under the heading), so there the layout changes at once and the map
+       assembles where it is instead: its ground comes up, the projects rise out of it on their
+       stems, then come their names and connections; going back, it comes apart before the model
+       returns. The same progress, so the same turning round.
+       Neither runs with reduced motion, while something else moves the model (the hero's
+       drawing turning into it, the quick look) or from a link (Back, Forward, #work-…, the
+       command palette), which change view at once. A scroll carries the model and the map
+       together, so it carries on through one; anything that would move what it stands on (a
+       resize, a new theme, a hidden page, leaving) ends it at once, where it was
+       going, as does a device too slow to run it. */
+    const model = architecture && (() => {
+      const root = architecture.stage;
+      const floors = [...(root?.querySelectorAll("[data-plane]") ?? [])].sort((a, b) => a.dataset.plane - b.dataset.plane);
+      if (floors.length < 2) return null;
+      return {
+        stage: root,
+        stack: root.querySelector("[data-stack]"),
+        shift: root.querySelector("[data-stack-shift]"),
+        spin: root.querySelector(".stack-spin"),
+        floors,
+        top: floors[0],
+        base: floors[floors.length - 1],
+        // What goes first: the caption, the controls, the floors' tags and the cut.
+        lead: [root.querySelector(".stage-hud"), root.querySelector("[data-stage-controls]"), ...root.querySelectorAll("[data-plane-tag], [data-beam]")].filter(Boolean),
+        sides: (architecture.sides || []).filter(Boolean)
+      };
+    })();
+    const chrome = [index, panel, ...map.querySelectorAll(".uv-bar, .uv-hud, .uv-camera, .uv-hint")];
+    const wide = matchMedia("(min-width: 1280px)"); // where the model itself turns into the map
+    const BRIDGE_MS = 1400;
+    const ASSEMBLE_MS = 900; // the map assembling in place, under 1280px
+    const RELEASE = 1.35; // how far the floors part first, as a share of their spacing
+    const CELL = 480 / 12; // the floor's 12 grid cells are the ground's 40-unit cells
+    const ramp = (p, a, b) => clamp((p - a) / (b - a), 0, 1);
+    const inOut = (t) => (t < .5 ? 4 * t * t * t : 1 - (2 - 2 * t) ** 3 / 2);
+    const easeOut = (t) => 1 - (1 - t) ** 3;
+    const mix = (a, b, t) => (t <= 0 ? a : t >= 1 ? b : a + (b - a) * t);
+    const f3 = (value) => String(Math.round(value * 1000) / 1000);
+    const inView = (r) => Math.min(r.bottom, innerHeight) - Math.max(r.top, 0) >= Math.min(r.height, innerHeight) * .5;
+
+    // Inline styles, each written only when it changes, and all taken away at the end.
+    const styled = new Map();
+    function put(el, property, value) {
+      let last = styled.get(el);
+      if (!last) styled.set(el, last = {});
+      if (last[property] === value) return;
+      last[property] = value;
+      el.style.setProperty(property, value);
+    }
+    function unstyle() {
+      for (const [el, props] of styled) {
+        for (const property in props) el.style.removeProperty(property);
+        if (el.getAttribute("style") === "") el.removeAttribute("style");
+      }
+      styled.clear();
+    }
+
+    // The projective map of the unit square onto a quadrilateral seen in perspective (its corners
+    // (0,0), (1,0), (1,1), (0,1) in order): any point of a floor, from its four corners.
+    function squareTo([p0, p1, p2, p3]) {
+      const dx1 = p1.x - p2.x, dx2 = p3.x - p2.x, dx3 = p0.x - p1.x + p2.x - p3.x;
+      const dy1 = p1.y - p2.y, dy2 = p3.y - p2.y, dy3 = p0.y - p1.y + p2.y - p3.y;
+      const det = dx1 * dy2 - dx2 * dy1;
+      const g = det ? (dx3 * dy2 - dx2 * dy3) / det : 0;
+      const h = det ? (dx1 * dy3 - dx3 * dy1) / det : 0;
+      const a = p1.x - p0.x + g * p1.x, b = p3.x - p0.x + h * p3.x;
+      const d = p1.y - p0.y + g * p1.y, e = p3.y - p0.y + h * p3.y;
+      return (u, v) => { const w = g * u + h * v + 1; return { x: (a * u + b * v + p0.x) / w, y: (d * u + e * v + p0.y) / w }; };
+    }
+
+    // The model, as it is drawn now: where its stage and the parts beside it are, how far apart
+    // its floors are (under the pointer they part a little, Explode parts them more), and, held
+    // still and parted as the bridge first parts it, where the top floor's sockets and the lowest
+    // floor's corners are. Null if there is no model to start from.
+    function readModel() {
+      const rect = model.stage.getBoundingClientRect();
+      if (!rect.width || !rect.height || !inView(rect)) return null;
+      let gap = 0;
+      try { gap = new DOMMatrixReadOnly(getComputedStyle(model.top).transform).m43 / (model.floors.length - 1); } catch { /* no model */ }
+      if (!(gap > 0)) return null;
+      const held = [model.shift, model.stack].filter(Boolean).map((el) => [el, getComputedStyle(el).transform]);
+      const drift = model.spin?.getAnimations?.()[0]?.currentTime ?? null;
+      const sides = model.sides.map((el) => [el, el.getBoundingClientRect()]);
+      const explorer = model.stage.parentElement;
+      const box = explorer.getBoundingClientRect();
+      const origin = { x: box.left + explorer.clientLeft, y: box.top + explorer.clientTop };
+      architecture.bridging(true);
+      explorer.classList.add("is-turning"); // the model itself is carried across (universe.css)
+      for (const [el, value] of held) put(el, "transform", value);
+      paintFloors(RELEASE, 0, gap);
+      const sockets = new Map();
+      model.top.querySelectorAll("[data-socket]").forEach((socket) => {
+        const key = architecture.featured?.[Number(socket.dataset.socket)];
+        if (!byKey.has(key)) return;
+        const r = socket.getBoundingClientRect();
+        sockets.set(key, { x: r.left + r.width / 2, y: r.top + r.height / 2 });
+      });
+      const probes = [[0, 0], [100, 0], [100, 100], [0, 100]].map(([u, v]) => {
+        const probe = document.createElement("i");
+        probe.style.cssText = `position:absolute;left:${u}%;top:${v}%;width:0;height:0`;
+        model.base.append(probe);
+        return probe;
+      });
+      const corners = probes.map((probe) => { const r = probe.getBoundingClientRect(); return { x: r.left, y: r.top }; });
+      probes.forEach((probe) => probe.remove());
+      return { rect, gap, drift, sides, origin, sockets, floor: squareTo(corners) };
+    }
+    // The model and the parts beside it stand where they were while the page changes under them.
+    // First choice: still in the explorer's grid, in their own rows, across all its columns at
+    // their own width and offset. From 1280px the two layouts share their rows and the first
+    // column, so they do not move, the model still sticks under the header, and every one of them
+    // is drawn exactly as it was, on the same layers. Once the other layout is in, `hold` checks;
+    // any that moved after all (the layouts under 1280px differ) is placed in the explorer's box
+    // instead.
+    const PLACES = ["grid-column", "justify-self", "width", "margin-left"];
+    function stand(el, r, origin) {
+      put(el, "grid-column", "1 / -1");
+      put(el, "justify-self", "start");
+      put(el, "width", `${r.width}px`);
+      put(el, "margin-left", `${r.left - origin.x}px`);
+    }
+    function hold(el, r, origin) {
+      const now = el.getBoundingClientRect();
+      const moved = (a, b) => Math.abs(a - b) > .5;
+      if (!moved(now.left, r.left) && !moved(now.top, r.top) && !moved(now.width, r.width) && (el !== model.stage || !moved(now.height, r.height))) return false;
+      for (const property of PLACES) put(el, property, "");
+      put(el.parentElement, "position", "relative");
+      put(el, "position", "absolute");
+      put(el, "grid-area", "auto"); // placed in the explorer's box, not in its own grid area
+      put(el, "left", `${r.left - origin.x}px`);
+      put(el, "top", `${r.top - origin.y}px`);
+      put(el, "width", `${r.width}px`);
+      put(el, "height", `${r.height}px`);
+      put(el, "margin", "0");
+      return true;
+    }
+    // All of them held: true if any had to be placed in the explorer's box after all.
+    const holdAll = (m) => [[model.stage, m.rect], ...m.sides].map(([el, r]) => hold(el, r, m.origin)).some(Boolean);
+
+    // Both ends of every path, in this drawing's coordinates: from the model (m) to the map as the
+    // camera sees it now; without a model (the map assembling in place), from the ground itself.
+    function plan(m, box) {
+      aim();
+      const ground = (x, z) => project3d(x, GROUND, z);
+      let floor = ground;
+      if (m) {
+        // The lowest floor lies on the ground's middle 12 x 12 cells, turned whichever quarter
+        // brings its corners nearest to where the ground's will be, so it turns the least on the way.
+        const ends = [[-240, -240], [240, -240], [240, 240], [-240, 240]].map(([x, z]) => ground(x, z));
+        const turns = [(u, v) => [u, v], (u, v) => [1 - v, u], (u, v) => [1 - u, 1 - v], (u, v) => [v, 1 - u]];
+        const at = (turn, u, v) => { const s = m.floor(...turn(u, v)); return { x: s.x - box.left, y: s.y - box.top }; };
+        let turn = turns[0];
+        let best = Infinity;
+        for (const option of turns) {
+          const cost = [[0, 0], [1, 0], [1, 1], [0, 1]].reduce((sum, [u, v], i) => { const s = at(option, u, v); return sum + (s.x - ends[i].x) ** 2 + (s.y - ends[i].y) ** 2; }, 0);
+          if (cost < best) { best = cost; turn = option; }
+        }
+        floor = (x, z) => at(turn, .5 + x / (CELL * 12), .5 + z / (CELL * 12));
+      }
+      const lines = [];
+      for (let k = -280; k <= 280; k += 40) {
+        lines.push([floor(k, -260), ground(k, -260), floor(k, 260), ground(k, 260)]);
+        lines.push([floor(-280, k), ground(-280, k), floor(280, k), ground(280, k)]);
+      }
+      const rings = [115, 210, 280].map((radius) => RING.map(([c, s]) => [floor(c * radius, s * radius), ground(c * radius, s * radius)]));
+      // The six systems leave their sockets one after another, the one selected first; the
+      // others rise out of the floor a little later, each from where it stands. Assembling in
+      // place, all of them rise, the selected one first.
+      const fromSockets = m ? [...m.sockets.keys()] : [];
+      const first = fromSockets.includes(state.selected) ? [state.selected, ...fromSockets.filter((key) => key !== state.selected)] : fromSockets;
+      const rising = m ? null : [state.selected, ...projects.map((project) => project.key).filter((key) => key !== state.selected)];
+      let risen = 0;
+      const items = projects.map((project) => {
+        const [x, y, z] = project.position;
+        const node = nodes.get(project.key);
+        const end = project3d(x, y, z);
+        const drawn = parseFloat(getComputedStyle(node.g).opacity);
+        const it = {
+          node,
+          label: labels.get(project.key),
+          sel: project.key === state.selected,
+          end,
+          footFrom: floor(x, z),
+          footTo: ground(x, z),
+          q: Math.round((view.narrow ? .9 : 1) * clamp(end.s, .7, 1.35) * 100) / 100,
+          opacity: Number.isNaN(drawn) ? 1 : drawn
+        };
+        const socket = m?.sockets.get(project.key);
+        if (rising) {
+          const n = rising.indexOf(project.key);
+          it.t0 = .08 + n * .035; it.t1 = it.t0 + .42; it.a0 = it.t0; it.a1 = it.t0 + .08;
+        } else if (socket) {
+          const n = first.indexOf(project.key);
+          it.from = { x: socket.x - box.left, y: socket.y - box.top };
+          it.arc = Math.min(90, Math.hypot(end.x - it.from.x, end.y - it.from.y) * .22);
+          it.t0 = .2 + n * .022; it.t1 = .74 + n * .022; it.a0 = it.t0 - .08; it.a1 = it.t0;
+        } else {
+          const n = risen++;
+          it.t0 = .38 + n * .022; it.t1 = .8 + n * .022; it.a0 = it.t0; it.a1 = it.t0 + .08;
+        }
+        it.l0 = it.t1 - .06;
+        it.l1 = Math.min(1, it.t1 + .04);
+        return it;
+      });
+      return { lines, rings, items };
+    }
+
+    // The floors at a spacing (1 is the model's own) and as far into rising away as `rise` (0 to 1);
+    // the lowest stays where it lies.
+    function paintFloors(parted, rise, gap) {
+      const n = model.floors.length;
+      model.floors.forEach((floor, i) => {
+        const z = n - 1 - i;
+        if (!z) return;
+        const f = inOut(ramp(rise, i * .15, .7 + i * .15));
+        put(floor, "transform", `translateZ(${(z * gap * (parted + .45 * f)).toFixed(2)}px) scale(${f3(1 + .08 * f)})`);
+        put(floor, "opacity", f3(1 - f));
+      });
+    }
+
+    // The scene at progress p.
+    function paint(p) {
+      const b = bridge;
+      if (b.model) paintModel(p, b);
+      // The ground: the lowest floor's grid, unfolding into the map's (in place, it fades up).
+      const tg = b.model ? inOut(ramp(p, .34, .86)) : 1;
+      if (b.model) {
+        let d = "";
+        for (const [a, a1, c, c1] of b.lines) d += `M${r1(mix(a.x, a1.x, tg))} ${r1(mix(a.y, a1.y, tg))}L${r1(mix(c.x, c1.x, tg))} ${r1(mix(c.y, c1.y, tg))}`;
+        attr(grid, "d", d);
+        const ring = (points) => { let s = ""; for (let j = 0; j < points.length; j++) s += `${j ? "L" : "M"}${r1(mix(points[j][0].x, points[j][1].x, tg))} ${r1(mix(points[j][0].y, points[j][1].y, tg))}`; return s; };
+        attr(guideInner, "d", ring(b.rings[0]) + ring(b.rings[1]));
+        attr(guideOuter, "d", ring(b.rings[2]));
+      }
+      put(grid, "stroke-opacity", f3(b.model ? ramp(p, .22, .34) : ramp(p, 0, .25)));
+      const guides = f3(b.model ? ramp(p, .5, .84) : ramp(p, .12, .45));
+      put(guideInner, "stroke-opacity", guides);
+      put(guideOuter, "stroke-opacity", guides);
+
+      // The projects.
+      for (const it of b.items) {
+        const foot = { x: mix(it.footFrom.x, it.footTo.x, tg), y: mix(it.footFrom.y, it.footTo.y, tg) };
+        let x, y, scale, grow;
+        if (it.from) {
+          // Out of its socket, in an arc, growing to its size; its stem comes up as it arrives.
+          const t = inOut(ramp(p, it.t0, it.t1));
+          const lift = Math.sin(Math.PI * t) * it.arc;
+          x = mix(it.from.x, it.end.x, t);
+          y = mix(it.from.y, it.end.y, t) - lift;
+          scale = mix(.55, it.q, t);
+          grow = ramp(p, (it.t0 + it.t1) / 2, it.t1);
+        } else {
+          // Up out of the floor (or the ground) where it stands, on its stem.
+          const t = easeOut(ramp(p, it.t0, it.t1));
+          x = t >= 1 && tg >= 1 ? it.end.x : foot.x + (it.end.x - it.footTo.x) * t;
+          y = t >= 1 && tg >= 1 ? it.end.y : foot.y + (it.end.y - it.footTo.y) * t;
+          scale = it.q * easeOut(ramp(p, it.t0, it.t0 + .16));
+          grow = 1;
+        }
+        const fx = r1(foot.x), fy = r1(foot.y), nx = r1(x), ny = r1(y);
+        attr(it.node.stem, "d", `M${fx} ${fy}L${grow >= 1 ? nx : r1(foot.x + (x - foot.x) * grow)} ${grow >= 1 ? ny : r1(foot.y + (y - foot.y) * grow)}`);
+        attr(it.node.foot, "transform", `translate(${fx} ${fy})`);
+        attr(it.node.body, "transform", `translate(${nx} ${ny})`);
+        attr(it.node.cube, "transform", `scale(${Math.round(scale * 100) / 100})`);
+        put(it.node.g, "opacity", f3(it.opacity * ramp(p, it.a0, it.a1)));
+        // Its name (and, selected, its glow and ring) once it is there.
+        const named = f3(ramp(p, it.l0, it.l1));
+        put(it.label.g, "opacity", named);
+        if (it.sel) { put(it.node.ring, "stroke-opacity", named); put(it.node.glow, "fill-opacity", named); }
+      }
+
+      // Then what they share, and (where the model turns into the map) the map's controls, lists
+      // and panel; in place, those are there from the start.
+      const linked = f3(ramp(p, .86, 1));
+      put(linkLayer, "opacity", linked);
+      put(signalLayer, "opacity", linked);
+      if (!b.model) return;
+      const ui = ramp(p, .6, .88);
+      for (const el of chrome) put(el, "opacity", f3(ui));
+      put(map, "border-color", `color-mix(in srgb, var(--line) ${(ui * 100).toFixed(1)}%, transparent)`);
+    }
+
+    // The model at progress p: its caption, controls and cut go first, the floors part (the nodes
+    // leave the top floor at that spacing), then rise and fade; the lowest gives way to the ground.
+    function paintModel(p, b) {
+      paintFloors(1 + (RELEASE - 1) * easeOut(ramp(p, 0, .12)), ramp(p, .32, .66), b.gap);
+      put(model.base, "opacity", f3(1 - ramp(p, .24, .36)));
+      const lead = f3(1 - ramp(p, 0, .14));
+      for (const el of model.lead) put(el, "opacity", lead);
+      put(model.stage, "opacity", f3(1 - ramp(p, .5, .7)));
+      const sides = f3(1 - ramp(p, .02, .24));
+      for (const el of model.sides) put(el, "opacity", sides);
+      // Gone once faded, so the map is drawn as it will be when the bridge ends (with their layers
+      // under it, its text would be rasterised a little differently). The model's drift starts
+      // over when it comes back, so on the way back it is put back to where it was held.
+      for (const el of model.sides) put(el, "display", p >= .24 ? "none" : "");
+      const away = p >= .7;
+      if (b.away !== away) {
+        b.away = away;
+        put(model.stage, "display", away ? "none" : "");
+        const drift = away ? null : model.spin?.getAnimations?.()[0];
+        if (drift && b.drift !== null) drift.currentTime = b.drift;
+      }
+    }
+
+    function step(time) {
+      const b = bridge;
+      if (!b) return;
+      b.frame = 0;
+      // The first frame shows where it starts (the work of starting is not counted against it).
+      const ms = b.last === null ? 0 : time - b.last;
+      b.last = time;
+      // A device that cannot keep up is taken straight to where it was going; one that keeps up
+      // only just gets the map's lighter drawing meanwhile, as while its camera moves. (The first
+      // two frames carry the one-off work of the first drawing, and do not count.)
+      if (++b.frames > 2) {
+        b.slow = ms > 90 ? b.slow + 1 : 0;
+        if (b.slow >= 3) { finish(); return; }
+        pace = pace * .7 + Math.min(ms, 200) * .3;
+        if (pace > 34) slow = true;
+        setLean(slow);
+      }
+      b.p = clamp(b.p + b.dir * Math.min(ms, 50) / b.ms, 0, 1);
+      paint(b.p);
+      if (b.dir > 0 ? b.p >= 1 : b.p <= 0) { finish(); return; }
+      b.frame = requestAnimationFrame(step);
+    }
+
+    // Where getting it ready takes too long (a slow device), it is not worth the wait: that change
+    // goes straight to its end, and after a second time the views change at once from then on
+    // (once could be a passing hiccup).
+    let slowStarts = 0;
+    const READY_MS = 400; // (a first opening includes the map's first layout ever)
+    // Measuring the model is the first and lightest part of getting ready; slow, it says so early,
+    // and the view changes at once with nothing more spent on it.
+    const MEASURE_MS = { 1: 60, [-1]: 120 }; // (on the way back it lays the model out for a moment)
+    function abandon() {
+      slowStarts++;
+      unstyle();
+      model.stage.parentElement.classList.remove("is-turning");
+      architecture.bridging(false);
+      return false;
+    }
+    function bridgeable(dir) {
+      if (slowStarts >= 2 || !model || reduced() || document.hidden || architecture.busy?.()) return false;
+      return dir > 0 ? !shown : shown && view.w > 0 && view.h > 0;
+    }
+
+    function begin(dir) {
+      const t0 = performance.now();
+      const begun = wide.matches ? carry(dir) : assemble(dir);
+      if (bridge && performance.now() - t0 > READY_MS) { slowStarts++; finish(); }
+      return begun;
+    }
+
+    // Under 1280px: the layout changes at once, and the map assembles (or comes apart) in place.
+    function assemble(dir) {
+      if (dir > 0) {
+        architecture.layout("universe");
+        if (!shown || !view.w || !view.h || !inView(measureMap())) return true;
+      } else {
+        holdCamera();
+        if (!inView(measureMap())) return false;
+      }
+      architecture.bridging(true);
+      return start({ dir, model: false, ms: ASSEMBLE_MS, ...plan(null, null) });
+    }
+    // The map's box as it is now that the layout is final, and the drawing fitted to it: what the
+    // map's size observer will report next, so it does not take this for a change of size.
+    function measureMap() {
+      const box = stage.getBoundingClientRect();
+      if (box.width && box.height && (Math.round(box.width) !== view.w || Math.round(box.height) !== view.h)) fit(box.width, box.height);
+      return box;
+    }
+    // The camera stops where it is (drawn there, if it was moving).
+    function holdCamera() {
+      if (!frame) return;
+      cancelAnimationFrame(frame);
+      frame = 0;
+      Object.assign(goal, cam);
+      syncZoom();
+      setLean(false);
+      draw();
+    }
+
+    // From 1280px: the model itself is carried into the map, or back.
+    function carry(dir) {
+      let m = null;
+      let box = null;
+      let loose = false;
+      const t0 = performance.now();
+      if (dir > 0) {
+        m = readModel();
+        if (!m) return false;
+        if (performance.now() - t0 > MEASURE_MS[dir]) return abandon();
+        stand(model.stage, m.rect, m.origin);
+        for (const [el, r] of m.sides) stand(el, r, m.origin);
+        // Laid out as Universe, and this view shown and drawn as it will be when the bridge ends.
+        architecture.layout("universe");
+        if (!shown || !view.w || !view.h) { unstyle(); architecture.bridging(false); return true; }
+        loose = holdAll(m);
+        box = measureMap();
+      } else {
+        holdCamera();
+        box = measureMap();
+        if (!inView(box)) return false;
+        // The model, laid out for a moment to be measured, then standing where it will be.
+        m = architecture.peek(readModel);
+        if (!m) { unstyle(); architecture.bridging(false); return false; }
+        if (performance.now() - t0 > MEASURE_MS[dir]) return abandon();
+        stand(model.stage, m.rect, m.origin);
+        for (const [el, r] of m.sides) stand(el, r, m.origin);
+        loose = holdAll(m);
+      }
+      set(frameRect, { width: view.w, height: view.h });
+      for (const el of [grid, guideInner, guideOuter]) el.setAttribute("clip-path", "url(#uv-frame)");
+      model.stage.classList.add("is-releasing");
+      return start({ dir, model: true, ms: BRIDGE_MS, gap: m.gap, drift: m.drift, away: null, loose, ...plan(m, box) });
+    }
+
+    function start(b) {
+      bridge = { p: b.dir > 0 ? 0 : 1, last: null, frame: 0, frames: 0, slow: 0, inert: [], stop: null, finish, ...b };
+      // Nothing in either view takes input or focus, or is read out, until it ends.
+      for (const el of b.model ? [shell, model.stage, ...model.sides] : [shell]) if (!el.inert) { el.inert = true; bridge.inert.push(el); }
+      paint(bridge.p);
+      listen(bridge);
+      bridge.frame = requestAnimationFrame(step);
+      return true;
+    }
+
+    function listen(b) {
+      const x = scrollX, y = scrollY, w = innerWidth, h = innerHeight;
+      const end = () => finish();
+      // A scroll moves the model and the map together (the same rows, sticking under the header
+      // together), so the change carries on; only a part placed in the explorer's box would be
+      // left behind, and then it ends.
+      const scrolled = () => { if (b.loose && (Math.abs(scrollY - y) > 2 || Math.abs(scrollX - x) > 2)) finish(); };
+      const resized = () => { if (innerWidth !== w || innerHeight !== h) finish(); };
+      const hidden = () => { if (document.hidden) finish(); };
+      const theme = new MutationObserver(end);
+      theme.observe(document.documentElement, { attributes: true, attributeFilter: ["data-theme"] });
+      addEventListener("scroll", scrolled, { passive: true });
+      addEventListener("resize", resized);
+      addEventListener("pagehide", end);
+      document.addEventListener("visibilitychange", hidden);
+      motion.addEventListener?.("change", end);
+      wide.addEventListener?.("change", end);
+      b.stop = () => {
+        theme.disconnect();
+        removeEventListener("scroll", scrolled);
+        removeEventListener("resize", resized);
+        removeEventListener("pagehide", end);
+        document.removeEventListener("visibilitychange", hidden);
+        motion.removeEventListener?.("change", end);
+        wide.removeEventListener?.("change", end);
+      };
+    }
+
+    // The end, in the view it was going to: that view's own layout and drawing, and nothing of
+    // the bridge left behind.
+    function finish() {
+      const b = bridge;
+      if (!b) return;
+      cancelAnimationFrame(b.frame);
+      b.stop?.();
+      bridge = null;
+      setLean(false);
+      const toMap = b.dir > 0;
+      if (!toMap) architecture.layout("architecture");
+      unstyle();
+      // Styled now, while their transitions are still held: otherwise the floors would glide from
+      // the last frame drawn to where they already are.
+      void getComputedStyle(model.stage).opacity;
+      void getComputedStyle(map).opacity;
+      model.stage.classList.remove("is-releasing");
+      model.stage.parentElement.classList.remove("is-turning");
+      for (const el of [grid, guideInner, guideOuter]) el.removeAttribute("clip-path");
+      set(frameRect, { width: 0, height: 0 });
+      for (const el of b.inert) el.inert = false;
+      architecture.bridging(false);
+      if (toMap) { draw(); setLive(); }
+    }
+
     return {
       // The first time, the map opens on `initial` (the system the visitor was looking at).
       show({ initial } = {}) {
@@ -624,10 +1130,26 @@
         setLive();
       },
       hide() {
+        if (bridge) finish();
         shown = false;
         setLive();
         if (frame) { cancelAnimationFrame(frame); frame = 0; Object.assign(cam, goal); setLean(false); }
       },
+      // Turn the model into the map ("universe") or back ("architecture"), or turn round one that is
+      // under way. `instant` ends one at once. False if it did not (the caller then switches at once).
+      transition(mode, { instant = false } = {}) {
+        const dir = mode === "universe" ? 1 : -1;
+        if (bridge) {
+          bridge.dir = dir;
+          if (instant) finish();
+          return true;
+        }
+        if (instant || !bridgeable(dir)) return false;
+        return begin(dir);
+      },
+      // Whether the bridge is running, and to end it where it is going.
+      bridging: () => Boolean(bridge),
+      settle: finish,
       select
     };
   }

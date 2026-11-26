@@ -1830,9 +1830,16 @@ test("hero to explorer: nothing shifts while it runs, a keyboard visitor on a he
    nothing while it is closed, off screen or unwanted. */
 const ALL_KEYS = [...featuredList, ...alsoList].map((project) => project.key);
 const toWorkbench = `(() => { const bench = document.querySelector("[data-workbench]"); scrollTo({ top: bench.getBoundingClientRect().top + scrollY - document.querySelector("[data-header]").getBoundingClientRect().bottom, behavior: "instant" }); })()`;
+// The view has settled: laid out as the switch says (the first choice may wait a moment for the
+// script), and the change between the two views (universe.js), where it runs, has ended.
+const viewSettled = `(() => { const bench = document.querySelector("[data-workbench]"); const pressed = document.querySelector('[data-wb-view][aria-pressed="true"]')?.dataset.wbView; return !bench.classList.contains("is-bridging") && bench.classList.contains("is-universe") === (pressed === "universe"); })()`;
+async function chooseView(page, view) {
+  await page.click(`[data-wb-view="${view}"]`, { scroll: false });
+  await page.waitFor(viewSettled, { timeout: 5000, message: `the change to ${view} did not end` });
+}
 async function openUniverse(page) {
   await page.evaluate(toWorkbench);
-  await page.click('[data-wb-view="universe"]', { scroll: false });
+  await chooseView(page, "universe");
   await page.waitFor(`!!document.querySelector(".uv-svg .uv-node") && !!document.querySelector(".uv-svg").getAttribute("viewBox") && document.querySelectorAll(".uv-label:not(.is-hidden)").length > 0`, { message: "the universe did not open" });
 }
 const architectureState = `({ tab: document.querySelector('[role="tab"][aria-selected="true"]').dataset.wbTab, layer: [...document.querySelectorAll("[data-layer-btn]")].findIndex((b) => b.getAttribute("aria-pressed") === "true"), exploded: document.querySelector("[data-explode]").getAttribute("aria-pressed"), stack: getComputedStyle(document.querySelector("[data-stack]")).transform, file: document.querySelector(".system-file.is-current")?.dataset.system })`;
@@ -1921,16 +1928,16 @@ test("universe: Architecture stays the default; the switch opens all thirteen pr
     assert.ok(s.labelBoxes.every(([l, t, r, b]) => l >= s.svgBox[0] && r <= s.svgBox[2] && t >= s.svgBox[1] && b <= s.svgBox[3]), "every label lies inside the map");
     assert.ok(s.nodes.every((n) => n.x > s.svgBox[0] && n.x < s.svgBox[2] && n.y > s.svgBox[1] && n.y < s.svgBox[3]), "every node lies inside the map");
     // Back to Architecture: exactly as it was.
-    await page.click('[data-wb-view="architecture"]', { scroll: false });
+    await chooseView(page, "architecture");
     assert.deepEqual(await page.evaluate(architectureState), before, "the system, the layer, the spacing and the angle are as they were");
     assert.equal(await page.evaluate(`document.getElementById("work-title").textContent`), heading);
     assert.deepEqual(await page.evaluate(`({ shell: document.querySelector("[data-universe]").hidden, live: document.querySelector("[data-universe]").classList.contains("is-live"), stage: getComputedStyle(document.querySelector("[data-wb-stage]")).display })`), { shell: true, live: false, stage: "block" });
     // Over and over: one map, one script, and each choice acts once.
     for (let i = 0; i < 4; i++) {
       await page.click('[data-wb-view="universe"]', { scroll: false });
-      await page.click('[data-wb-view="architecture"]', { scroll: false });
+      await chooseView(page, "architecture");
     }
-    await page.click('[data-wb-view="universe"]', { scroll: false });
+    await chooseView(page, "universe");
     await page.evaluate(`document.querySelector('.uv-item[data-uv-key="gurmat"]').click()`);
     assert.equal(await page.evaluate(`document.querySelectorAll(".uv-svg").length + "/" + document.querySelectorAll('script[src*="universe.js"]').length + "/" + document.querySelectorAll(".uv-node.is-sel").length`), "1/1/1");
     assert.equal((await page.evaluate(universeState)).selected, "gurmat", "Universe kept its own state, and the list still selects");
@@ -2101,7 +2108,7 @@ test("universe: by keyboard alone, the view, the projects, the domains, the came
     await page.key("Tab");
     assert.ok(await page.evaluate(focused('[data-wb-view="universe"]')), "Tab moves from Architecture to Universe");
     await page.key("Enter");
-    await page.waitFor(`!!document.querySelector(".uv-svg .uv-node")`);
+    await page.waitFor(`!!document.querySelector(".uv-svg .uv-node") && ${viewSettled}`);
     assert.ok(await page.evaluate(`document.activeElement.matches('[data-wb-view="universe"][aria-pressed="true"]')`), "Universe opens, focus stays on its button");
     await page.evaluate(`document.querySelector('.uv-item[data-uv-key="maintops"]').focus()`);
     await page.key("Enter");
@@ -2134,7 +2141,7 @@ test("universe: by touch, a tap selects, a sideways swipe orbits, a vertical swi
     await page.waitFor(`document.documentElement.classList.contains("workbench-ready")`);
     await page.evaluate(toWorkbench);
     await page.tap('[data-wb-view="universe"]', { scroll: false });
-    await page.waitFor(`!!document.querySelector(".uv-svg .uv-node") && document.querySelectorAll(".uv-label:not(.is-hidden)").length > 0`);
+    await page.waitFor(`!!document.querySelector(".uv-svg .uv-node") && document.querySelectorAll(".uv-label:not(.is-hidden)").length > 0 && ${viewSettled}`);
     await page.evaluate(`document.querySelector(".uv-svg").scrollIntoView({ block: "center", behavior: "instant" })`);
     await page.evaluate(drawFrames);
     const tap = async (at) => { assert.ok(at, "a point to tap"); await page.call("Input.dispatchTouchEvent", { type: "touchStart", touchPoints: [{ x: at.x, y: at.y }] }); await page.call("Input.dispatchTouchEvent", { type: "touchEnd", touchPoints: [] }); await page.evaluate(drawFrames); };
@@ -2189,7 +2196,7 @@ test("universe: reduced motion has no signals and moves the camera at once; the 
     await page.evaluate(toWorkbench);
     await page.evaluate(drawFrames);
     assert.ok((await page.evaluate(universeState)).live, "and start again in view");
-    await page.click('[data-wb-view="architecture"]', { scroll: false });
+    await chooseView(page, "architecture");
     assert.equal(await page.evaluate(`document.querySelector("[data-universe]").classList.contains("is-live")`), false, "closed, they stop");
     assert.deepEqual(page.errors(), []);
   });
@@ -2207,7 +2214,7 @@ test("universe: while it is shown, the hero's drawing stays as it is; back in Ar
     assert.ok(!state.copy, "no copy of the floors is shown");
     assert.equal(await page.evaluate(`document.querySelector('[data-wb-view="universe"]').getAttribute("aria-pressed")`), "true", "and the view is still Universe");
     await page.evaluate(toWorkbench);
-    await page.click('[data-wb-view="architecture"]', { scroll: false });
+    await chooseView(page, "architecture");
     await scrollToY(page, 0);
     await readyToMorph(page);
     await scrollToY(page, Math.round((y0 + y1) / 2));
@@ -2300,11 +2307,11 @@ test("universe: #work-universe opens it directly; choosing a view rewrites the a
     assert.deepEqual([s.url, s.view], ["/#work-universe", "universe"], "a direct link opens Universe");
     assert.ok(s.work > -40 && s.work < 80, `and lands on Selected work, as #work does: ${s.work}px`);
     const length = s.length;
-    await page.click('[data-wb-view="architecture"]', { scroll: false });
+    await chooseView(page, "architecture");
     s = await page.evaluate(now);
     assert.deepEqual([s.url, s.view, s.length], ["/#work", "architecture", length], "Architecture rewrites the address in place: no new history entry");
     const y = s.y;
-    await page.click('[data-wb-view="universe"]', { scroll: false });
+    await chooseView(page, "universe");
     s = await page.evaluate(now);
     assert.deepEqual([s.url, s.view, s.length, s.y], ["/#work-universe", "universe", length, y], "and Universe again, without scrolling");
     // A project's link: Architecture, on that system; Back returns to Universe, Forward to the system.
@@ -2323,7 +2330,7 @@ test("universe: #work-universe opens it directly; choosing a view rewrites the a
     assert.deepEqual([s.url, s.view], ["/", "architecture"], "a plain load opens Architecture");
     await openUniverse(page);
     assert.equal(await page.evaluate("location.pathname + location.hash"), "/#work-universe");
-    await page.click('[data-wb-view="architecture"]', { scroll: false });
+    await chooseView(page, "architecture");
     assert.equal(await page.evaluate("location.pathname + location.hash"), "/");
     // The command palette offers it, by its address.
     const index = await page.evaluate(`fetch("/assets/search-index.json").then((response) => response.json())`);
@@ -2371,16 +2378,18 @@ test("universe: the signals and the camera stop while the page is hidden, off sc
     await page.evaluate(drawFrames);
     assert.equal((await page.evaluate(state)).running, 0, "off screen");
     await page.evaluate(toWorkbench);
-    await page.click('[data-wb-view="architecture"]', { scroll: false });
+    await chooseView(page, "architecture");
     assert.equal((await page.evaluate(state)).running, 0, "closed");
     // Again and again: the same listeners and the same elements.
     await page.call("Performance.enable");
-    const metrics = async () => { const { metrics: list } = await page.call("Performance.getMetrics"); return { listeners: list.find((m) => m.name === "JSEventListeners").value, elements: await page.evaluate(`document.getElementsByTagName("*").length`) }; };
+    // (Garbage collected first: listeners on elements the panel has replaced linger until then.)
+    const metrics = async () => { await page.call("HeapProfiler.collectGarbage"); const { metrics: list } = await page.call("Performance.getMetrics"); return { listeners: list.find((m) => m.name === "JSEventListeners").value, elements: await page.evaluate(`document.getElementsByTagName("*").length`) }; };
     const first = await metrics();
     for (let i = 0; i < 10; i++) {
       await page.click('[data-wb-view="universe"]', { scroll: false });
-      await page.click('[data-wb-view="architecture"]', { scroll: false });
+      await chooseView(page, "architecture");
     }
+    await page.waitFor(viewSettled);
     assert.deepEqual(await metrics(), first, "ten round trips add no listener and no element");
     assert.deepEqual(page.errors(), []);
   });
@@ -2506,4 +2515,391 @@ test("universe: on a device too slow to redraw at a steady rate, the drawing lig
       assert.deepEqual(page.errors(), []);
     });
   }
+});
+
+/* ---------- Between the views ----------
+   From 1280px the switch turns the explorer's model into the Universe map, and back
+   (assets/universe.js): the floors part, the systems leave their sockets, the lowest floor
+   unfolds into the ground. Under 1280px the layout changes at once and the map assembles in
+   place. These tests drive the page's animation frames by hand, so every frame is exactly where
+   it should be: __manual(true) holds requestAnimationFrame, and __tick(n) runs n frames, a
+   sixtieth of a second apart. */
+const HAND_FRAMES = `(() => {
+  const real = window.requestAnimationFrame.bind(window), realCancel = window.cancelAnimationFrame.bind(window);
+  let manual = false, id = 1e7, now = 0; const queue = new Map();
+  window.requestAnimationFrame = (cb) => { if (!manual) return real(cb); const i = ++id; queue.set(i, cb); return i; };
+  window.cancelAnimationFrame = (i) => { if (queue.has(i)) queue.delete(i); else realCancel(i); };
+  window.__manual = (on) => { manual = on; now = performance.now(); if (!on) { const q = [...queue.values()]; queue.clear(); q.forEach((cb) => real(cb)); } };
+  window.__tick = (n = 1) => { for (let k = 0; k < n; k++) { now += 1000 / 60; const q = [...queue.values()]; queue.clear(); q.forEach((cb) => cb(now)); } };
+})()`;
+const bridgingNow = `document.querySelector("[data-workbench]").classList.contains("is-bridging")`;
+// Frame by frame until it ends: how many frames it took.
+const tickToEnd = `(() => { let n = 0; while (${bridgingNow} && n < 400) { __tick(1); n++; } return n; })()`;
+// Everything the bridge writes: the explorer's own parts' inline styles and inertness, the
+// Universe view's inline styles, its classes and the drawing's clip.
+const traces = `(() => {
+  const bench = document.querySelector("[data-workbench]");
+  // (The hero's drawing keeps its copy of the floors in the stage; that copy is its own.)
+  const parts = [...bench.querySelectorAll(":scope > .wb-index, :scope > .wb-files, [data-wb-stage], [data-wb-stage] *")].filter((el) => !el.closest(".stack-morph"));
+  return {
+    parts: parts.map((el) => el.style.cssText + (el.inert ? " inert" : "")),
+    bench: (bench.getAttribute("style") || "") + bench.className,
+    universe: [...document.querySelectorAll("[data-universe], [data-universe] *")].map((el) => el.style?.cssText).filter(Boolean),
+    marks: document.querySelectorAll(".is-bridging, .is-turning, .is-releasing, .uv-svg [clip-path]").length,
+    shell: Boolean(document.querySelector("[data-universe]")?.inert)
+  };
+})()`;
+// What a bridge that ended early may never leave: its classes, clip and inline styles.
+const bridgeLeft = `(() => { const t = ${traces}; return { marks: t.marks, styled: t.parts.filter((s) => /opacity|position|display|visibility|grid-column|margin-left|transform|inert/.test(s)), universe: t.universe }; })()`;
+const nodeSpots = `[...document.querySelectorAll(".uv-svg .uv-node")].map((n) => { const m = /translate\\(([-0-9.]+) ([-0-9.]+)\\)/.exec(n.querySelector(".uv-body").getAttribute("transform")); return [n.dataset.key, Number(m[1]), Number(m[2]), Number(getComputedStyle(n).opacity)]; })`;
+const floorPoses = `[...document.querySelectorAll("[data-plane]")].map((p) => [Math.round(new DOMMatrixReadOnly(getComputedStyle(p).transform).m43 * 10) / 10, Number(getComputedStyle(p).opacity)])`;
+const viewNow = `({ view: document.querySelector('[data-wb-view][aria-pressed="true"]').dataset.wbView, universe: document.querySelector("[data-workbench]").classList.contains("is-universe"), url: location.pathname + location.hash, stage: getComputedStyle(document.querySelector("[data-wb-stage]")).display, map: getComputedStyle(document.querySelector(".uv-map") || document.body).display })`;
+const BLANK = { marks: 0, styled: [], universe: [] };
+// The largest step any visible project takes from one frame to the next.
+function largestStep(a, b) {
+  let worst = 0;
+  for (let i = 0; i < a.length; i++) if (a[i][3] > 0 && b[i][3] > 0) worst = Math.max(worst, Math.hypot(a[i][1] - b[i][1], a[i][2] - b[i][2]));
+  return worst;
+}
+// Steps through a change frame by frame; resolves to its length and its largest step.
+async function followBridge(page) {
+  let last = await page.evaluate(nodeSpots);
+  let frames = 0;
+  let worst = 0;
+  while ((await page.evaluate(bridgingNow)) && frames < 300) {
+    await page.evaluate("__tick(1)");
+    frames++;
+    const now = await page.evaluate(nodeSpots);
+    worst = Math.max(worst, largestStep(last, now));
+    last = now;
+  }
+  return { frames, worst };
+}
+async function bridgePage(page, url = "/#work") {
+  await page.addInitScript(HAND_FRAMES);
+  await page.goto(base + url);
+  await page.waitFor(`document.documentElement.classList.contains("workbench-ready")`);
+  // The page as it settles: its fonts in, so nothing under the change still moves.
+  await page.evaluate(`document.fonts.ready.then(() => true)`);
+  await page.evaluate(scrollSettled);
+  await page.evaluate(toWorkbench);
+  // Universe's script, as the pointer reaching its button loads it.
+  await page.evaluate(`document.querySelector('[data-wb-view="universe"]').dispatchEvent(new PointerEvent("pointerenter"))`);
+  await page.waitFor(`!!document.querySelector(".uv-svg")`, { message: "Universe did not load" });
+  await page.evaluate(drawFrames);
+}
+// The views as the instant switch shows them (reduced motion), to compare a change's ends with.
+async function instantViews(width, height, mobile = false) {
+  return withPage({ width, height, mobile, reducedMotion: true }, async (page) => {
+    await page.goto(`${base}/#work`);
+    await page.waitFor(`document.documentElement.classList.contains("workbench-ready")`);
+    await page.evaluate(`document.fonts.ready.then(() => true)`);
+    await page.evaluate(scrollSettled);
+    await page.evaluate(toWorkbench);
+    await page.evaluate(drawFrames);
+    const architecture = await page.evaluate(traces);
+    await page.evaluate(`document.querySelector('[data-wb-view="universe"]').click()`);
+    await page.waitFor(`!!document.querySelector(".uv-svg .uv-label:not(.is-hidden)")`);
+    assert.equal(await page.evaluate(bridgingNow), false, "with reduced motion the view changes at once");
+    await page.evaluate(drawFrames);
+    return { architecture, universe: await page.evaluate(traces), drawing: await page.evaluate(`document.querySelector(".uv-svg").outerHTML`) };
+  });
+}
+
+test("between the views: from 1280px the model turns into the map and back, without a jump, and each end is exactly that view", async () => {
+  const instant = await instantViews(1440, 900);
+  await withPage({ width: 1440, height: 900 }, async (page) => {
+    await bridgePage(page);
+    const before = { traces: await page.evaluate(traces), state: await page.evaluate(architectureState), floors: await page.evaluate(floorPoses) };
+    assert.deepEqual(before.traces, instant.architecture, "the model as the page shows it");
+    await page.evaluate("__manual(true)");
+    await page.evaluate(`document.querySelector('[data-wb-view="universe"]').click()`);
+    // Under way: both views on the page, neither taking input; the switch and the address already say Universe.
+    let s = await page.evaluate(`({ ...${viewNow}, turning: document.querySelector("[data-workbench]").classList.contains("is-turning"), inert: [document.querySelector("[data-universe]").inert, document.querySelector("[data-wb-stage]").inert, document.querySelector("[data-wb-files]").inert] })`);
+    assert.deepEqual(s, { view: "universe", universe: true, url: "/#work-universe", stage: "block", map: "flex", turning: true, inert: [true, true, true] });
+    await page.evaluate("__tick(1)");
+    assert.deepEqual(await page.evaluate(floorPoses), before.floors, "its first frame is the model as it was");
+    await page.evaluate("__tick(40)");
+    s = await page.evaluate(`({ floors: ${floorPoses}, nodes: ${nodeSpots}.filter((n) => n[3] > 0).length, grid: Number(getComputedStyle(document.querySelector(".uv-grid")).strokeOpacity), morphing: document.documentElement.classList.contains("is-morphing") })`);
+    assert.ok(s.floors[0][1] < 1 && s.floors[0][0] > before.floors[0][0], `halfway, the top floor has risen and is fading: ${JSON.stringify(s.floors[0])}`);
+    assert.ok(s.nodes >= 6 && s.grid > 0, `the projects are on their way and the ground is coming up: ${s.nodes} nodes`);
+    assert.equal(s.morphing, false, "the hero's drawing does not turn into the model meanwhile");
+    const forward = await followBridge(page);
+    assert.ok(forward.frames >= 38 && forward.frames <= 50, `about 1.4 s in all: ${41 + forward.frames} frames`);
+    assert.ok(forward.worst < 30, `no project jumps from one frame to the next: largest step ${forward.worst.toFixed(1)}px`);
+    await page.evaluate("__manual(false)");
+    await page.evaluate(drawFrames);
+    // The end is the map exactly as the instant switch shows it, with nothing of the change left.
+    assert.equal(await page.evaluate(`document.querySelector(".uv-svg").outerHTML`), instant.drawing, "the drawing is the map's own, attribute for attribute");
+    assert.deepEqual(await page.evaluate(traces), instant.universe, "and nothing of the change is left");
+    // And back.
+    const settled = await page.evaluate(nodeSpots);
+    await page.evaluate("__manual(true)");
+    await page.evaluate(`document.querySelector('[data-wb-view="architecture"]').click()`);
+    await page.evaluate("__tick(1)");
+    assert.equal(largestStep(settled, await page.evaluate(nodeSpots)), 0, "the way back starts from the map as it was");
+    s = await page.evaluate(viewNow);
+    assert.deepEqual([s.view, s.url, s.universe], ["architecture", "/#work", true], "the switch and the address say Architecture at once; the map is still there");
+    const back = await followBridge(page);
+    assert.ok(back.frames >= 80 && back.frames <= 90 && back.worst < 30, `the same way back: ${back.frames} frames, largest step ${back.worst.toFixed(1)}px`);
+    await page.evaluate("__manual(false)");
+    await page.evaluate(drawFrames);
+    assert.deepEqual(await page.evaluate(traces), before.traces, "the model, the systems and the file exactly as they were");
+    assert.deepEqual(await page.evaluate(architectureState), before.state, "the same system, layer, spacing and angle");
+    assert.deepEqual(await page.evaluate(floorPoses), before.floors, "the floors where they were");
+    assert.deepEqual(page.errors(), []);
+  });
+});
+
+test("between the views: a new choice midway turns it round from where it is; quick choices end on the last; a link or Forward changes view at once", async () => {
+  await withPage({ width: 1440, height: 900 }, async (page) => {
+    await bridgePage(page);
+    const before = await page.evaluate(traces);
+    await page.evaluate("__manual(true)");
+    await page.evaluate(`document.querySelector('[data-wb-view="universe"]').click()`);
+    await page.evaluate("__tick(36)");
+    const midway = await page.evaluate(nodeSpots);
+    await page.evaluate(`document.querySelector('[data-wb-view="architecture"]').click()`);
+    let s = await page.evaluate(viewNow);
+    assert.deepEqual([s.view, s.url], ["architecture", "/#work"], "the switch and the address follow the new choice");
+    await page.evaluate("__tick(1)");
+    assert.ok(largestStep(midway, await page.evaluate(nodeSpots)) < 30, "it turns round from where it was");
+    const back = await page.evaluate(tickToEnd);
+    assert.ok(back >= 30 && back <= 40, `and goes back the way it came, in as long as it had come: ${back} frames`);
+    assert.deepEqual(await page.evaluate(traces), before, "back in Architecture, exactly as it was");
+    // Quick choices, faster than the frames: the last one wins, once.
+    for (const view of ["universe", "architecture", "universe", "architecture", "universe"]) await page.evaluate(`document.querySelector('[data-wb-view="${view}"]').click()`);
+    await page.evaluate(tickToEnd);
+    s = await page.evaluate(viewNow);
+    assert.deepEqual([s.view, s.universe, s.url, s.stage], ["universe", true, "/#work-universe", "none"]);
+    assert.equal(await page.evaluate(`document.querySelectorAll(".uv-svg").length + "/" + document.querySelectorAll(".uv-node.is-sel").length`), "1/1");
+    assert.deepEqual(await page.evaluate(bridgeLeft), BLANK);
+    // A link to a system while the map turns back into the model: that system, at once.
+    await page.evaluate(`document.querySelector('[data-wb-view="architecture"]').click()`);
+    await page.evaluate("__tick(20)");
+    await page.evaluate(`location.hash = "#work-flowbank"`);
+    await page.waitFor(`location.hash === "#work-flowbank" && document.querySelector('[role="tab"][aria-selected="true"]').dataset.wbTab === "flowbank"`, { message: "the link was not followed" });
+    s = await page.evaluate(viewNow);
+    assert.deepEqual([s.view, s.universe, await page.evaluate(bridgingNow)], ["architecture", false, false], "Architecture, at once");
+    assert.deepEqual(await page.evaluate(bridgeLeft), BLANK);
+    // Forward to Universe's own address while the model turns into it, or back from it: at once.
+    await page.evaluate(`document.querySelector('[data-wb-view="universe"]').click()`);
+    await page.evaluate("__tick(20)");
+    await page.evaluate(`location.hash = "#work-gurmat"`);
+    await page.waitFor(`document.querySelector('[role="tab"][aria-selected="true"]').dataset.wbTab === "gurmat" && !${bridgingNow}`, { message: "a link did not end the change" });
+    await page.evaluate(`history.back()`);
+    await page.waitFor(`location.hash === "#work-universe"`, { message: "Back did not return to Universe's address" });
+    await page.waitFor(`document.querySelector('[data-wb-view="universe"]').getAttribute("aria-pressed") === "true"`);
+    assert.deepEqual([await page.evaluate(bridgingNow), (await page.evaluate(viewNow)).universe], [false, true], "Back to Universe's address: Universe, at once");
+    await page.evaluate(`document.querySelector('[data-wb-view="architecture"]').click()`);
+    await page.evaluate("__tick(20)");
+    await page.evaluate(`history.forward()`);
+    await page.waitFor(`location.hash === "#work-gurmat" && !${bridgingNow}`, { message: "Forward did not end the change" });
+    s = await page.evaluate(viewNow);
+    assert.deepEqual([s.view, s.universe, await page.evaluate(selectedSystem)], ["architecture", false, "gurmat"]);
+    assert.deepEqual(await page.evaluate(bridgeLeft), BLANK);
+    await page.evaluate("__manual(false)");
+    assert.deepEqual(page.errors(), []);
+  });
+});
+
+test("between the views: a scroll carries the model and the map together; a resize, a new theme, reduced motion or a hidden page ends it at once, where it was going, and leaves nothing behind", async () => {
+  await withPage({ width: 1440, height: 900 }, async (page) => {
+    await bridgePage(page);
+    // A scroll moves both ends of the change together: it carries on, and still ends exactly.
+    const apart = `(() => { const a = document.querySelector("[data-wb-stage]").getBoundingClientRect(), b = document.querySelector(".uv-stage").getBoundingClientRect(); return [Math.round(a.left - b.left), Math.round(a.top - b.top)]; })()`;
+    await page.evaluate("__manual(true)");
+    await page.evaluate(`document.querySelector('[data-wb-view="universe"]').click()`);
+    await page.evaluate("__tick(30)");
+    const gap = await page.evaluate(apart);
+    for (const by of [-90, 260]) {
+      await page.evaluate(`scrollBy(0, ${by})`);
+      await page.evaluate(`new Promise((resolve) => setTimeout(resolve, 60))`);
+      assert.equal(await page.evaluate(bridgingNow), true, `a scroll of ${by}px: it carries on`);
+      assert.deepEqual(await page.evaluate(apart), gap, `a scroll of ${by}px: the model and the map stay where they are to each other`);
+    }
+    const carried = await followBridge(page);
+    assert.ok(carried.worst < 30, `and every project still moves smoothly: largest step ${carried.worst.toFixed(1)}px`);
+    assert.deepEqual(await page.evaluate(bridgeLeft), BLANK);
+    await page.evaluate("__manual(false)");
+    await page.evaluate(toWorkbench);
+    await page.evaluate(drawFrames);
+    const interrupt = async (view, act, label, after) => {
+      await page.evaluate("__manual(true)");
+      await page.evaluate(`document.querySelector('[data-wb-view="${view}"]').click()`);
+      await page.evaluate("__tick(30)");
+      assert.equal(await page.evaluate(bridgingNow), true, `${label}: under way`);
+      await act();
+      await page.waitFor(`!${bridgingNow}`, { message: `${label}: it did not end` });
+      const s = await page.evaluate(viewNow);
+      assert.deepEqual([s.view, s.universe], [view, view === "universe"], `${label}: it ends where it was going`);
+      assert.deepEqual(await page.evaluate(bridgeLeft), BLANK, `${label}: nothing left behind`);
+      await after?.();
+      await page.evaluate("__manual(false)");
+      await page.evaluate(drawFrames);
+      await page.evaluate(toWorkbench);
+      await page.evaluate(drawFrames);
+    };
+    await interrupt("architecture", () => page.call("Emulation.setDeviceMetricsOverride", { width: 1400, height: 880, deviceScaleFactor: 1, mobile: false }), "a resize");
+    // (The other theme from the one showing: a choice made in an earlier test is remembered.)
+    const theme = await page.evaluate(`document.documentElement.dataset.theme === "light" ? "dark" : "light"`);
+    await interrupt("universe", () => page.evaluate(`document.querySelector('[data-theme-choice="${theme}"]').click()`), "a new theme");
+    await interrupt("architecture", () => page.call("Emulation.setEmulatedMedia", { features: [{ name: "prefers-reduced-motion", value: "reduce" }] }), "reduced motion");
+    await page.call("Emulation.setEmulatedMedia", { features: [{ name: "prefers-reduced-motion", value: "no-preference" }] });
+    // Another tab, opened first (opening it brings it to the front), then this page in front again.
+    const other = await browser.newPage({ width: 800, height: 600 });
+    try {
+      await page.call("Page.bringToFront");
+      await page.waitFor(`document.visibilityState === "visible"`);
+      // (A hidden page draws no frames: it is brought back before the next steps wait for one.)
+      await interrupt("universe", async () => { await other.call("Page.bringToFront"); await page.waitFor(`document.visibilityState === "hidden"`); }, "a hidden page", async () => { await page.call("Page.bringToFront"); await page.waitFor(`document.visibilityState === "visible"`); });
+    } finally {
+      await other.close();
+      await page.call("Page.bringToFront");
+    }
+    // The theme still applies, and every view still works.
+    assert.equal(await page.evaluate("document.documentElement.dataset.theme"), theme);
+    await page.evaluate(toWorkbench);
+    await chooseView(page, "architecture");
+    assert.deepEqual(await page.evaluate(bridgeLeft), BLANK);
+    assert.deepEqual(page.errors(), []);
+  });
+});
+
+test("between the views: it does not run with reduced motion, while the hero's drawing turns into the model, or with the model out of sight; links open views at once", async () => {
+  // Reduced motion: covered by instantViews; here, the other cases.
+  await withPage({ width: 1440, height: 900 }, async (page) => {
+    await page.addInitScript(HAND_FRAMES);
+    await page.goto(`${base}/`);
+    await readyToMorph(page);
+    await page.evaluate(`document.querySelector('[data-wb-view="universe"]').dispatchEvent(new PointerEvent("pointerenter"))`);
+    await page.waitFor(`!!document.querySelector(".uv-svg")`);
+    const { y0, y1 } = await page.evaluate(morphRange);
+    await scrollToY(page, Math.round((y0 + y1) / 2));
+    assert.ok((await page.evaluate(morphState)).morphing, "the hero's drawing is turning into the model");
+    await page.evaluate(`document.querySelector('[data-wb-view="universe"]').click()`);
+    const bridged = await page.evaluate(bridgingNow);
+    await page.evaluate(drawFrames);
+    let s = await page.evaluate(viewNow);
+    assert.deepEqual([s.universe, bridged, (await page.evaluate(morphState)).morphing], [true, false, false], "meanwhile, the switch is at once, and the hero's drawing stays itself");
+    // Back at the top of the page, the model out of sight: at once too.
+    await scrollToY(page, 0);
+    await page.evaluate(`document.querySelector('[data-wb-view="architecture"]').click()`);
+    assert.deepEqual([(await page.evaluate(viewNow)).universe, await page.evaluate(bridgingNow)], [false, false]);
+    assert.deepEqual(page.errors(), []);
+  });
+  // A direct link: Universe from the first frame, no change shown.
+  await withPage({ width: 1440, height: 900 }, async (page) => {
+    await page.addInitScript(`window.__bridged = false; new MutationObserver(() => { if (document.querySelector("[data-workbench]")?.classList.contains("is-bridging")) window.__bridged = true; }).observe(document, { subtree: true, attributes: true, attributeFilter: ["class"] });`);
+    await page.goto(`${base}/#work-universe`);
+    await page.waitFor(`!!document.querySelector(".uv-svg .uv-label:not(.is-hidden)")`);
+    await page.evaluate(drawFrames);
+    assert.deepEqual([(await page.evaluate(viewNow)).universe, await page.evaluate("window.__bridged")], [true, false]);
+    assert.deepEqual(page.errors(), []);
+  });
+});
+
+test("between the views: under 1280px the layout changes at once and the map assembles in place, and comes apart before the model returns", async () => {
+  for (const [width, height, mobile] of [[1024, 768, false], [390, 844, true]]) {
+    const instant = await instantViews(width, height, mobile);
+    await withPage({ width, height, mobile }, async (page) => {
+      const at = `${width}×${height}`;
+      await bridgePage(page);
+      const before = await page.evaluate(traces);
+      await page.evaluate("__manual(true)");
+      await page.evaluate(`document.querySelector('[data-wb-view="universe"]').click()`);
+      let s = await page.evaluate(`({ ...${viewNow}, turning: document.querySelector("[data-workbench]").classList.contains("is-turning"), bridging: ${bridgingNow} })`);
+      assert.deepEqual([s.universe, s.stage, s.turning, s.bridging], [true, "none", false, true], `${at}: laid out as Universe at once, the map assembling`);
+      await page.evaluate("__tick(20)");
+      const spots = await page.evaluate(nodeSpots);
+      assert.ok(spots.some((n) => n[3] === 0) && spots.some((n) => n[3] > 0), `${at}: the projects come up one after another`);
+      const forward = await followBridge(page);
+      assert.ok(21 + forward.frames >= 50 && 21 + forward.frames <= 60 && forward.worst < 30, `${at}: under a second, smoothly: ${21 + forward.frames} frames, largest step ${forward.worst.toFixed(1)}px`);
+      await page.evaluate("__manual(false)");
+      await page.evaluate(drawFrames);
+      assert.equal(await page.evaluate(`document.querySelector(".uv-svg").outerHTML`), instant.drawing, `${at}: the drawing is the map's own`);
+      assert.deepEqual(await page.evaluate(traces), instant.universe, `${at}: nothing left behind`);
+      await page.evaluate("__manual(true)");
+      await page.evaluate(`document.querySelector('[data-wb-view="architecture"]').click()`);
+      s = await page.evaluate(viewNow);
+      assert.deepEqual([s.view, s.universe], ["architecture", true], `${at}: the map comes apart first`);
+      await page.evaluate(tickToEnd);
+      await page.evaluate("__manual(false)");
+      await page.evaluate(drawFrames);
+      assert.deepEqual(await page.evaluate(traces), before, `${at}: then the model, exactly as it was`);
+      assert.deepEqual(page.errors(), [], `${at}: errors`);
+    });
+  }
+});
+
+test("between the views: focus stays on the chosen button, neither view takes focus while it changes, and Tab leads into the new view afterwards", async () => {
+  await withPage({ width: 1440, height: 900 }, async (page) => {
+    await bridgePage(page);
+    await page.evaluate("__manual(true)");
+    await page.evaluate(`document.querySelector('[data-wb-view="universe"]').focus()`);
+    await page.key("Enter");
+    assert.equal(await page.evaluate(bridgingNow), true);
+    assert.ok(await page.evaluate(focused('[data-wb-view="universe"]')), "focus stays on Universe's button");
+    await page.key("Tab");
+    assert.ok(await page.evaluate(`!document.querySelector("[data-workbench]").contains(document.activeElement) || document.querySelector("[data-wb-mode]").contains(document.activeElement)`), "Tab passes over both views while they change");
+    await page.key("Tab", { shift: true });
+    assert.ok(await page.evaluate(focused('[data-wb-view="universe"]')), "and Shift+Tab comes back to the switch");
+    await page.evaluate(tickToEnd);
+    await page.key("Tab");
+    assert.ok(await page.evaluate(`document.querySelector("[data-universe]").contains(document.activeElement)`), "afterwards, Tab leads into the map's view");
+    // Focus inside Universe when it turns back into the model moves to the switch at once.
+    await page.evaluate(`document.querySelector('.uv-item[data-uv-key="orbit"]').focus()`);
+    await page.evaluate(`document.querySelector('[data-wb-view="architecture"]').click()`);
+    assert.ok(await page.evaluate(focused('[data-wb-view="architecture"]')), "focus moves to Architecture's button");
+    await page.evaluate(tickToEnd);
+    assert.ok(await page.evaluate(focused('[data-wb-view="architecture"]')), "and stays there");
+    await page.evaluate("__manual(false)");
+    assert.deepEqual(page.errors(), []);
+  });
+});
+
+test("between the views: the first choice waits a moment for Universe's script and then turns the model into it; a slow script shows its place at once instead", async () => {
+  const source = readFileSync(new URL("assets/universe.js", DIST), "utf8");
+  // As it is served (in a moment), and slowed down to a second and a half.
+  for (const [delay, expectBridge] of [[0, true], [1500, false]]) {
+    await withPage({ width: 1440, height: 900 }, async (page) => {
+      if (delay) await page.intercept(/\/assets\/universe\.js/, () => ({ status: 200, body: source, headers: { "Content-Type": "text/javascript" }, delay }));
+      await page.addInitScript(`window.__bridged = false; window.__loadedAtClick = null; new MutationObserver(() => { if (document.querySelector("[data-workbench]")?.classList.contains("is-bridging")) window.__bridged = true; }).observe(document, { subtree: true, attributes: true, attributeFilter: ["class"] }); document.addEventListener("click", (event) => { if (event.target.closest?.('[data-wb-view="universe"]')) window.__loadedAtClick = Boolean(window.PortfolioUniverse); }, true);`);
+      await page.goto(`${base}/#work`);
+      await page.waitFor(`document.documentElement.classList.contains("workbench-ready")`);
+      await page.evaluate(`document.fonts.ready.then(() => true)`);
+      await page.evaluate(scrollSettled);
+      await page.evaluate(toWorkbench);
+      await page.evaluate(drawFrames);
+      // The pointer reaches the button and clicks straight away: the script is on its way.
+      await page.click('[data-wb-view="universe"]', { scroll: false });
+      if (!expectBridge) {
+        await page.evaluate(`new Promise((resolve) => setTimeout(resolve, 450))`);
+        assert.deepEqual([(await page.evaluate(viewNow)).universe, !!(await page.evaluate(`document.querySelector("[data-uv-loading]")`))], [true, true], `${delay} ms: after a moment, Universe's place with its placeholder`);
+      }
+      await page.waitFor(`!!document.querySelector(".uv-svg .uv-label:not(.is-hidden)") && ${viewSettled}`, { timeout: 6000, message: `${delay} ms: Universe did not open` });
+      assert.equal(await page.evaluate("window.__loadedAtClick"), false, `${delay} ms: the script was still on its way when the button was clicked`);
+      assert.equal(await page.evaluate("window.__bridged"), expectBridge, `${delay} ms: ${expectBridge ? "the model turns into the map" : "no change is shown over the loaded map"}`);
+      assert.deepEqual(await page.evaluate(bridgeLeft), BLANK);
+      assert.deepEqual(page.errors(), []);
+    });
+  }
+});
+test("between the views: on a device too slow to get it ready in time, the view changes at once instead, both ways, and leaves nothing behind", async () => {
+  await withPage({ width: 1440, height: 900 }, async (page) => {
+    await bridgePage(page);
+    await page.call("Emulation.setCPUThrottlingRate", { rate: 6 });
+    try {
+      for (const view of ["universe", "architecture", "universe"]) {
+        await page.evaluate(`document.querySelector('[data-wb-view="${view}"]').click()`);
+        const s = await page.evaluate(`({ ...${viewNow}, bridging: ${bridgingNow} })`);
+        assert.deepEqual([s.view, s.universe, s.bridging], [view, view === "universe", false], `${view}: at once`);
+        assert.deepEqual(await page.evaluate(bridgeLeft), BLANK, `${view}: nothing left behind`);
+      }
+    } finally {
+      await page.call("Emulation.setCPUThrottlingRate", { rate: 1 });
+    }
+    await page.waitFor(`!!document.querySelector(".uv-svg .uv-label:not(.is-hidden)")`);
+    assert.deepEqual(page.errors(), []);
+  });
 });

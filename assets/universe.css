@@ -156,3 +156,25 @@ button.uv-tag-item:hover { border-color: var(--line-3); color: var(--text); }
 }
 @media (min-width: 900px) and (max-height: 520px) { .uv-map { position: relative; top: auto; height: 520px; } }
 
+/* ---------- From the model to the map, and back (universe.js) ----------
+   While either view changes into the other (.is-bridging), the drawing is the bridge's: its
+   nodes take no transition of their own. From 1280px the model itself turns into the map
+   (.is-turning): the page is laid out as Universe, and the model, the systems and the selected
+   system's file stay on the page, standing where they were (universe.js writes their place and
+   opacity); the map's drawing, which comes after them in the page, is drawn over them and may
+   leave its frame (the ground stays clipped to it). Nothing is restacked, so both ends are drawn
+   exactly as the views are. Their own transitions and the model's drift are held, so nothing
+   moves them but the bridge, and the top floor's sockets light up as the systems leave them.
+   The map's edges come up with its controls. */
+.workbench.is-turning.is-universe > :is(.wb-files, .wb-stage) { display: block; }
+.workbench.is-turning.is-universe > .wb-index { display: grid; }
+.workbench.is-turning > .wb-stage { pointer-events: none; }
+.is-turning .wb-stage :is(.stack-shift, .stack, .plane, .beam) { transition: none; }
+.is-turning .wb-stage :is(.stack-spin, .packet) { animation-play-state: paused; }
+.wb-stage.is-releasing [data-plane="0"] .socket:not(.is-sel) { border-color: var(--accent-fill); background: rgb(var(--accent-rgb) / .45); box-shadow: 0 0 14px rgb(var(--accent-rgb) / .5); }
+.is-turning .uv-map { background: none; border-color: transparent; }
+.is-turning .uv-svg { overflow: visible; }
+.is-bridging .uv-svg { cursor: default; }
+.is-bridging .uv-node { transition: none; }
+@media (min-width: 1280px) { .workbench.is-turning.is-universe > .wb-index { display: block; } }
+

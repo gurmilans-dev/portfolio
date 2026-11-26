@@ -491,6 +491,8 @@
     const key = keyFromHash(location.hash);
     if (!key) return;
     const index = featured.indexOf(key);
+    // A link changes view at once: a change between the views under way ends first.
+    if (key === "universe" || index >= 0) universe?.settle();
     // #work-universe opens the Universe view; a link to one of the six systems shows its file,
     // in the Architecture view. Either way the address already says so.
     if (key === "universe") setView("universe", { address: false });
@@ -898,6 +900,8 @@
 
     function update() {
       frame = 0;
+      // While the model turns into the Universe map, or back, it is that bridge's (universe.js).
+      if (bench.classList.contains("is-bridging")) return;
       const y = scrollY;
       const x = scrollX;
       const calm = motionQuery.matches || !root.classList.contains("workbench-ready") || bench.classList.contains("is-universe");
@@ -974,7 +978,27 @@
       script.onload = () => resolve();
       script.onerror = () => reject(new Error("universe.js did not load"));
       document.head.append(script);
-    }).then(() => (universe = window.PortfolioUniverse.mount(universeShell, { quickLook: canDrawer, motion: motionQuery })));
+    }).then(() => (universe = window.PortfolioUniverse.mount(universeShell, {
+      quickLook: canDrawer,
+      motion: motionQuery,
+      // What the bridge between the two views needs from this side: the model's stage and which
+      // system each socket is, this view's own parts beside it, a way to lay out either view (and
+      // to measure this one for a moment), and whether something else is moving the model.
+      architecture: {
+        stage,
+        featured,
+        sides: [bench.querySelector(".wb-index"), filesWrap].filter(Boolean),
+        layout: applyLayout,
+        peek(measure) {
+          bench.classList.remove("is-universe");
+          universeShell.hidden = true;
+          try { return measure(); } finally { universeShell.hidden = false; bench.classList.add("is-universe"); }
+        },
+        // While it runs, the hero's drawing does not turn into the model; afterwards it measures again.
+        bridging(on) { bench.classList.toggle("is-bridging", on); if (!on) morph?.refresh(); },
+        busy: () => root.classList.contains("is-morphing") || Boolean(drawer?.open)
+      }
+    })));
     universeLoad.catch(() => { universeLoad = null; }); // a later choice tries again
     return universeLoad;
   }
@@ -993,22 +1017,52 @@
       history.replaceState(history.state, "", url);
     } catch { /* the view still changes */ }
   }
-  // `address`: false when the address already says which view (a link, Back or Forward).
-  function setView(next, { address = true } = {}) {
-    if (next === explorerView || !universeShell || !viewSwitch) return;
-    explorerView = next;
-    const on = next === "universe";
-    viewButtons.forEach(button => button.setAttribute("aria-pressed", String(button.dataset.wbView === next)));
+  // A view's layout, at once: which of the explorer's parts are shown (the address and the switch
+  // are setView's). The bridge between the views calls it too: as it starts on the way to
+  // Universe, and as it ends on the way back.
+  let layoutView = "architecture";
+  function applyLayout(mode) {
+    const on = mode === "universe";
+    layoutView = mode;
     bench.classList.toggle("is-universe", on);
     root.classList.remove("wb-universe-pending");
     // Focus inside the view that closes would be lost: it moves to that view's switch button.
     if (!on && universeShell.contains(document.activeElement)) viewButtons.find(button => button.dataset.wbView === "architecture")?.focus({ preventScroll: true });
     universeShell.hidden = !on;
+    if (on) {
+      if (universe) universe.show({ initial: featured[state.selected] });
+      else loadUniverse().then(view => { if (layoutView === "universe") view.show({ initial: featured[state.selected] }); }, () => setView("architecture"));
+    } else universe?.hide();
+    morph?.refresh();
+  }
+  // `address`: false when the address already says which view (a link, Back or Forward); such a
+  // change is also `instant`. Otherwise, where it can, the model turns into the map, or back
+  // (universe.js); a new choice midway turns it around.
+  function setView(next, { address = true, instant = !address } = {}) {
+    if (next === explorerView || !universeShell || !viewSwitch) return;
+    explorerView = next;
+    const on = next === "universe";
+    const chosen = viewButtons.find(button => button.dataset.wbView === next);
+    viewButtons.forEach(button => button.setAttribute("aria-pressed", String(button === chosen)));
     if (address) rewriteAddress(on);
     if (!on) hashBeforeUniverse = null;
-    if (on) loadUniverse().then(view => { if (explorerView === "universe") view.show({ initial: featured[state.selected] }); }, () => setView("architecture"));
-    else universe?.hide();
-    morph?.refresh();
+    // Focus in a part of the view that goes would be lost: it moves to the button just chosen.
+    const focused = document.activeElement;
+    if (focused && bench.contains(focused) && !viewSwitch.contains(focused)) chosen?.focus({ preventScroll: true });
+    if (universe?.transition(next, { instant })) return;
+    // Universe on its way (the pointer reached its button a moment ago): wait for it a little, so
+    // the model can still turn into it, rather than show its placeholder first.
+    if (on && !universe && universeLoad && !instant) {
+      let late = false;
+      const timer = setTimeout(() => { late = true; if (explorerView === next && layoutView !== next) applyLayout(next); }, 300);
+      universeLoad.then(view => {
+        clearTimeout(timer);
+        if (late || explorerView !== next || layoutView === next) return;
+        if (!view.transition(next)) applyLayout(next);
+      }, () => { clearTimeout(timer); if (!late && explorerView === next) applyLayout(next); });
+      return;
+    }
+    applyLayout(next);
   }
   if (viewSwitch && universeShell) {
     viewSwitch.hidden = false;
