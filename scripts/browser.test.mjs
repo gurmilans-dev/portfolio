@@ -2494,23 +2494,29 @@ test("universe: accessible names and states, relationships in words, contrast in
 });
 
 test("universe: on a device too slow to redraw at a steady rate, the drawing lightens only while the camera moves; a capable device never sees it", async () => {
-  const watchLean = `(() => { window.__lean = []; const stage = document.querySelector(".uv-stage"); new MutationObserver(() => window.__lean.push(stage.classList.contains("is-lean"))).observe(stage, { attributes: true, attributeFilter: ["class"] }); })()`;
-  for (const [cpu, expectLean] of [[1, false], [8, true]]) {
+  // The map measures a device by its own frames, so they are driven by hand: a capable device's
+  // pace (60 a second) and a slow one's (20 a second). Throttling the CPU instead would depend on
+  // how fast the machine running the tests is.
+  for (const [perSecond, expectLean] of [[60, false], [20, true]]) {
     await withPage({ width: 1440, height: 900 }, async (page) => {
+      await page.addInitScript(HAND_FRAMES);
       await page.goto(`${base}/#work-universe`);
       await page.waitFor(`!!document.querySelector(".uv-svg .uv-label:not(.is-hidden)")`);
-      await page.evaluate(watchLean);
-      await page.call("Emulation.setCPUThrottlingRate", { rate: cpu });
-      // Two turns, so a slow device has measured itself by the second.
+      // Landed, and the map in view (off screen, the camera goes straight to where it is sent).
+      await page.evaluate(scrollSettled);
+      await page.waitFor(`document.querySelector("[data-universe]").classList.contains("is-live")`);
+      await page.evaluate("__manual(true)");
+      const seen = [];
+      // Two turns, so a slow device has measured itself by the second; each eases there in time.
       for (const turn of ["1", "1"]) {
         await page.evaluate(`document.querySelector('[data-uv-turn="${turn}"]').click()`);
-        await page.evaluate(cameraSettled);
+        // Frame by frame, whether the lighter drawing is on.
+        seen.push(...await page.evaluate(`(() => { const stage = document.querySelector(".uv-stage"), on = []; for (let i = 0; i < 60; i++) { __tick(1, ${1000 / perSecond}); on.push(stage.classList.contains("is-lean")); } return on; })()`));
       }
-      await page.call("Emulation.setCPUThrottlingRate", { rate: 1 });
-      const seen = await page.evaluate("window.__lean");
+      await page.evaluate("__manual(false)");
       const now = await page.evaluate(`({ lean: document.querySelector(".uv-stage").classList.contains("is-lean"), cam: document.querySelector("[data-uv-cam]").textContent, dashes: getComputedStyle(document.querySelector(".uv-stem")).strokeDasharray })`);
-      assert.equal(seen.includes(true), expectLean, `cpu x${cpu}: the lighter drawing ${expectLean ? "appears" : "never appears"} while the camera moves`);
-      assert.deepEqual([now.lean, now.cam], [false, "AZ 58° / EL 24°"], `cpu x${cpu}: when the camera stops, the full drawing is back, where it was sent`);
+      assert.equal(seen.includes(true), expectLean, `${perSecond} frames a second: the lighter drawing ${expectLean ? "appears" : "never appears"} while the camera moves`);
+      assert.deepEqual([now.lean, now.cam], [false, "AZ 58° / EL 24°"], `${perSecond} frames a second: when the camera stops, the full drawing is back, where it was sent`);
       assert.notEqual(now.dashes, "none", "with its dashed stems");
       assert.deepEqual(page.errors(), []);
     });
@@ -2522,15 +2528,26 @@ test("universe: on a device too slow to redraw at a steady rate, the drawing lig
    (assets/universe.js): the floors part, the systems leave their sockets, the lowest floor
    unfolds into the ground. Under 1280px the layout changes at once and the map assembles in
    place. These tests drive the page's animation frames by hand, so every frame is exactly where
-   it should be: __manual(true) holds requestAnimationFrame, and __tick(n) runs n frames, a
-   sixtieth of a second apart. */
+   it should be: __manual(true) holds requestAnimationFrame, and __tick(n, ms) runs n frames, ms
+   apart (a sixtieth of a second unless given); the page's clock follows them. __slowClock(true)
+   makes it a slow device's. */
 const HAND_FRAMES = `(() => {
-  const real = window.requestAnimationFrame.bind(window), realCancel = window.cancelAnimationFrame.bind(window);
-  let manual = false, id = 1e7, now = 0; const queue = new Map();
-  window.requestAnimationFrame = (cb) => { if (!manual) return real(cb); const i = ++id; queue.set(i, cb); return i; };
+  const real = window.requestAnimationFrame.bind(window), realCancel = window.cancelAnimationFrame.bind(window), realNow = performance.now.bind(performance);
+  let manual = false, id = 1e7, now = 0, lag = 0, slow = false; const queue = new Map();
+  // One clock for the page, performance.now() and the frames' timestamps alike, held with the frames
+  // (so the page measures exactly the frames it is given) and never running backwards. A slow
+  // device's clock (__slowClock) jumps a quarter of a second at every reading.
+  performance.now = () => { if (slow) lag += 250; return manual ? now : realNow() + lag; };
+  window.requestAnimationFrame = (cb) => { if (!manual) return real((t) => cb(t + lag)); const i = ++id; queue.set(i, cb); return i; };
   window.cancelAnimationFrame = (i) => { if (queue.has(i)) queue.delete(i); else realCancel(i); };
-  window.__manual = (on) => { manual = on; now = performance.now(); if (!on) { const q = [...queue.values()]; queue.clear(); q.forEach((cb) => real(cb)); } };
-  window.__tick = (n = 1) => { for (let k = 0; k < n; k++) { now += 1000 / 60; const q = [...queue.values()]; queue.clear(); q.forEach((cb) => cb(now)); } };
+  window.__manual = (on) => {
+    if (on) { now = realNow() + lag; manual = true; return; }
+    manual = false;
+    lag = Math.max(lag, now - realNow());
+    const q = [...queue.values()]; queue.clear(); q.forEach((cb) => real((t) => cb(t + lag)));
+  };
+  window.__tick = (n = 1, ms = 1000 / 60) => { for (let k = 0; k < n; k++) { now += ms; const q = [...queue.values()]; queue.clear(); q.forEach((cb) => cb(now)); } };
+  window.__slowClock = (on) => { slow = on; };
 })()`;
 const bridgingNow = `document.querySelector("[data-workbench]").classList.contains("is-bridging")`;
 // Frame by frame until it ends: how many frames it took.
@@ -2888,16 +2905,22 @@ test("between the views: the first choice waits a moment for Universe's script a
 test("between the views: on a device too slow to get it ready in time, the view changes at once instead, both ways, and leaves nothing behind", async () => {
   await withPage({ width: 1440, height: 900 }, async (page) => {
     await bridgePage(page);
-    await page.call("Emulation.setCPUThrottlingRate", { rate: 6 });
-    try {
-      for (const view of ["universe", "architecture", "universe"]) {
-        await page.evaluate(`document.querySelector('[data-wb-view="${view}"]').click()`);
-        const s = await page.evaluate(`({ ...${viewNow}, bridging: ${bridgingNow} })`);
-        assert.deepEqual([s.view, s.universe, s.bridging], [view, view === "universe", false], `${view}: at once`);
-        assert.deepEqual(await page.evaluate(bridgeLeft), BLANK, `${view}: nothing left behind`);
-      }
-    } finally {
-      await page.call("Emulation.setCPUThrottlingRate", { rate: 1 });
+    // A slow device, for certain: the page's clock jumps a quarter of a second at every reading, so
+    // getting ready always takes too long. (Throttling the CPU instead would depend on how fast the
+    // machine running the tests is.)
+    await page.evaluate("__slowClock(true)");
+    for (const view of ["universe", "architecture", "universe"]) {
+      await page.evaluate(`document.querySelector('[data-wb-view="${view}"]').click()`);
+      const s = await page.evaluate(`({ ...${viewNow}, bridging: ${bridgingNow} })`);
+      assert.deepEqual([s.view, s.universe, s.bridging], [view, view === "universe", false], `${view}: at once`);
+      assert.deepEqual(await page.evaluate(bridgeLeft), BLANK, `${view}: nothing left behind`);
+    }
+    // After two slow starts, the rest of the visit changes view at once, even with time to spare.
+    await page.evaluate("__slowClock(false)");
+    for (const view of ["architecture", "universe"]) {
+      await page.evaluate(`document.querySelector('[data-wb-view="${view}"]').click()`);
+      const s = await page.evaluate(`({ ...${viewNow}, bridging: ${bridgingNow} })`);
+      assert.deepEqual([s.view, s.universe, s.bridging], [view, view === "universe", false], `${view}, the device idle again: still at once`);
     }
     await page.waitFor(`!!document.querySelector(".uv-svg .uv-label:not(.is-hidden)")`);
     assert.deepEqual(page.errors(), []);
