@@ -64,7 +64,7 @@
             <p class="case-section-no">01 / Product</p>
             <h2 id="overview-title">One live line, read across the room.</h2>
             <p>I built the React and JavaScript interface, Node.js and Express API, matching flow, and multi-device session. Participants join by QR or session code; phones follow the projector without becoming extra control surfaces.</p>
-            <p>Two live modes share one tracker. Kirtan follows a sung Shabad (a hymn) line by line; Katha follows a speaker across nearby Shabads or a whole Ang (a page of the scripture), and holds while they explain. Away from the microphone, a Shabad can be found by first letters, Ang number or meaning, with a multilingual embedding model running in the browser over a bundled index. Bani mode, the daily Hukamnama (the day’s reading) and offline session packs sit beside the readers.</p>
+            <p>Two live modes share one tracker. Kirtan follows a sung Shabad (a hymn) line by line; Katha follows a speaker across nearby Shabads or a whole Ang (a page of the scripture), and holds while they explain. Away from the microphone, a Shabad can be found by first letters, Ang number or meaning. Search by meaning is retrieval, not a chatbot: the collection is embedded ahead of time, only the query is embedded in the browser, with the multilingual-e5-small model on ONNX Runtime’s WebAssembly backend through Transformers.js, and results are ranked by cosine similarity. Nothing is generated. Bani mode, the daily Hukamnama (the day’s reading) and offline session packs sit beside the readers.</p>
             {{> case-cut gurmat}}
           </section>
 

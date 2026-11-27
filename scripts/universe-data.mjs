@@ -29,8 +29,12 @@ export function buildUniverseData({ siteConfig, projects, routeOf }) {
     if (!Array.isArray(place.position) || place.position.length !== 3 || !place.position.every(Number.isFinite)) fail(`"${project.key}" needs a position [x, y, z]`);
     for (const concept of place.concepts) if (!concepts[concept]) fail(`"${project.key}" has an unknown concept "${concept}"`);
     const conceptNames = place.concepts.map((id) => concepts[id].toLowerCase());
-    // Technologies from the project's own list; an entry that is one of its concepts is shown once.
-    const tech = project.tech.split(" · ").map(techName).filter((item) => item && !conceptNames.includes(item.toLowerCase()));
+    // Technologies from the project's own list, then the further ones its repository shows in use
+    // (`extraTech`); an entry that is one of its concepts is shown once, and none twice.
+    const extra = project.extraTech ?? [];
+    if (!Array.isArray(extra) || extra.some((item) => typeof item !== "string" || !item.trim() || item.includes(" · "))) fail(`"${project.key}" needs extraTech as a list of technology names`);
+    const tech = [...new Set([...project.tech.split(" · "), ...extra].map(techName))].filter((item) => item && !conceptNames.includes(item.toLowerCase()));
+    if (tech.length !== new Set(tech.map((item) => item.toLowerCase())).size) fail(`"${project.key}" lists a technology twice`);
     const caseStudy = project.caseStudy ? routeOf(project.caseStudy) : "";
     // The same destinations, in the same order and markup, as the project's file in the explorer.
     const links = [

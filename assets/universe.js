@@ -128,6 +128,7 @@
         <button type="button" class="uv-cbtn uv-text" data-uv-reset>Reset view</button>
       </div>
       <p class="uv-hint" aria-hidden="true">${fine ? "Drag to orbit · Ctrl + scroll to zoom · Click a project to see what it shares" : "Swipe sideways to orbit · Pinch to zoom · Tap a project to see what it shares"}</p>
+      <p class="uv-legend">Colours indicate engineering domains; connections indicate shared technologies or engineering concerns.</p>
       <p class="sr-only" aria-live="polite" data-uv-live></p>`;
     const $ = (selector) => map.querySelector(selector);
     const jump = $("[data-uv-jump]");
@@ -615,7 +616,9 @@
       for (const link of links) if (link.run) { if (on) link.run.play(); else link.run.pause(); }
       if (!on && frame) { cancelAnimationFrame(frame); frame = 0; Object.assign(cam, goal); setLean(false); draw(); }
     }
-    if ("IntersectionObserver" in window) new IntersectionObserver(([entry]) => { onScreen = entry.isIntersecting; setLive(); }).observe(map);
+    // One callback can carry several entries for the map (it went out of view and back before the
+    // callback ran, as when a page opened at #work-universe scrolls to it): the last one is current.
+    if ("IntersectionObserver" in window) new IntersectionObserver((entries) => { onScreen = entries[entries.length - 1].isIntersecting; setLive(); }).observe(map);
     document.addEventListener("visibilitychange", setLive);
     motion.addEventListener?.("change", wake);
     document.fonts?.ready.then(() => { widths.clear(); draw(); });
@@ -663,7 +666,7 @@
         sides: (architecture.sides || []).filter(Boolean)
       };
     })();
-    const chrome = [index, panel, ...map.querySelectorAll(".uv-bar, .uv-hud, .uv-camera, .uv-hint")];
+    const chrome = [index, panel, ...map.querySelectorAll(".uv-bar, .uv-hud, .uv-camera, .uv-hint, .uv-legend")];
     const wide = matchMedia("(min-width: 1280px)"); // where the model itself turns into the map
     const BRIDGE_MS = 1400;
     const ASSEMBLE_MS = 900; // the map assembling in place, under 1280px

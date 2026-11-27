@@ -58,6 +58,12 @@ export const siteConfig = {
   // sentence must be supported by the project's own case study or repository: these
   // summaries are evidence, not marketing copy.
   //
+  // `extraTech` lists further technologies the project's repository shows in real use, beyond
+  // the short `tech` line on its card (which stays as it is). Project Universe lists them with
+  // the rest and highlights the ones another project shares, and search finds the project by
+  // them; they are never shown on the cards. Each needs repository evidence, named in the
+  // comment above it: an installed package is not evidence.
+  //
   // Repository visibility is one field. `repository: ""` means the source is not public:
   // no GitHub action is rendered anywhere and the source reads "Private repository" (or
   // `sourceNote`). When a repository is made public, paste its https://github.com/... URL
@@ -130,6 +136,12 @@ export const siteConfig = {
       lead: "A simulated digital bank built to learn transactional systems properly: a double-entry ledger, transfers that cannot be applied twice, rotating sessions, and load tests that check the books afterwards.",
       summary: "Simulated bank: double-entry ledger, idempotent transfers, measured under load.",
       tech: "Java 21 · Spring Boot · PostgreSQL · React · TypeScript",
+      // infra/compose.yaml (PostgreSQL; Prometheus and Grafana in an `observability` profile),
+      // backend/src/test/.../PostgresTestConfiguration.java (Testcontainers), db/migration (Flyway),
+      // ModularityTest.java (Spring Modulith), micrometer-registry-prometheus with
+      // infra/observability/prometheus/prometheus.yml and grafana/dashboards/*.json,
+      // .github/workflows/ci.yml, frontend/e2e/*.spec.ts (Playwright).
+      extraTech: ["Docker Compose", "Testcontainers", "Flyway", "Spring Modulith", "Micrometer", "Prometheus", "Grafana", "GitHub Actions", "Playwright"],
       status: "In development",
       statusClass: "badge-development",
       caseStudy: "flowbank-one.html",
@@ -148,9 +160,9 @@ export const siteConfig = {
         intro: "No real money and no real bank: every account is fictitious. Each transfer is a debit and a credit committed together or not at all, and the system is tested under concurrency and load to prove the books still balance.",
         layers: [
           ["Four-step transfer", "React and TypeScript. The access token lives only in memory; a double click sends one request, and a transfer with no answer is checked by its key, never resent."],
-          ["Modular monolith", "Spring Boot with eight modules whose boundaries a test enforces. Accounts are locked in one fixed order, so crossed transfers cannot deadlock."],
+          ["Modular monolith", "Spring Boot with eight modules whose boundaries a Spring Modulith test enforces. Paths that lock two accounts lock them in one fixed order, so crossed transfers do not deadlock on them."],
           ["Double-entry ledger", "PostgreSQL. A deferred constraint trigger rejects any transfer whose debits and credits differ; the application can insert ledger rows but never rewrite them."],
-          ["355 tests · k6", "144 unit and 211 integration tests against a real PostgreSQL container, plus k6 load tests followed by twelve accounting checks."]
+          ["355 tests · k6 · metrics", "144 unit and 211 integration tests against a real PostgreSQL container, k6 load tests followed by twelve accounting checks, and local Prometheus metrics in two Grafana dashboards."]
         ],
         architecture: [
           ["React SPA", "Token in memory · 4-step transfer"],
@@ -203,7 +215,16 @@ export const siteConfig = {
       mobileImageWidth: 780,
       mobileImageHeight: 1688,
       mobileImageAlt: "FlowBank One dashboard on a phone, with the bottom navigation bar",
-      mobileImageCaption: "The same dashboard on a phone."
+      mobileImageCaption: "The same dashboard on a phone.",
+      // From the repository's docs/assets/screenshots/grafana-technical.webp, cropped below Grafana's
+      // toolbar (its environment selector and its link to the other dashboard); otherwise unchanged.
+      grafanaImage: "assets/flowbank/flowbank-grafana-technical.png",
+      grafanaImageAvif: "assets/flowbank/flowbank-grafana-technical.avif",
+      grafanaImageWebp: "assets/flowbank/flowbank-grafana-technical.webp",
+      grafanaImageWidth: 1440,
+      grafanaImageHeight: 944,
+      grafanaImageAlt: "FlowBank One's technical Grafana dashboard, labelled in Italian: one reachable instance, requests per second, a 0% share of server errors and p95 latency, then requests by outcome, latency percentiles, error responses by status and p95 latency per endpoint",
+      grafanaImageCaption: "The technical dashboard during a local run with simulated traffic, built from the backend's Prometheus metrics. The figures are not production benchmarks. The interface is Italian."
     },
     procbeacon: {
       order: 3,
@@ -232,7 +253,7 @@ export const siteConfig = {
         layers: [
           ["Four-area WPF app", "Workspaces, Ports, Processes and System, with one search across services, PIDs and ports. MVVM view models drive every view."],
           ["Identity before action", "One shared monitor feeds every area. A process is its PID plus its creation time, re-checked on the same handle before anything is ended."],
-          ["Native sources", "TCP and UDP tables from IP Helper, process facts from kernel32, counters from PDH. Local registries are saved by atomic file replacement."],
+          ["Native sources", "TCP and UDP tables from IP Helper, process facts from kernel32, command lines from WMI, counters from PDH. Local registries are saved by atomic file replacement."],
           ["438 tests · preview build", "438 automated tests pass in a Release build, with native checks against fixture processes the tests start themselves. Packaged as a local, unsigned preview."]
         ],
         architecture: [
@@ -279,8 +300,10 @@ export const siteConfig = {
       title: "MaintOps",
       shortTitle: "MaintOps",
       category: "Maintenance operations platform",
-      lead: "A full-stack system for handling maintenance work from request and triage through assignment, execution, SLA tracking, resolution and reporting.",
+      lead: "A full-stack system for handling maintenance work from request and triage through assignment, execution, SLA tracking, resolution and reporting, with optional AI suggestions that change nothing until a person accepts them.",
       tech: "React · Fastify · MySQL",
+      // backend/src/modules/ai/provider/groq.client.js (the public repository).
+      extraTech: ["Groq"],
       // Maturity only; whether the source is public is shown beside it ("Public source").
       status: "Runs locally",
       statusClass: "badge-local",
@@ -291,7 +314,7 @@ export const siteConfig = {
       meta: {
         role: "End-to-end developer",
         context: "Single organization",
-        focus: "Workflow · SLA · authorization",
+        focus: "Workflow · SLA · authorization · bounded AI",
         evidence: "Public repository · frontend and backend test suites"
       },
       system: {
@@ -301,11 +324,11 @@ export const siteConfig = {
           ["Role workspaces", "React SPA with role-specific workspaces. Frontend guards improve navigation; they are not the security boundary."],
           ["Authz in transaction", "Fastify API. Services own authorization and run it inside the same transaction as the state change."],
           ["Append-only events", "MySQL. Lifecycle changes write immutable events, SLA policies are versioned, and sessions are normalized to UTC."],
-          ["Public · tested", "Public repository. Backend cases run on the native Node test runner; the frontend is covered with Vitest and Testing Library."]
+          ["Public · tested", "Public repository. Backend cases, 20 of them for the AI path, run on the native Node test runner; the frontend is covered with Vitest and Testing Library."]
         ],
         architecture: [
           ["React SPA", "Role-specific workspaces"],
-          ["Fastify API", "Validation · authorization · transitions"],
+          ["Fastify API", "Validation · authorization · bounded AI"],
           ["MySQL", "Records · SLA state · audit history"]
         ],
         decision: {
@@ -371,7 +394,9 @@ export const siteConfig = {
       shortTitle: "Gurmat Saanj",
       category: "Real-time shared reading system",
       lead: "A deployed system that follows live Punjabi recitation, matches recognized phrases against known Gurbani, and holds a projector and connected viewers on the same line.",
-      tech: "React · Node.js · Web Speech API · BaniDB",
+      tech: "React · Node.js · Web Speech API · Transformers.js · BaniDB",
+      // frontend/src/services/semanticSearch.js (onnxruntime-web, WebAssembly backend).
+      extraTech: ["ONNX Runtime"],
       status: "Deployed",
       statusClass: "badge-deployed",
       caseStudy: "gurmat-saanj.html",
@@ -474,6 +499,10 @@ export const siteConfig = {
       category: "Event operations platform",
       lead: "A full-stack product for live events: areas, tasks and exceptions roll up into readiness, every write is checked against the caller's event role, and on-site staff get scoped access through revocable QR codes.",
       tech: "React · Fastify · MySQL · Server-Sent Events",
+      // backend/src/modules/ai/providers/groqProvider.js and ollamaProvider.js, compose.e2e.yml and
+      // deploy/staging/compose.yml, .github/workflows/ci.yml and deploy-staging.yml,
+      // playwright.config.js with e2e/critical/*.spec.js.
+      extraTech: ["Groq", "Ollama", "Docker Compose", "GitHub Actions", "Playwright"],
       status: "Pilot preparation",
       statusClass: "badge-development",
       caseStudy: "opssemble.html",
@@ -483,7 +512,7 @@ export const siteConfig = {
       meta: {
         role: "End-to-end developer",
         context: "University project, grown into a product",
-        focus: "Event roles · live updates · scoped access",
+        focus: "Event roles · live updates · scoped access · optional AI",
         evidence: "483 unit tests · recorded release checks"
       },
       system: {
@@ -493,7 +522,7 @@ export const siteConfig = {
           ["Readiness dashboard", "React and MUI. Readiness, blockers and open exceptions per area, a mobile My Shift queue, and QR area workspaces for on-site staff."],
           ["Role on every write", "Fastify feature modules. Owner, coordinator, operator and viewer are checked server-side on every write; event-scoped Server-Sent Events push changes live."],
           ["Hashed tokens", "MySQL with migrations. QR, verification and reset tokens are stored only as SHA-256 hashes; evidence photos are re-encoded without metadata and served after authorization."],
-          ["Release checks", "149 frontend and 334 backend unit tests pass; a local validation of the packaged release passed 24 critical journeys in Chromium and WebKit. Not launched."]
+          ["Release gate", "CI builds one release artefact and runs the critical browser journeys against it in Chromium and WebKit before it can be promoted. 149 frontend and 334 backend unit tests pass. Not launched."]
         ],
         architecture: [
           ["React + MUI", "Dashboard · My Shift · QR areas"],
@@ -584,6 +613,9 @@ export const siteConfig = {
       lead: "A study planner that splits one weekly availability budget across every active exam, and records study sessions on a timer the server owns rather than the browser.",
       summary: "Study planner sharing one weekly budget across exams, with server-owned timers.",
       tech: "React · TypeScript · Express · Prisma · MySQL",
+      // server/src/swagger.ts (OpenAPI 3.0.3, served by Swagger UI), docker-compose.yml (MySQL),
+      // .github/workflows/ci.yml (quality, test and e2e jobs), client/playwright.config.ts.
+      extraTech: ["OpenAPI", "Docker Compose", "GitHub Actions", "Playwright"],
       status: "Runs locally",
       statusClass: "badge-local",
       caseStudy: "",
@@ -610,7 +642,7 @@ export const siteConfig = {
             ["Planning", "Deterministic: one weekly availability budget is distributed across every active exam."]
           ]
         },
-        evidence: "Public repository under MIT, with unit, API and end-to-end tests.",
+        evidence: "Public repository under MIT. The REST API is described by an OpenAPI 3 document served with Swagger UI, and requests are validated with Zod. GitHub Actions runs lint and build checks, unit and API tests against a MySQL service container, and Playwright end-to-end tests.",
         boundary: "No usage figures are claimed; the public repository is the evidence. The interface is Italian."
       },
       primaryImage: "assets/esamarea/esamarea-shared-plan.png",
@@ -671,6 +703,9 @@ export const siteConfig = {
       lead: "A personal planning app for appointments with reminders, today, an inbox, a weekly and monthly planner, habits, goals and projects. It works offline first and synchronizes once you sign in.",
       summary: "Offline-first planner for appointments, tasks and goals, with sync and reminders.",
       tech: "React · TypeScript · Node.js · MySQL · PWA",
+      // tests/e2e/*.spec.ts (Playwright; 16 specs run AxeBuilder), compose.yaml (MySQL, Mailpit),
+      // .github/workflows/ci.yml.
+      extraTech: ["Playwright", "axe-core", "Docker Compose", "GitHub Actions"],
       status: "In development",
       statusClass: "badge-development",
       caseStudy: "",
@@ -694,7 +729,7 @@ export const siteConfig = {
             "A separate worker schedules opt-in reminders for verified accounts"
           ]
         },
-        evidence: "Unit, end-to-end and installable-app test suites with Vitest and Playwright.",
+        evidence: "Unit, end-to-end and installed-app suites with Vitest and Playwright. 16 of the 32 end-to-end specs also run automated axe checks against WCAG 2.2 A and AA rules: automated checks that catch many issues, not a full accessibility audit.",
         boundary: "Not released: a stable version and production deployment are not approved yet, and push delivery to real phones is unverified."
       },
       primaryImage: "assets/orbit/orbit-today.png",
@@ -713,6 +748,8 @@ export const siteConfig = {
       lead: "A private writing environment for poetry, fragments and longer-form work across English, Hindi and Punjabi.",
       summary: "Private writing environment for English, Hindi and Punjabi, privacy by schema.",
       tech: "React · Express · MySQL",
+      // tests/e2e/*.spec.js with playwright.config.js, .github/workflows/ci.yml.
+      extraTech: ["Playwright", "GitHub Actions"],
       status: "In development",
       statusClass: "badge-development",
       caseStudy: "alfaaz.html",
@@ -778,6 +815,9 @@ export const siteConfig = {
       lead: "An acoustic modem and file-transfer stack that sends binary data through an ordinary speaker and microphone, with no network at all.",
       summary: "Rust acoustic modem: files through a speaker and a microphone, integrity-checked.",
       tech: "Rust · signal processing · Tauri",
+      // .github/workflows/ci.yml (cargo test, clippy, frontend checks), apps/desktop/e2e/verify.mjs
+      // (Playwright with an axe audit of the desktop interface).
+      extraTech: ["GitHub Actions", "Playwright", "axe-core"],
       status: "Experimental",
       statusClass: "badge-experimental",
       caseStudy: "",
@@ -786,7 +826,7 @@ export const siteConfig = {
       meta: { role: "Sole developer", context: "Experiment · MIT" },
       system: {
         head: "A file, sent through the air.",
-        intro: "Data is split into numbered packets, each with a CRC32, modulated into two audible tones and played through a speaker. The receiver recovers timing from the microphone signal and writes the file only when every packet has arrived and the SHA-256 matches.",
+        intro: "Data is split into numbered packets, each with a CRC32, modulated into two audible tones and played through a speaker. The receiver recovers timing from the microphone signal and writes the file only when every packet has arrived and the SHA-256 matches. The audio callbacks only pass fixed-size blocks to a worker thread through lock-free single-producer queues, and are written not to allocate, lock or log; blocks dropped under load are counted.",
         architecture: [
           ["Framing", "Numbered packets · CRC32"],
           ["BFSK modem", "1200 / 2200 Hz · timing recovery"],
@@ -800,7 +840,7 @@ export const siteConfig = {
             "Two-way transfer with retransmission: tested in software only"
           ]
         },
-        evidence: "Public repository under MIT. One-way phone-to-PC transfer was validated physically on ordinary hardware, in one room.",
+        evidence: "Public repository under MIT, with 130 Rust tests run by default. One-way phone-to-PC transfer was validated physically on ordinary hardware, in one room.",
         boundary: "Experimental, at about 100 bit/s. Two-way transfer between real devices is not validated, the 257-byte transfer needed a replay, and range and hardware variability are not measured."
       }
     },
@@ -843,6 +883,8 @@ export const siteConfig = {
       lead: "Agent-based SIRD desktop simulator: a background engine drives moving agents with collision handling, real-time S/I/R/D visualization, and CSV export, on a model–engine–controller architecture.",
       summary: "Agent-based epidemic simulator in Java and JavaFX.",
       tech: "Java 17 · JavaFX · Maven · concurrency",
+      // .github/workflows/build.yml (Maven build).
+      extraTech: ["GitHub Actions"],
       status: "Academic",
       statusClass: "badge-academic",
       caseStudy: "",
@@ -906,22 +948,25 @@ export const siteConfig = {
       offline: "Offline capabilities",
       privacy: "Privacy by schema",
       simulation: "Agent-based simulation",
-      licensing: "Licence activation"
+      licensing: "Licence activation",
+      aiAssist: "AI assistance with guardrails",
+      observability: "Metrics and dashboards",
+      semanticSearch: "Semantic search"
     },
     // position: [x, y, z]; y is up, the ground lies at y = -170.
     projects: {
       // "Server-side roles", "Validation + role checks", "daily internal operations", "Commercial software".
       erp: { domain: "business", position: [-145, 70, -145], concepts: ["authorization", "workflow", "commercial"] },
-      // "Accounts are locked in one fixed order", "transfers that cannot be applied twice", "the application can insert ledger rows but never rewrite them", "A deferred constraint trigger rejects any transfer whose debits and credits differ", "load tests".
-      flowbank: { domain: "backend", position: [136, 115, -118], concepts: ["concurrency", "idempotency", "appendOnly", "integrity", "loadTesting"] },
+      // "Paths that lock two accounts lock them in one fixed order", "transfers that cannot be applied twice", "the application can insert ledger rows but never rewrite them", "A deferred constraint trigger rejects any transfer whose debits and credits differ", "load tests", "local Prometheus metrics in two Grafana dashboards".
+      flowbank: { domain: "backend", position: [136, 115, -118], concepts: ["concurrency", "idempotency", "appendOnly", "integrity", "loadTesting", "observability"] },
       // "checks a process's identity again before it ends it", "for developers".
       procbeacon: { domain: "tools", position: [-205, -4, 90], concepts: ["processIdentity", "devTools"] },
-      // "request and triage through assignment ... SLA", "Services own authorization", "Lifecycle changes write immutable events".
-      maintops: { domain: "business", position: [-225, -76, -65], concepts: ["workflow", "authorization", "appendOnly"] },
-      // "follows live Punjabi recitation", "Operator, projector and viewers all follow this one selected line".
-      gurmat: { domain: "personal", position: [35, 125, 157], concepts: ["live", "sync", "speech", "punjabi"] },
-      // "readiness is computed from what is still open", "checked server-side on every write", "Server-Sent Events push changes live", "revocable QR codes".
-      opssemble: { domain: "business", position: [-100, 140, -35], concepts: ["workflow", "authorization", "live", "scopedAccess"] },
+      // "request and triage through assignment ... SLA", "Services own authorization", "Lifecycle changes write immutable events", "optional AI suggestions that change nothing until a person accepts them".
+      maintops: { domain: "business", position: [-225, -76, -65], concepts: ["workflow", "authorization", "appendOnly", "aiAssist"] },
+      // "follows live Punjabi recitation", "Operator, projector and viewers all follow this one selected line", "Search by meaning is retrieval, not a chatbot".
+      gurmat: { domain: "personal", position: [35, 125, 157], concepts: ["live", "sync", "speech", "punjabi", "semanticSearch"] },
+      // "readiness is computed from what is still open", "checked server-side on every write", "Server-Sent Events push changes live", "revocable QR codes", "Optional assistance, no write authority", "Offline operation is behind a feature flag ... a durable outbox".
+      opssemble: { domain: "business", position: [-100, 140, -35], concepts: ["workflow", "authorization", "live", "scopedAccess", "aiAssist", "offline"] },
       // "study planner", "a timer the server owns rather than the browser".
       esamarea: { domain: "personal", position: [238, -25, -48], concepts: ["planning", "serverTime"] },
       // "A keyboard-first new tab for developers".
@@ -930,8 +975,8 @@ export const siteConfig = {
       orbit: { domain: "personal", position: [-18, -110, 210], concepts: ["planning", "offline", "sync"] },
       // "Optimistic concurrency", "Readable offline as an installed web app", "English, Hindi and Punjabi", "privacy by schema".
       alfaaz: { domain: "personal", position: [144, -5, 192], concepts: ["concurrency", "offline", "punjabi", "privacy"] },
-      // "numbered packets, each with a CRC32", "writes the file only when every packet has arrived and the SHA-256 matches".
-      tonequill: { domain: "experiments", position: [-35, -115, -175], concepts: ["integrity"] },
+      // "numbered packets, each with a CRC32", "writes the file only when every packet has arrived and the SHA-256 matches", "lock-free single-producer queues".
+      tonequill: { domain: "experiments", position: [-35, -115, -175], concepts: ["integrity", "concurrency"] },
       // "licence activation", "Commercial software".
       licenceManager: { domain: "business", position: [-252, 65, -170], concepts: ["commercial", "licensing"] },
       // "Agent-based", "Java 17 · JavaFX · Maven · concurrency", "A background engine drives moving agents".
@@ -940,9 +985,10 @@ export const siteConfig = {
     // [project, project, what they share, how each does it]
     connections: [
       ["erp", "maintops", "Server-side authorization", "Both check roles on the server rather than in the browser: Business Platform's API validates input and checks roles; MaintOps runs authorization inside the same transaction as the change."],
-      ["maintops", "opssemble", "Shared stack: React, Fastify, MySQL", "Built on the same stack, and both authorize writes on the server: MaintOps in its services, Opssemble against the caller's event role."],
+      // MaintOps: "optional AI suggestions that change nothing until a person accepts them", "A triage suggestion stays pending until a supervisor accepts it". Opssemble: "Optional assistance, no write authority". (Their shared React, Fastify and MySQL stay findable by technology.)
+      ["maintops", "opssemble", "AI assistance without write authority", "Both add optional LLM assistance behind server-side limits, and neither lets it change records on its own: MaintOps screens input with Prompt Guard and holds a triage suggestion until a supervisor accepts it; Opssemble's assistant has no write authority, so every change goes through the normal endpoints."],
       ["flowbank", "maintops", "Append-only records", "FlowBank's ledger rows can be inserted but never rewritten; MaintOps records every lifecycle change as an immutable event."],
-      ["flowbank", "alfaaz", "Concurrency control", "FlowBank locks accounts in one fixed order so crossed transfers cannot deadlock; Alfaaz uses optimistic concurrency and refuses a save whose version is out of date."],
+      ["flowbank", "alfaaz", "Concurrency control", "FlowBank takes account locks in one fixed order so crossed transfers do not deadlock on them; Alfaaz uses optimistic concurrency and refuses a save whose version is out of date."],
       ["flowbank", "sird", "Java", "Both are written in Java: Java 21 with Spring Boot for a backend, Java 17 with JavaFX for a desktop simulation."],
       ["flowbank", "tonequill", "Data integrity checks", "Both verify data before trusting it: FlowBank's database rejects any transfer whose debits and credits differ; ToneQuill checks a CRC32 on every packet and writes a file only when its SHA-256 matches."],
       ["procbeacon", "licenceManager", "C# and .NET", "Both are built in C# and .NET: a WPF desktop tool, and a client-server component in commercial software."],
@@ -950,6 +996,8 @@ export const siteConfig = {
       ["gurmat", "orbit", "Cross-device synchronization", "Gurmat Saanj keeps the projector and every connected viewer on the same line during a live session; Orbit synchronizes signed-in devices through its API."],
       ["gurmat", "alfaaz", "Punjabi text support", "Gurmat Saanj matches recited Punjabi against known Gurbani; Alfaaz is a writing environment for English, Hindi and Punjabi."],
       ["orbit", "alfaaz", "Offline capabilities", "Both install as web apps with offline support: Orbit works offline first and saves every change on the device; Alfaaz stays readable offline."],
+      // Orbit: "Everything is saved on the device first" (an IndexedDB outbox, src/db/outbox.ts). Opssemble: "downloaded into IndexedDB, work continues through a durable outbox, and the server reconciles it with idempotent receipts".
+      ["opssemble", "orbit", "Offline outbox", "Both keep working without a connection by queuing changes in IndexedDB: Orbit saves every change on the device first and synchronizes once you sign in; Opssemble's offline mode, behind a feature flag, replays a durable outbox that the server reconciles with idempotent receipts."],
       ["esamarea", "orbit", "Planning apps: React, TypeScript, MySQL", "Two planning apps on a similar stack: Esamarea shares one weekly study budget across exams; Orbit plans appointments, tasks and goals."],
       ["erp", "licenceManager", "Commercial software", "Both were built for a company as commercial software: a business platform in daily production use, and a licensing component."]
     ]

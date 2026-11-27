@@ -1323,6 +1323,31 @@ test("command palette: technologies, projects and topics lead to the right place
   });
 });
 
+test("command palette: finds a project by the further technologies its repository shows (extraTech), only the projects that list one, and still shows just its category", async () => {
+  const everyone = [...featuredList, ...alsoList];
+  const users = (tech) => everyone.filter((project) => project.tech.split(" · ").includes(tech) || (project.extraTech ?? []).includes(tech)).map((project) => project.title).sort();
+  const projectsIn = (results) => results.filter((r) => /^(project|case study)$/.test(r.kind)).map((r) => r.title).sort();
+  await withPage({ width: 1440, height: 900 }, async (page) => {
+    await page.goto(`${base}/`);
+    await chord(page, "k", CTRL);
+    await page.waitFor(paletteOpen);
+    // Exactly the projects that list it, on their card or in extraTech, and no other.
+    for (const tech of ["Grafana", "Prometheus", "Testcontainers", "Spring Modulith", "Groq", "Ollama", "Playwright", "axe-core", "OpenAPI", "ONNX Runtime", "Docker Compose", "GitHub Actions"]) {
+      const expected = users(tech);
+      assert.ok(expected.length > 0, `${tech} is listed by some project`);
+      assert.deepEqual(projectsIn(await query(page, tech)), expected, tech);
+    }
+    assert.equal(users("Playwright").length, 6, "six projects list Playwright");
+    // A result found by a technology still shows the project's category, not its technologies.
+    const grafana = (await query(page, "Grafana")).find((r) => r.title === config.projects.flowbank.title);
+    assert.equal(await page.evaluate(`[...document.querySelectorAll(".pal-opt")].find((o) => o.querySelector(".pal-title").textContent === ${JSON.stringify(config.projects.flowbank.title)}).querySelector(".pal-sub").textContent`), config.projects.flowbank.category);
+    assert.equal(grafana.path, "/flowbank-one");
+    // Nothing the repositories do not show: no project answers to these.
+    for (const tech of ["Kubernetes", "ESXi", "VMware", "Postman"]) assert.deepEqual(projectsIn(await query(page, tech)), [], `${tech}: no project`);
+    assert.deepEqual(page.errors(), []);
+  });
+});
+
 test("command palette: opening results, across pages and on the same page, with keys and with the mouse", async () => {
   await withPage({ width: 1440, height: 900 }, async (page) => {
     await page.goto(`${base}/`);
@@ -2180,6 +2205,51 @@ test("universe: domains, connections and shared technologies keep the map, the l
   });
 });
 
+test("universe: a technology the repository shows (extraTech) is listed with the card's own and highlights every project that uses it; one used once is only listed; the cards keep their own line", async () => {
+  const everyone = [...featuredList, ...alsoList];
+  const name = (item) => item.replace(/^(Java|\.NET)\s+\d+$/, "$1").trim();
+  const listed = (project) => [...project.tech.split(" · "), ...(project.extraTech ?? [])].map(name);
+  const uses = (tech) => everyone.filter((project) => listed(project).includes(tech)).map((project) => project.key).sort();
+  // What the panel lists: the card's technologies and then extraTech, each once, less any that is one of the project's concerns.
+  const panelTech = (project) => {
+    const concerns = config.universe.projects[project.key].concepts.map((id) => config.universe.concepts[id].toLowerCase());
+    return [...new Set(listed(project))].filter((item) => !concerns.includes(item.toLowerCase()));
+  };
+  await withPage({ width: 1440, height: 900 }, async (page) => {
+    await page.goto(`${base}/#work`);
+    await page.waitFor(`document.documentElement.classList.contains("workbench-ready")`);
+    await openUniverse(page);
+    for (const [from, tech] of [["opssemble", "GitHub Actions"], ["esamarea", "Playwright"], ["flowbank", "Docker Compose"], ["maintops", "Groq"], ["orbit", "axe-core"]]) {
+      await page.click(`.uv-item[data-uv-key="${from}"]`);
+      await page.click(`[data-uv-lit="tech"][data-uv-id="${tech}"]`);
+      const s = await page.evaluate(universeState);
+      const expected = uses(tech);
+      assert.ok(expected.length >= 2, `${tech} is shared`);
+      assert.deepEqual(s.lit, expected, `${tech} highlights exactly the projects that list it`);
+      assert.equal(s.count, `${tech} · ${expected.length} projects`);
+      await page.click("[data-uv-clear]");
+      assert.deepEqual((await page.evaluate(universeState)).lit, [], `${tech}: cleared`);
+    }
+    // Every project's list, in order; a shared one is a button with its count, one used once a plain entry.
+    for (const project of everyone) {
+      await page.click(`.uv-item[data-uv-key="${project.key}"]`);
+      const tags = await page.evaluate(`[...document.querySelectorAll("[data-uv-tech] .uv-tag-item")].map((el) => ({ name: el.firstChild.textContent, button: el.tagName === "BUTTON", n: el.querySelector(".uv-n")?.textContent || "" }))`);
+      const expected = panelTech(project).map((tech) => { const n = uses(tech).length; return { name: tech, button: n >= 2, n: n >= 2 ? String(n) : "" }; });
+      assert.deepEqual(tags, expected, `${project.key}: its technologies`);
+    }
+    assert.deepEqual(page.errors(), []);
+  });
+  // The cards (the explorer's files and Also built) still show only the project's own short line.
+  await withPage({ width: 1440, height: 900 }, async (page) => {
+    await page.goto(`${base}/`);
+    const cards = await page.evaluate(`[...document.querySelectorAll(".sf-tech, .ab-tech")].map((el) => el.textContent.replace(/\\u00a0/g, " "))`);
+    const lines = everyone.map((project) => project.tech);
+    assert.ok(cards.length >= everyone.length, `a technology line on every card: ${cards.length}`);
+    for (const card of cards) assert.ok(lines.includes(card), `a card shows its own line only: ${card}`);
+    assert.deepEqual(page.errors(), []);
+  });
+});
+
 test("universe: the whole scene orbits, tilts and zooms together; Reset and Focus; a plain wheel still scrolls the page; a still map draws nothing", async () => {
   await withPage({ width: 1440, height: 900 }, async (page) => {
     await page.goto(`${base}/#work`);
@@ -2582,7 +2652,7 @@ test("universe: accessible names and states, relationships in words, contrast in
     const ground = (el) => { let bg = page; const stack = []; for (let n = el; n && n !== document.documentElement; n = n.parentElement) stack.unshift(n); for (const n of stack) { const c = parse(getComputedStyle(n).backgroundColor); if (c.a > 0) bg = over(c, bg); } return bg; };
     const results = [];
     const check = (label, el, fg, bg) => { if (el && el.getClientRects().length) results.push([label, +ratio(fg, bg).toFixed(2)]); };
-    for (const sel of [".uv-item", '.uv-item[aria-pressed="true"]', ".uv-group-name", ".uv-chip", '.uv-chip[aria-pressed="true"]', ".uv-count", ".uv-cam", ".uv-cbtn", ".uv-hint", ".uv-k", ".uv-summary", ".uv-rel-name", ".uv-rel-why", ".uv-rel-detail", ".uv-tag-item", ".uv-kicker > span:last-child", ".uv-meta .sf-source"]) {
+    for (const sel of [".uv-item", '.uv-item[aria-pressed="true"]', ".uv-group-name", ".uv-chip", '.uv-chip[aria-pressed="true"]', ".uv-count", ".uv-cam", ".uv-cbtn", ".uv-hint", ".uv-legend", ".uv-k", ".uv-summary", ".uv-rel-name", ".uv-rel-why", ".uv-rel-detail", ".uv-tag-item", ".uv-kicker > span:last-child", ".uv-meta .sf-source"]) {
       const el = document.querySelector(sel);
       if (el) check(sel, el, parse(getComputedStyle(el).color).rgb, ground(el));
     }
@@ -3065,4 +3135,44 @@ test("between the views: on a device too slow to get it ready in time, the view 
     await page.waitFor(`!!document.querySelector(".uv-svg .uv-label:not(.is-hidden)")`);
     assert.deepEqual(page.errors(), []);
   });
+});
+
+test("hero: the four layers' labels read as written and none is cut short, from a small phone to a wide screen", async () => {
+  const expected = [["React", "TypeScript", "Responsive UI", "Accessibility"], ["Node.js", "Express / Fastify", "Java", "C# / .NET"], ["PostgreSQL", "MySQL", "SQL Server", "Transactions"], ["Docker", "GitHub Actions", "Automated testing", "Ship & support"]];
+  for (const [width, height, mobile] of [[320, 640, true], [360, 740, true], [390, 844, true], [430, 932, true], [768, 1024, true], [1024, 768, false], [1280, 720, false], [1440, 900, false], [1920, 1080, false]]) {
+    await withPage({ width, height, mobile }, async (page) => {
+      await page.goto(`${base}/`);
+      await page.evaluate("document.fonts.ready.then(() => true)");
+      const plates = await page.evaluate(`[...document.querySelectorAll(".hero-stack > .plate")].map((plate) => [...plate.querySelectorAll(".plate-chips li")].map((li) => ({ text: li.textContent, cut: li.scrollWidth > li.clientWidth })))`);
+      assert.deepEqual(plates.map((chips) => chips.map((chip) => chip.text)), expected, `${width}×${height}: the labels, top layer first`);
+      assert.deepEqual(plates.flat().filter((chip) => chip.cut).map((chip) => chip.text), [], `${width}×${height}: labels cut short`);
+      assert.deepEqual(page.errors(), []);
+    });
+  }
+});
+
+test("selected work: the heading is the same in both views and fits every width; the Universe legend says what colours and lines mean, whole and inside the map", async () => {
+  const heading = "A closer look at the systems I’ve built.";
+  const legend = "Colours indicate engineering domains; connections indicate shared technologies or engineering concerns.";
+  const fits = (selector) => `(() => { const el = document.querySelector(${JSON.stringify(selector)}); if (!el || !el.getClientRects().length) return "missing"; const r = el.getBoundingClientRect(); return el.scrollWidth <= el.clientWidth + 1 && r.left >= 0 && r.right <= innerWidth + .5 ? "fits" : [el.scrollWidth, el.clientWidth, r.left, r.right].map(Math.round).join(" "); })()`;
+  const inMap = `(() => { const l = document.querySelector(".uv-legend").getBoundingClientRect(); const m = document.querySelector(".uv-map").getBoundingClientRect(); const c = document.querySelector(".uv-camera").getBoundingClientRect(); return l.left >= m.left - .5 && l.right <= m.right + .5 && l.top >= c.bottom - .5 && l.bottom <= m.bottom + .5; })()`;
+  for (const [width, height, mobile] of [[320, 640, true], [390, 844, true], [768, 1024, true], [1024, 768, false], [1440, 900, false], [1920, 1080, false]]) {
+    for (const scheme of ["dark", "light"]) {
+      await withPage({ width, height, mobile, scheme }, async (page) => {
+        await page.goto(`${base}/#work`);
+        await page.waitFor(`document.documentElement.classList.contains("workbench-ready")`);
+        assert.equal(await page.evaluate(`document.getElementById("work-title").textContent`), heading, `${width}px: Architecture's heading`);
+        assert.equal(await page.evaluate(fits("#work-title")), "fits", `${width}px: the heading fits`);
+        await openUniverse(page);
+        assert.equal(await page.evaluate(`document.getElementById("work-title").textContent`), heading, `${width}px: Universe's heading`);
+        assert.equal(await page.evaluate(fits("#work-title")), "fits", `${width}px, Universe: the heading fits`);
+        assert.equal(await page.evaluate(`document.querySelector(".uv-legend").textContent`), legend);
+        assert.ok(await page.evaluate(visible(".uv-legend")), `${width}px, ${scheme}: the legend is shown`);
+        assert.equal(await page.evaluate(fits(".uv-legend")), "fits", `${width}px: the legend is not cut`);
+        assert.ok(await page.evaluate(inMap), `${width}px: the legend sits under the camera controls, inside the map`);
+        assert.equal(await page.evaluate(`document.querySelector(".uv-legend").getAttribute("aria-hidden")`), null, "the legend is read, unlike the gesture hint");
+        assert.deepEqual(page.errors(), []);
+      });
+    }
+  }
 });

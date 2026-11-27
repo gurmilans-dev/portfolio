@@ -88,7 +88,9 @@ export function buildSearchIndex({ siteConfig, projects, pages, routeOf }) {
       meta: project.category,
       url,
       caseStudy: Boolean(project.caseStudy),
-      tags: project.tech,
+      // The card's technologies and the further ones the repository shows in use (`extraTech`):
+      // searchable, though a result still shows only its category.
+      tags: [project.tech, ...(project.extraTech ?? [])].join(" · "),
       text: clean([project.summary, project.lead, project.meta?.focus, project.meta?.context, project.status].filter(Boolean).join(" "))
     });
     if (project.caseStudy) items.push(...caseSections(pages.get(project.caseStudy), url, project));

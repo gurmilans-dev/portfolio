@@ -50,7 +50,9 @@
 @media (pointer: coarse) { .uv-cbtn { min-width: 42px; min-height: 42px; } }
 .uv-zoom { display: flex; flex: 1 1 140px; align-items: center; gap: 10px; min-width: 120px; }
 .uv-zoom input { width: 100%; min-height: 30px; accent-color: var(--accent); }
-.uv-hint { margin: 0; padding: 2px 16px 14px; color: var(--text-4); font: 400 12px/1.5 var(--sans); }
+.uv-hint { margin: 0; padding: 2px 16px 2px; color: var(--text-4); font: 400 12px/1.5 var(--sans); }
+/* What the drawing's colours and lines mean, under the camera's hint and as quiet. */
+.uv-legend { margin: 0; padding: 0 16px 14px; color: var(--text-4); font: 400 12px/1.5 var(--sans); }
 
 /* The drawing: perspective-projected, every colour from the theme. */
 .uv-svg { position: absolute; inset: 0; display: block; width: 100%; height: 100%; overflow: hidden; cursor: grab; touch-action: pan-y; user-select: none; -webkit-user-select: none; }
