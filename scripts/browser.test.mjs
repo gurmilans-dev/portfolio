@@ -1495,9 +1495,11 @@ const drawFrames = `new Promise((resolve) => { let n = 0; (function step() { if 
 async function scrollToY(page, y) {
   await page.evaluate(`scrollTo({ top: ${y}, behavior: "instant" }); ${drawFrames}`);
 }
-// The stretch it runs over: from the first pixels of scroll to where the stage settles under the
-// header, or where a link to #work lands, if that is earlier.
-const morphRange = `(() => { const top = (s) => document.querySelector(s).getBoundingClientRect().top + scrollY - document.querySelector("[data-header]").offsetHeight; const end = Math.min(top("[data-workbench]"), top("#work")) - 2; return { y0: Math.min(48, end / 6), y1: end }; })()`;
+// The stretch it runs over: from the first pixels of scroll until the model stands whole on the
+// screen, that is, the later of where its lowest floor comes into the window and where the
+// drawing's lowest plate has left it at the top; never later than where the stage settles under
+// the header, or where a link to #work lands, if that is earlier (`end`).
+const morphRange = `(() => { const top = (s) => document.querySelector(s).getBoundingClientRect().top + scrollY - document.querySelector("[data-header]").offsetHeight; const end = Math.min(top("[data-workbench]"), top("#work")) - 2; const lowest = (s) => Math.max(...[...document.querySelectorAll(s)].map((el) => el.getBoundingClientRect().bottom)) + scrollY; const whole = lowest("[data-stage-scene] .plane, [data-stage-scene] .plane-tag") - innerHeight; const gone = lowest(".hero-stack > .plate"); return { y0: Math.min(48, end / 6), y1: Math.min(end, Math.max(whole, gone)), end, whole, gone }; })()`;
 const morphState = `(() => { const opacity = (s) => { const el = document.querySelector(s); return el ? Number(getComputedStyle(el).opacity) : null; }; return { morphing: document.documentElement.classList.contains("is-morphing"), hero: opacity(".hero-figure"), model: opacity("[data-stage-scene]"), copy: opacity(".stack-morph"), caption: Number(document.querySelector(".hero-figure .fig-cap").style.opacity || 1) }; })()`;
 const boxes = (selector) => `[...document.querySelectorAll(${JSON.stringify(selector)})].map((el) => { const r = el.getBoundingClientRect(); return [r.left, r.top, r.right, r.bottom]; })`;
 const worstGap = (a, b) => Math.max(...a.flatMap((box, i) => box.map((value, k) => Math.abs(value - b[i][k]))));
@@ -1537,7 +1539,7 @@ test("hero to explorer: the drawing turns into the model with the scroll, both w
       await readyToMorph(page);
       const range = await page.evaluate(morphRange);
       const y0 = Math.ceil(range.y0);
-      const y1 = Math.floor(range.y1);
+      let y1 = Math.floor(range.y1);
       // The copy is decoration: hidden from assistive technology, inert, nothing in it to focus or follow.
       assert.deepEqual(await page.evaluate(`(() => { const layer = document.querySelector(".stack-morph"); return [layer.getAttribute("aria-hidden"), layer.inert, layer.querySelectorAll("a, button, input, select, textarea, [tabindex], [id], [href]").length]; })()`), ["true", true, 0], `${at}: the copy is aria-hidden and inert, with nothing focusable`);
       let state = await page.evaluate(morphState);
@@ -1551,6 +1553,8 @@ test("hero to explorer: the drawing turns into the model with the scroll, both w
       assert.ok(state.morphing && state.hero === 0 && state.copy === 1, `${at}: running one pixel later: ${JSON.stringify(state)}`);
       const cards = shifted(await page.evaluate(boxes(".morph-face")), 1);
       assert.ok(worstGap(cards, plates) < 0.5, `${at}: the cards start ${worstGap(cards, plates).toFixed(2)}px off the plates`);
+      // The end, read as the page reads it when the change starts (the model then holds its angle).
+      y1 = Math.floor((await page.evaluate(morphRange)).y1);
       // Middle: both real figures transparent, the copy in between, no sideways overflow.
       await scrollToY(page, Math.round((y0 + y1) / 2));
       state = await page.evaluate(morphState);
@@ -1643,6 +1647,141 @@ test("hero to explorer: after it, choosing a system and a quick look work; durin
     await page.waitFor(focused("#work-flowbank [data-open-file]"), { message: "focus did not return to the Quick look button" });
     assert.deepEqual(page.errors(), []);
   });
+});
+
+test("hero to explorer: the model takes over as soon as it stands whole on the screen, before the stage settles, and answers at once", async () => {
+  // Where the model is, just after the hand-over: its floors and beam, the drawing, the stage, the signals.
+  const handedOver = `(() => {
+    const box = (el) => el.getBoundingClientRect();
+    const floors = [...document.querySelectorAll("[data-stage-scene] .plane")].map(box);
+    const beam = document.querySelector("[data-stage-scene] .beam");
+    return {
+      top: Math.min(...floors.map((b) => b.top)), bottom: Math.max(...floors.map((b) => b.bottom)), height: innerHeight, header: ${headerBottom},
+      drawing: Math.max(...[...document.querySelectorAll(".hero-stack > .plate")].map((el) => box(el).bottom)),
+      stage: box(document.querySelector("[data-wb-stage]")).top,
+      beam: [Number(getComputedStyle(beam).opacity), box(beam).height],
+      signals: [...document.querySelectorAll("[data-stage-scene] .packet")].filter((packet) => packet.getAnimations().some((a) => a.playState === "running")).length
+    };
+  })()`;
+  // A point on each floor that only that floor answers to (the floors overlap where they are stacked).
+  const floorPoint = (index) => `(() => { const plane = document.querySelectorAll("[data-stage-scene] .plane")[${index}]; const r = plane.getBoundingClientRect(); const fractions = [.5, .4, .6, .3, .7, .2, .8, .15, .85, .1, .9]; for (const fy of fractions) for (const fx of fractions) { const x = Math.round(r.left + r.width * fx), y = Math.round(r.top + r.height * fy); const hit = document.elementFromPoint(x, y); if (hit && hit.closest("[data-plane]") === plane && !hit.closest("[data-socket]")) return { x, y }; } return null; })()`;
+  const mouse = async (page, type, x, y, extra = {}) => page.call("Input.dispatchMouseEvent", { type, x, y, button: "left", ...extra });
+  // The floors part a little under the pointer (a .9s transition): read a point only once they are still.
+  const still = (page) => page.waitFor(`!document.querySelector("[data-stack]").getAnimations({ subtree: true }).some((a) => a instanceof CSSTransition)`, { message: "the stack did not come to rest" });
+  for (const [width, height] of [[1440, 900], [1903, 939], [1280, 720], [1920, 1080], [2560, 1300]]) {
+    await withPage({ width, height }, async (page) => {
+      const at = `${width}×${height}`;
+      await page.goto(`${base}/`);
+      await readyToMorph(page);
+      const range = await page.evaluate(morphRange);
+      assert.ok(range.y1 < range.end - 20, `${at}: the model takes over ${Math.round(range.end - range.y1)}px before the stage settles`);
+      // Scrolled down slowly, stopping every 30px: the copy stands in only inside the range, and from
+      // its end the model itself is there.
+      let exact = null;
+      for (let y = 0; y <= Math.ceil(range.end) + 30; y += 30) {
+        await scrollToY(page, y);
+        // The end as the page reads it once the change has started (the model then holds its angle).
+        if (!exact && (await page.evaluate(morphState)).morphing) exact = await page.evaluate(morphRange);
+        const r = exact || range;
+        if (Math.abs(y - r.y1) < 1 || Math.abs(y - r.y0) < 1) continue;
+        const state = await page.evaluate(morphState);
+        const inside = y > r.y0 && y < r.y1;
+        assert.equal(state.morphing, inside, `${at}: at ${y}px the ${inside ? "copy" : "model"} should be shown: ${JSON.stringify(state)}`);
+        if (!inside && y > r.y1) assert.ok(state.model === 1 && state.copy === 0, `${at}: at ${y}px the model itself: ${JSON.stringify(state)}`);
+      }
+      assert.ok(exact, `${at}: the change ran on the way down`);
+      // A pixel before the end the copy still stands in; a pixel after it the model has taken over,
+      // whole on the screen, the drawing out of sight, the stage still on its way to the header.
+      const y1 = Math.floor(exact.y1);
+      await scrollToY(page, y1 - 1);
+      assert.ok((await page.evaluate(morphState)).morphing, `${at}: still the copy at ${y1 - 1}px`);
+      // (Coming back into the range starts the change again, and it reads the end again.)
+      const end = Math.floor((await page.evaluate(morphRange)).y1);
+      assert.ok(Math.abs(end - y1) <= 1, `${at}: the same end both times: ${y1}, ${end}`);
+      await scrollToY(page, end + 1);
+      const state = await page.evaluate(morphState);
+      assert.ok(!state.morphing && state.model === 1 && state.copy === 0, `${at}: handed over at ${end + 1}px: ${JSON.stringify(state)}`);
+      await page.waitFor(`!document.querySelector("[data-stack]").classList.contains("is-arriving")`, { message: "the beam's arrival did not end" });
+      const view = await page.evaluate(handedOver);
+      assert.ok(view.top >= view.header && view.bottom <= view.height + .5, `${at}: the whole model on the screen: ${JSON.stringify(view)}`);
+      assert.ok(view.drawing <= .5, `${at}: the drawing out of sight: ${view.drawing}`);
+      assert.ok(view.stage > view.header + 20, `${at}: before the stage settles under the header: ${view.stage}`);
+      assert.ok(view.beam[0] === 1 && view.beam[1] > 40, `${at}: the vertical connection is drawn: ${view.beam}`);
+      assert.ok(view.signals > 0, `${at}: the signals run`);
+      // It answers there: a hovered floor becomes the layer, a drag turns the stack, a socket chooses
+      // its system, and a click on a floor opens the quick look.
+      const active = await page.evaluate(`[...document.querySelectorAll("[data-layer-btn]")].findIndex((b) => b.getAttribute("aria-pressed") === "true")`);
+      const other = active === 0 ? 3 : 0;
+      await still(page);
+      const point = await page.evaluate(floorPoint(other));
+      assert.ok(point, `${at}: a point on floor ${other}`);
+      await mouse(page, "mouseMoved", point.x - 20, point.y);
+      await mouse(page, "mouseMoved", point.x, point.y);
+      await page.waitFor(`document.querySelectorAll("[data-layer-btn]")[${other}].getAttribute("aria-pressed") === "true"`, { message: `${at}: hovering floor ${other} did not choose it` });
+      const turned = await page.evaluate(`document.querySelector("[data-stack]").style.getPropertyValue("--rz")`);
+      await mouse(page, "mousePressed", point.x, point.y, { buttons: 1, clickCount: 1 });
+      for (let step = 1; step <= 6; step++) await mouse(page, "mouseMoved", point.x + step * 20, point.y + step * 4, { buttons: 1 });
+      await mouse(page, "mouseReleased", point.x + 120, point.y + 24, { clickCount: 1 });
+      assert.notEqual(await page.evaluate(`document.querySelector("[data-stack]").style.getPropertyValue("--rz")`), turned, `${at}: a drag turns the stack`);
+      assert.ok(!(await page.evaluate(`document.querySelector("[data-drawer]").open`)), `${at}: a drag opens nothing`);
+      await still(page);
+      const before = await page.evaluate(selectedSystem);
+      // Hovering a socket makes its floor the layer, which can bring that floor's tag over the
+      // socket: aim, let the stack rest, and click only what is then under the pointer.
+      const findSocket = `(() => { const all = [...document.querySelectorAll("[data-stage-scene] .socket")]; for (const el of all) { if (el.classList.contains("is-sel")) continue; const r = el.getBoundingClientRect(); const x = Math.round(r.left + r.width / 2), y = Math.round(r.top + r.height / 2); if (document.elementFromPoint(x, y)?.closest("[data-socket]") === el) return { x, y, i: all.indexOf(el) }; } return null; })()`;
+      const onSocket = (p) => `document.elementFromPoint(${p.x}, ${p.y})?.closest("[data-socket]") === document.querySelectorAll("[data-stage-scene] .socket")[${p.i}]`;
+      const onFloor = (p, index) => `(() => { const hit = document.elementFromPoint(${p.x}, ${p.y}); return hit?.closest("[data-plane]") === document.querySelectorAll("[data-stage-scene] .plane")[${index}] && !hit.closest("[data-socket]"); })()`;
+      async function aim(find, under) {
+        for (let tries = 0; tries < 4; tries++) {
+          const p = await page.evaluate(find);
+          if (!p) return null;
+          await mouse(page, "mouseMoved", p.x - 6, p.y);
+          await mouse(page, "mouseMoved", p.x, p.y);
+          await still(page);
+          if (await page.evaluate(under(p))) return p;
+        }
+        return null;
+      }
+      const socket = await aim(findSocket, onSocket);
+      assert.ok(socket, `${at}: a socket of another system in reach`);
+      await mouse(page, "mousePressed", socket.x, socket.y, { buttons: 1, clickCount: 1 });
+      await mouse(page, "mouseReleased", socket.x, socket.y, { clickCount: 1 });
+      await page.waitFor(`${selectedSystem} !== ${JSON.stringify(before)}`, { message: `${at}: the socket did not choose its system` });
+      await still(page);
+      const floor = await aim(floorPoint(1), (p) => onFloor(p, 1));
+      assert.ok(floor, `${at}: a point on floor 1`);
+      await mouse(page, "mousePressed", floor.x, floor.y, { buttons: 1, clickCount: 1 });
+      await mouse(page, "mouseReleased", floor.x, floor.y, { clickCount: 1 });
+      await page.waitFor(`document.querySelector("[data-drawer]").open`, { message: `${at}: a click on a floor did not open the quick look` });
+      await page.key("Escape");
+      await page.waitFor(`!document.querySelector("[data-drawer]").open`);
+      assert.ok(!(await page.evaluate(morphState)).morphing, `${at}: the model kept the page`);
+      if (width === 1440) {
+        // Every system, chosen there: the model shows it, and the change stays out of the way.
+        for (const key of await page.evaluate(`[...document.querySelectorAll('[role="tab"][data-wb-tab]')].map((tab) => tab.dataset.wbTab)`)) {
+          await page.evaluate(`document.getElementById("tab-${key}").click()`);
+          await page.waitFor(`${selectedSystem} === ${JSON.stringify(key)}`);
+          const index = await page.evaluate(`[...document.querySelectorAll('[role="tab"][data-wb-tab]')].findIndex((tab) => tab.dataset.wbTab === ${JSON.stringify(key)})`);
+          assert.ok((await page.evaluate(floorsShown("[data-stage-scene]"))).every(([, socket]) => socket === String(index)), `${key}: its socket on every floor`);
+          assert.ok(!(await page.evaluate(morphState)).morphing, `${key}: the model stays`);
+        }
+        // Universe straight after the hand-over, and back: Architecture as it was, and the change
+        // still runs both ways.
+        const architecture = await page.evaluate(architectureState);
+        await chooseView(page, "universe");
+        await page.waitFor(`!!document.querySelector(".uv-svg .uv-label:not(.is-hidden)")`, { message: "the universe did not open" });
+        await chooseView(page, "architecture");
+        assert.deepEqual(await page.evaluate(architectureState), architecture, "Architecture as it was");
+        assert.ok(!(await page.evaluate(morphState)).morphing && (await page.evaluate(morphState)).model === 1, "the model, after Universe");
+        await scrollToY(page, y1 - 40);
+        assert.ok((await page.evaluate(morphState)).morphing, "back up: the copy again");
+        await scrollToY(page, y1 + 40);
+        const back = await page.evaluate(morphState);
+        assert.ok(!back.morphing && back.model === 1, `down again: the model: ${JSON.stringify(back)}`);
+      }
+      assert.deepEqual(page.errors(), [], `${at}: errors`);
+    });
+  }
 });
 
 test("hero to explorer: a deep link and Back keep the chosen system, and the copy shows it", async () => {

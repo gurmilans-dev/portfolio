@@ -515,10 +515,10 @@
   /* ---------- One stack, one story ----------
      On wide screens the drawing does not just scroll away: it turns into the explorer's model,
      travelling to wherever the stage is (the middle column from 1280px, under the systems from
-     960px). From the first few pixels of scroll until the stage settles under the header, a
-     copy of the four plates (aria-hidden, inert, never focusable or clickable) lies exactly over the
-     drawing, and with the scroll each plate tips back, turns and squares into a floor until it
-     lies exactly over the stage's own stack, which then takes over. The copy is built and the
+     960px). From the first few pixels of scroll until the model stands whole on the screen (see
+     range() below), a copy of the four plates (aria-hidden, inert, never focusable or clickable)
+     lies exactly over the drawing, and with the scroll each plate tips back, turns and squares
+     into a floor until it lies exactly over the stage's own stack, which then takes over. The copy is built and the
      still parts of both figures measured while the page is idle (again after a resize); the
      start of the scroll only reads what can change from moment to moment (the drawing's lean,
      the model's angle). On scroll, in one animation frame, only transforms and opacity change,
@@ -789,17 +789,30 @@
       });
     }
 
-    // Where it runs: from the first few pixels of scroll until the workbench's top reaches the
-    // header, where the stage settles, or until a link to #work lands, if that is a little
-    // earlier (so "View work", the header's Work link and project links always land on the
-    // stage itself). Ending earlier changes nothing at the hand-over: the stage only sticks
-    // once the workbench reaches the header, so until then it is where it was measured.
-    function range() {
+    // Where it runs: from the first few pixels of scroll until the model stands whole on the
+    // screen, so it never looks finished while the copy still stands in for it. That is the later
+    // of two points, both read from the page: where the model's lowest floor, as drawn, comes into
+    // the window, and where the drawing's lowest plate has left it at the top (the drawing shows
+    // again once the change is over, so by then it must be out of sight, header included). Never
+    // later than where the workbench's top reaches the header and the stage settles, or where a
+    // link to #work lands, if that is a little earlier (so "View work", the header's Work link and
+    // project links always land on the stage itself). Ending earlier changes nothing at the
+    // hand-over: the stage only sticks once the workbench reaches the header, so until then it
+    // moves with the page, and the copy lands exactly where the model is at that moment.
+    // The figures are read only where the page has them in place: not once the stage has stuck
+    // under the header, nor while either is in a transition, unless the change is starting
+    // (`now`); until then the stage's landing stands in (`rough`), and they are read again later.
+    function range(now = false) {
       const top = (el) => el.getBoundingClientRect().top + scrollY - (header?.offsetHeight || 0);
       const work = document.getElementById("work");
       // Two pixels to spare, for a landing rounded down.
       const end = Math.min(top(bench), work ? top(work) : Infinity) - 2;
-      return { y0: Math.min(48, end / 6), y1: end };
+      const y0 = Math.min(48, end / 6);
+      if (scrollY >= end || (!now && !settled())) return { y0, y1: end, end, rough: true };
+      const lowest = (els) => Math.max(...[...els].map((el) => el.getBoundingClientRect().bottom)) + scrollY;
+      const whole = lowest(scene.querySelectorAll(".plane, .plane-tag")) - innerHeight;
+      const gone = lowest(heroPlates);
+      return { y0, y1: Math.min(end, Math.max(whole, gone)), end, rough: false };
     }
     // Before it starts, the request trace and the caption leave the drawing over those first
     // pixels, so only the plates travel.
@@ -846,6 +859,9 @@
       if (flat) { stage.classList.remove("is-held"); return false; }
       if (!fits()) build();
       dress();
+      // The end, read afresh from the figures as they stand now (the drawing's lean, the angle
+      // the model is held at, its floors' spacing).
+      span = range(true);
       active = true;
       root.classList.add("is-morphing");
       return true;
@@ -912,11 +928,12 @@
         leadOut.forEach(el => put(el, "opacity", ""));
         return;
       }
-      if (!span) span = range();
-      const inside = y > span.y0 && y < span.y1;
-      if (!inside) passed = false;
-      if (inside && !active && !passed) passed = !start();
-      else if (!inside && active) stop(y);
+      if (!span || (span.rough && y < span.end)) span = range();
+      const inside = () => y > span.y0 && y < span.y1;
+      if (!inside()) passed = false;
+      else if (!active && !passed) passed = !start();
+      // (Starting reads the end afresh, so the scroll may already be past it.)
+      if (active && !inside()) stop(y);
       // A pass that goes by without the change keeps the whole drawing.
       const lead = passed ? "" : (1 - Math.min(1, Math.max(0, y / span.y0))).toFixed(3);
       leadOut.forEach(el => put(el, "opacity", lead));
