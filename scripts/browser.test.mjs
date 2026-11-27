@@ -1666,8 +1666,9 @@ test("hero to explorer: the model takes over as soon as it stands whole on the s
   // A point on each floor that only that floor answers to (the floors overlap where they are stacked).
   const floorPoint = (index) => `(() => { const plane = document.querySelectorAll("[data-stage-scene] .plane")[${index}]; const r = plane.getBoundingClientRect(); const fractions = [.5, .4, .6, .3, .7, .2, .8, .15, .85, .1, .9]; for (const fy of fractions) for (const fx of fractions) { const x = Math.round(r.left + r.width * fx), y = Math.round(r.top + r.height * fy); const hit = document.elementFromPoint(x, y); if (hit && hit.closest("[data-plane]") === plane && !hit.closest("[data-socket]")) return { x, y }; } return null; })()`;
   const mouse = async (page, type, x, y, extra = {}) => page.call("Input.dispatchMouseEvent", { type, x, y, button: "left", ...extra });
-  // The floors part a little under the pointer (a .9s transition): read a point only once they are still.
-  const still = (page) => page.waitFor(`!document.querySelector("[data-stack]").getAnimations({ subtree: true }).some((a) => a instanceof CSSTransition)`, { message: "the stack did not come to rest" });
+  // The floors part a little under the pointer (a .9s transition) and a new layer's tag comes in:
+  // read a point only once nothing in the stack is still on its way (the drift and signals loop for ever).
+  const still = (page) => page.waitFor(`!document.querySelector("[data-stack]").getAnimations({ subtree: true }).some((a) => a.playState === "running" && a.effect.getComputedTiming().iterations !== Infinity)`, { message: "the stack did not come to rest" });
   for (const [width, height] of [[1440, 900], [1903, 939], [1280, 720], [1920, 1080], [2560, 1300]]) {
     await withPage({ width, height }, async (page) => {
       const at = `${width}×${height}`;

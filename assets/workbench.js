@@ -109,12 +109,18 @@
      measure them instead of guessing; the CSS keeps static fallbacks for when this cannot run. */
   const hud = stage?.querySelector(".stage-hud");
   if (stage && hud && controls && "ResizeObserver" in window) {
+    let band = "";
     const fitBand = () => {
       const top = hud.offsetTop + hud.offsetHeight;
       const bottom = stage.clientHeight - controls.offsetTop;
       if (top > 0 && bottom > 0) {
         stage.style.setProperty("--band-top", `${Math.round(top + 8)}px`);
         stage.style.setProperty("--band-bottom", `${Math.round(bottom + 8)}px`);
+        // The stack moves and resizes with the band, and the hero-to-explorer change (below) may
+        // already have measured it, as it can on load, before the first band is written: it
+        // measures again, or it would land where the stack used to be.
+        const now = `${Math.round(top)}/${Math.round(bottom)}`;
+        if (now !== band) { band = now; morph?.refresh(); }
       }
     };
     new ResizeObserver(() => requestAnimationFrame(fitBand)).observe(stage);
