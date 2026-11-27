@@ -3138,7 +3138,7 @@ test("between the views: on a device too slow to get it ready in time, the view 
 });
 
 test("hero: the four layers' labels read as written and none is cut short, from a small phone to a wide screen", async () => {
-  const expected = [["React", "TypeScript", "Responsive UI", "Accessibility"], ["Node.js", "Express / Fastify", "Java", "C# / .NET"], ["PostgreSQL", "MySQL", "SQL Server", "Transactions"], ["Docker", "GitHub Actions", "Automated testing", "Ship & support"]];
+  const expected = [["React", "TypeScript", "Responsive UI", "Accessibility"], ["Node.js", "Express / Fastify", "Java", "C# / .NET"], ["PostgreSQL", "MySQL", "SQL Server", "Transactions"], ["Docker", "GitHub Actions", "Testing", "Releases"]];
   for (const [width, height, mobile] of [[320, 640, true], [360, 740, true], [390, 844, true], [430, 932, true], [768, 1024, true], [1024, 768, false], [1280, 720, false], [1440, 900, false], [1920, 1080, false]]) {
     await withPage({ width, height, mobile }, async (page) => {
       await page.goto(`${base}/`);

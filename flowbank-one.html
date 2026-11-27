@@ -43,7 +43,7 @@
       </section>
 
       <div class="frame case-layout">
-        <aside class="case-aside"><details class="case-toc" open data-toc><summary>On this page</summary><nav aria-label="On this page"><a href="#product">Product</a><a href="#architecture">Architecture</a><a href="#ledger">Ledger &amp; concurrency</a><a href="#security">Sessions &amp; security</a><a href="#testing">Testing &amp; load</a><a href="#boundaries">Boundaries</a></nav></details></aside>
+        <aside class="case-aside"><details class="case-toc" open data-toc><summary>On this page</summary><nav aria-label="On this page"><a href="#product">Product</a><a href="#architecture">Architecture</a><a href="#ledger">Ledger &amp; concurrency</a><a href="#security">Sessions &amp; security</a><a href="#testing">Testing &amp; load</a><a href="#boundaries">Limits</a></nav></details></aside>
         <article class="case-content">
 
           <section id="product" class="case-section" aria-labelledby="product-title">
@@ -51,7 +51,7 @@
             <h2 id="product-title">A retail bank’s everyday screens, on fictitious accounts.</h2>
             <p>I wanted a project where being wrong has a precise meaning: money appears, disappears or moves twice. FlowBank One simulates a retail bank end to end, and its demo users have months of history generated through the same posting path as every transfer, so the screens show what the ledger actually holds.</p>
             <div role="group" class="operational-scope" data-reveal aria-label="What the product does"><p class="artifact-label">what it does</p><ul><li><strong>Accounts</strong><span>Checking and savings accounts, amounts in minor units, account numbers with a mod-97 check</span></li><li><strong>Statement</strong><span>The ledger itself, newest first, filtered by direction and by Italian calendar days</span></li><li><strong>Transfers</strong><span>Four steps: details, payee check by masked name, confirmation, receipt</span></li><li><strong>Analysis</strong><span>Spending by category and six months of money in and out, from an event-fed projection</span></li></ul></div>
-            <p>The interface and the design documents are Italian; the code and its comments are English. The sidebar says what the product is on every screen: a simulated bank for demonstration, with no real money.</p>
+            <p>The interface and the design documents are Italian; the code and its comments are English.</p>
           </section>
 
           <section id="architecture" class="case-section" aria-labelledby="architecture-title">
@@ -68,10 +68,10 @@
           <section id="ledger" class="case-section" aria-labelledby="ledger-title">
             <p class="case-section-no">03 / Ledger &amp; concurrency</p>
             <h2 id="ledger-title">Double-entry, enforced by the database as well as the code.</h2>
-            <p>Every transfer writes two ledger entries, a debit and a credit, in one transaction. Amounts are integers in minor units with overflow-checked arithmetic, so nothing is ever rounded. The database is the last line of defence rather than an afterthought:</p>
+            <p>Every transfer writes two ledger entries, a debit and a credit, in one transaction. Amounts are integers in minor units with overflow-checked arithmetic, so nothing is ever rounded. The database enforces the same rules as the code:</p>
             <dl class="constraint-ledger" data-reveal><div><dt>Balanced</dt><dd>A deferred constraint trigger, checked at commit, rejects any transfer whose debits and credits differ.</dd></div><div><dt>Append-only</dt><dd>The application's database role can insert ledger rows but never update or delete them; on accounts it may update only the balance, sequence and status columns.</dd></div><div><dt>Sequenced</dt><dd>Each entry carries its account's next sequence number, unique per account, and the balance after it. The statement reads both directly.</dd></div><div><dt>Shaped</dt><dd>Check constraints cover amounts, currencies, account-number format, minimum balances and closed accounts; composite keys tie each entry to its account's currency.</dd></div></dl>
             <div role="group" class="case-flow" data-reveal aria-label="One transfer from the click to the commit">
-              <p class="artifact-label">technical artefact · one transfer, from click to commit</p>
+              <p class="artifact-label">one transfer, from click to commit</p>
               <ol class="case-flow-track">
                 <li><span class="case-flow-no">01</span><strong>Details</strong><em>The amount is parsed without floating point; the account number is checked before sending</em></li>
                 <li><span class="case-flow-no">02</span><strong>Key</strong><em>The browser creates an idempotency key and keeps it until it knows the outcome</em></li>
@@ -85,12 +85,12 @@
             </div>
             <figure class="evidence-media" data-reveal><picture><source srcset="{{projects.flowbank.statementImageAvif}}" type="image/avif" /><source srcset="{{projects.flowbank.statementImageWebp}}" type="image/webp" /><img src="{{projects.flowbank.statementImage}}" width="{{projects.flowbank.statementImageWidth}}" height="{{projects.flowbank.statementImageHeight}}" loading="lazy" decoding="async" alt="{{projects.flowbank.statementImageAlt}}" /></picture><figcaption>{{projects.flowbank.statementImageCaption}}</figcaption></figure>
             <article class="decision-record" aria-labelledby="flowbank-decision-title" data-reveal>
-              <p class="decision-id">decision 01</p>
+              <p class="decision-id">key decision</p>
               <h3 id="flowbank-decision-title">Lock accounts in one global order</h3>
               <dl><div><dt>Constraint</dt><dd>Two transfers between the same accounts in opposite directions each lock one account and then wait for the other: a deadlock.</dd></div><div><dt>Decision</dt><dd>One component decides the lock order for every code path that locks more than one account, and SQL never decides it with an ORDER BY.</dd></div><div><dt>Result</dt><dd>1,800 crossed transfers between two accounts in the load test, with no deadlock.</dd></div><div><dt>Trade-off</dt><dd>Writers to one busy account queue behind each other, and while they wait they hold database connections.</dd></div></dl>
             </article>
             {{> sim lock-order}}
-            <p>That trade-off is the main open issue the load test found: transactions queuing on a hot account's lock keep their connections, so a burst on one account slows unrelated ones. A larger pool made it worse. A limit on concurrent writes is the chosen direction; it is designed, not implemented.</p>
+            <p>That trade-off is the main open issue the load test found: transactions queuing on a hot account's lock keep their connections, so a burst on one account slows unrelated ones. A larger pool made it worse. When the pool does run dry, the API answers 503 with Retry-After instead of failing with a 500. A limit on concurrent writes is the chosen direction; it is designed, not implemented.</p>
           </section>
 
           <section id="security" class="case-section" aria-labelledby="security-title">
@@ -105,22 +105,21 @@
           <section id="testing" class="case-section" aria-labelledby="testing-title">
             <p class="case-section-no">05 / Testing &amp; load</p>
             <h2 id="testing-title">Tests that force the race, and load tests that audit the books.</h2>
-            <p>The backend suite runs 144 unit tests and 211 integration tests with <code>./mvnw verify</code>, the integration tests against a real PostgreSQL container. Concurrency tests do not hope for a race: they hold a lock, wait until the database shows the other transaction blocked, and only then release, so each interleaving is forced. The frontend has 38 Vitest tests and end-to-end scenarios in Playwright with Chromium.</p>
+            <p>The backend suite runs 144 unit tests and 211 integration tests with <code>./mvnw verify</code>, the integration tests against a real PostgreSQL container started by Testcontainers. Concurrency tests do not hope for a race: they hold a lock, wait until the database shows the other transaction blocked, and only then release, so each interleaving is forced. The frontend has 38 Vitest tests and end-to-end scenarios in Playwright with Chromium. On every pull request and every push to main, GitHub Actions runs the backend build with its integration tests, and the frontend type check, tests and build.</p>
             <p>Load tests use k6 in an open model, against a separate database that refuses to run unless it is marked for performance testing. After every scenario, twelve accounting checks run in one snapshot, the k6 counts are compared with the database, and the application's reconciliation has to pass.</p>
             <dl class="constraint-ledger" data-reveal><div><dt>Double spend</dt><dd>600 concurrent €1 withdrawals from an account holding €100: exactly 100 accepted, the rest refused for insufficient funds.</dd></div><div><dt>Idempotency</dt><dd>1,045 keys, each sent nine times, eight of them in parallel: 1,045 transfers in the database.</dd></div><div><dt>Deadlocks</dt><dd>1,800 crossed transfers between two accounts: none.</dd></div><div><dt>Latency</dt><dd>p95 of 264 ms for a transfer with 50 virtual users in a closed loop, at about 271 transfers per second.</dd></div><div><dt>Volume</dt><dd>All twelve accounting checks at zero on 5.08 million ledger entries.</dd></div></dl>
             <div role="group" class="technical-artifact permission-artifact" data-reveal aria-label="Measurement conditions">
               <p class="artifact-label">conditions · read every figure above with these</p>
               <ol><li><span>Machine</span><strong>One laptop: AMD Ryzen AI 7 350, 31 GB RAM</strong></li><li><span>Shared</span><strong>k6, the JVM and PostgreSQL 18 in Docker Desktop on the same CPU</strong></li><li><span>Runs</span><strong>One run per configuration, so variance is not estimated</strong></li><li><span>Meaning</span><strong>Correctness under contention and relative behaviour, not production capacity</strong></li></ol>
             </div>
-            <p>An optional Docker Compose profile adds Prometheus and Grafana for local monitoring. Prometheus reads the backend's Micrometer metrics from a separate management port, and two dashboards, one technical and one for simulated business activity, are generated from code rather than edited by hand. When the connection pool runs dry, the API answers 503 with Retry-After instead of failing with a 500.</p>
+            <p>An optional Docker Compose profile adds Prometheus and Grafana for local monitoring. Prometheus reads the backend's Micrometer metrics from a separate management port, and two dashboards, one technical and one for simulated business activity, are generated from code rather than edited by hand.</p>
             <figure class="evidence-media" data-reveal><picture><source srcset="{{projects.flowbank.grafanaImageAvif}}" type="image/avif" /><source srcset="{{projects.flowbank.grafanaImageWebp}}" type="image/webp" /><img src="{{projects.flowbank.grafanaImage}}" width="{{projects.flowbank.grafanaImageWidth}}" height="{{projects.flowbank.grafanaImageHeight}}" loading="lazy" decoding="async" alt="{{projects.flowbank.grafanaImageAlt}}" /></picture><figcaption>{{projects.flowbank.grafanaImageCaption}}</figcaption></figure>
           </section>
 
           <section id="boundaries" class="case-section" aria-labelledby="boundaries-title">
-            <p class="case-section-no">06 / Boundaries</p>
+            <p class="case-section-no">06 / Limits</p>
             <h2 id="boundaries-title">Simulation limits, and what is still open.</h2>
             <dl class="constraint-ledger" data-reveal><div><dt>Money</dt><dd>None. A simulated bank built for learning: no real accounts, no payment network, no regulated service.</dd></div><div><dt>Deployment</dt><dd>Runs locally with Docker Compose. There is no hosted instance.</dd></div><div><dt>Performance</dt><dd>Figures from one laptop and one run each: they are not production capacity.</dd></div><div><dt>Open issues</dt><dd>A hot account can exhaust the connection pool, and the analytics backfill rereads the whole ledger at start-up: about 71 minutes at 5 million entries.</dd></div></dl>
-            <div class="outcome-summary" data-reveal><div><p class="artifact-label">what it demonstrates</p><p>Transactional design in Java and Spring Boot: a ledger the database itself keeps balanced, idempotency and lock ordering that hold under concurrency, rotating sessions with reuse detection, and measurement used to find the next problem to solve.</p></div><div><p class="artifact-label">what it is tested with</p><p>JUnit unit and integration tests against a real PostgreSQL container (Testcontainers), an architecture test for module boundaries, Vitest and Playwright on the frontend, and k6 load scenarios followed by accounting checks. GitHub Actions runs the backend build with its integration tests, and the frontend type check, tests and build, on every push and pull request.</p></div></div>
           </section>
         </article>
       </div>

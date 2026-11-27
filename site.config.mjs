@@ -116,8 +116,8 @@ export const siteConfig = {
             ["Trade-off", "Every new feature has to carry its own permission rule."]
           ]
         },
-        evidence: "Used in daily internal operations. Behaviour is protected by input validation, relevant automated regression checks, manual verification and direct user feedback.",
-        boundary: "Source, interface, datasets and operational figures are confidential. Test counts and coverage are not published."
+        evidence: "In daily internal use. Changes are checked through input validation, automated regression tests where they matter, manual verification and feedback from the people who use it.",
+        boundary: "The source, screens, data and operational figures are confidential, test figures included."
       },
       // Confidential: no screenshots exist and none will be fabricated.
       primaryImage: "",
@@ -179,7 +179,7 @@ export const siteConfig = {
           ]
         },
         evidence: "144 unit and 211 integration tests pass with ./mvnw verify, the integration tests against a real PostgreSQL container. Load-tested with k6 on a laptop: 600 concurrent €1 withdrawals from a €100 account accept exactly 100.",
-        boundary: "A simulated bank built for learning: no real money, no regulated service and no production deployment. Load figures come from one laptop and are not production capacity."
+        boundary: "No real money, no regulated service and no production deployment. Load figures come from one laptop and are not production capacity."
       },
       primaryImage: "assets/flowbank/flowbank-dashboard.png",
       primaryImageAvif: "assets/flowbank/flowbank-dashboard.avif",
@@ -224,7 +224,7 @@ export const siteConfig = {
       grafanaImageWidth: 1440,
       grafanaImageHeight: 944,
       grafanaImageAlt: "FlowBank One's technical Grafana dashboard, labelled in Italian: one reachable instance, requests per second, a 0% share of server errors and p95 latency, then requests by outcome, latency percentiles, error responses by status and p95 latency per endpoint",
-      grafanaImageCaption: "The technical dashboard during a local run with simulated traffic, built from the backend's Prometheus metrics. The figures are not production benchmarks. The interface is Italian."
+      grafanaImageCaption: "The technical dashboard during a local run with simulated traffic, reading the backend's Prometheus metrics. The interface is Italian."
     },
     procbeacon: {
       order: 3,
@@ -270,8 +270,8 @@ export const siteConfig = {
             ["Trade-off", "A process that cannot be opened or read is never offered an action, even when ending it would be harmless."]
           ]
         },
-        evidence: "438 automated tests pass in a Release build (21 November 2026): 69 core, 108 Windows-layer and 261 application tests, the native ones against fixture processes the tests start and end themselves.",
-        boundary: "Packaged locally as an unsigned 0.1.0-preview.1, Setup and ZIP, but not distributed: clean-machine install tests, the usability review, a licence and approval to publish are still pending. The interface is Italian."
+        evidence: "438 automated tests, run in a Release build: 69 core, 108 Windows-layer and 261 application tests, the native ones against fixture processes the tests start and end themselves.",
+        boundary: "Packaged as an unsigned preview, 0.1.0-preview.1, but not distributed. The interface is Italian."
       },
       primaryImage: "assets/procbeacon/procbeacon-ports.png",
       primaryImageAvif: "assets/procbeacon/procbeacon-ports.avif",
@@ -300,7 +300,7 @@ export const siteConfig = {
       title: "MaintOps",
       shortTitle: "MaintOps",
       category: "Maintenance operations platform",
-      lead: "A full-stack system for handling maintenance work from request and triage through assignment, execution, SLA tracking, resolution and reporting, with optional AI suggestions that change nothing until a person accepts them.",
+      lead: "A full-stack system for handling maintenance work from request and triage through assignment, execution, SLA tracking, resolution and reporting, with optional AI assistance that cannot change a ticket on its own.",
       tech: "React · Fastify · MySQL",
       // backend/src/modules/ai/provider/groq.client.js (the public repository).
       extraTech: ["Groq"],
@@ -314,7 +314,7 @@ export const siteConfig = {
       meta: {
         role: "End-to-end developer",
         context: "Single organization",
-        focus: "Workflow · SLA · authorization · bounded AI",
+        focus: "Workflow · SLA · authorization · optional AI",
         evidence: "Public repository · frontend and backend test suites"
       },
       system: {
@@ -323,25 +323,25 @@ export const siteConfig = {
         layers: [
           ["Role workspaces", "React SPA with role-specific workspaces. Frontend guards improve navigation; they are not the security boundary."],
           ["Authz in transaction", "Fastify API. Services own authorization and run it inside the same transaction as the state change."],
-          ["Append-only events", "MySQL. Lifecycle changes write immutable events, SLA policies are versioned, and sessions are normalized to UTC."],
+          ["Lifecycle events", "MySQL. Lifecycle changes add events that the code only ever inserts, SLA policies are versioned, and sessions are normalized to UTC."],
           ["Public · tested", "Public repository. Backend cases, 20 of them for the AI path, run on the native Node test runner; the frontend is covered with Vitest and Testing Library."]
         ],
         architecture: [
           ["React SPA", "Role-specific workspaces"],
-          ["Fastify API", "Validation · authorization · bounded AI"],
+          ["Fastify API", "Validation · authorization · optional AI"],
           ["MySQL", "Records · SLA state · audit history"]
         ],
         decision: {
           title: "Put authorization in the service layer, beside the transaction",
           rows: [
-            ["Constraint", "Four privilege combinations act on the same ticket from different screens."],
+            ["Constraint", "Three operational roles act on the same ticket from different screens, and an administrator privilege can be held alongside a role."],
             ["Decision", "Services own authorization and run it inside the same transaction as the state change."],
             ["Result", "An unauthorized write cannot half-apply, and the interface can only reflect what the server already enforces."],
             ["Trade-off", "Every new transition needs its own authorization rule and its own test."]
           ]
         },
-        evidence: "Public repository. Backend cases on the native Node test runner; frontend covered with Vitest and Testing Library.",
-        boundary: "No hosted instance or public demo. No user counts, uptime or availability figures, because it has not been operated in production."
+        evidence: "Public repository. Backend cases on the native Node test runner, 20 of them for the AI path; frontend covered with Vitest and Testing Library.",
+        boundary: ""
       },
       primaryImage: "assets/maintops/maintops-supervisor-queue.png",
       primaryImageAvif: "assets/maintops/maintops-supervisor-queue.avif",
@@ -373,8 +373,8 @@ export const siteConfig = {
           {
             id: "activity", box: [1488, 504, 394, 309], title: "Recent activity",
             does: "The latest lifecycle updates across operations: a technician assigned, requests created, and how long ago.",
-            behind: "Each line is a recorded ticket event. Lifecycle changes run inside database transactions and write immutable events, so a ticket's history is appended to, never overwritten.",
-            matters: "What happened to a request can be read back in order, and the record does not change afterwards.",
+            behind: "Each line is a recorded ticket event. Lifecycle changes run inside database transactions and add events that the code only ever inserts, so a ticket's history is appended to, never overwritten.",
+            matters: "What happened to a request can be read back in order, and the application never rewrites it.",
             terms: [["Condizionatore non funzionante – Sala riunioni B1", "Air conditioner not working, meeting room B1"], ["2 minuti fa", "2 minutes ago"]]
           },
           {
@@ -385,7 +385,7 @@ export const siteConfig = {
           }
         ]
       },
-      primaryImageAlt: "MaintOps supervisor dashboard showing SLA breach and at-risk counts, an unassigned request queue, current team workload and backlog aging",
+      primaryImageAlt: "MaintOps supervisor dashboard showing SLA breach and at-risk counts, an unassigned request queue, current team workload and backlog ageing",
       primaryImageCaption: "The supervisor dashboard on the synthetic demo database: SLA breaches and tickets at risk, the unassigned queue, team workload and backlog age."
     },
     gurmat: {
@@ -393,7 +393,7 @@ export const siteConfig = {
       title: "Gurmat Saanj",
       shortTitle: "Gurmat Saanj",
       category: "Real-time shared reading system",
-      lead: "A deployed system that follows live Punjabi recitation, matches recognized phrases against known Gurbani, and holds a projector and connected viewers on the same line.",
+      lead: "A system deployed at a local Gurdwara that follows live Punjabi recitation, matches recognized phrases against known Gurbani, and holds a projector and connected viewers on the same line.",
       tech: "React · Node.js · Web Speech API · Transformers.js · BaniDB",
       // frontend/src/services/semanticSearch.js (onnxruntime-web, WebAssembly backend).
       extraTech: ["ONNX Runtime"],
@@ -407,7 +407,7 @@ export const siteConfig = {
         role: "End-to-end developer",
         context: "Community application",
         focus: "Speech matching · shared session state",
-        evidence: "Deployed · used at a local Gurdwara"
+        evidence: "Deployed at a local Gurdwara"
       },
       system: {
         head: "Following live Gurbani recitation, line by line.",
@@ -416,7 +416,7 @@ export const siteConfig = {
           ["Projector + phones", "Projector, editor and phone viewers. Font, size, language and translation stay local to each device."],
           ["Speech → match", "Kirtan and Katha modes: Web Speech output is normalized, matched and scored against BaniDB. Editor control transfers only on approval."],
           ["Known text only", "Known BaniDB text only. Raw transcript text never reaches the display."],
-          ["Deployed · in use", "Deployed and in active use at a local Gurdwara. 447 automated tests; phones pair with expiring codes and their own device tokens."]
+          ["Deployed", "Deployed at a local Gurdwara. 447 automated tests; phones pair with expiring codes and their own device tokens."]
         ],
         architecture: [
           ["React interface", "Projector · editor · viewers"],
@@ -432,8 +432,8 @@ export const siteConfig = {
             ["Trade-off", "Uncertain input sometimes holds rather than advances."]
           ]
         },
-        evidence: "Deployed and in active use at a local Gurdwara, coordinating a shared projector with connected personal reading. 447 automated tests pass across the backend and frontend.",
-        boundary: "No accuracy, latency, threshold or scalability figure is published without controlled measurement. Speech recognition availability depends on the browser."
+        evidence: "Deployed at a local Gurdwara: one shared projector, and phones that join by QR or session code to read along. 447 automated tests across the backend and frontend.",
+        boundary: "Recognition accuracy has not been measured yet, and speech recognition depends on the browser."
       },
       primaryImage: "assets/gurmat/gurmat-projector-output.png",
       primaryImageAvif: "assets/gurmat/gurmat-projector-output.avif",
@@ -475,7 +475,7 @@ export const siteConfig = {
           },
           {
             id: "preview", box: [570, 678, 358, 139], title: "Projector preview",
-            does: "A small, live view of what the projector is showing, which can be minimised.",
+            does: "A small, live view of what the projector is showing, which can be minimized.",
             behind: "It is the projector page itself, loaded in a frame and scaled down, not a second drawing of it.",
             matters: "What the operator checks is exactly what the room sees."
           }
@@ -497,49 +497,49 @@ export const siteConfig = {
       title: "Opssemble",
       shortTitle: "Opssemble",
       category: "Event operations platform",
-      lead: "A full-stack product for live events: areas, tasks and exceptions roll up into readiness, every write is checked against the caller's event role, and on-site staff get scoped access through revocable QR codes.",
+      lead: "A full-stack application for live events: areas, tasks and exceptions roll up into readiness, every write is checked against the caller's event role, and on-site staff get scoped access through revocable QR codes.",
       tech: "React · Fastify · MySQL · Server-Sent Events",
       // backend/src/modules/ai/providers/groqProvider.js and ollamaProvider.js, compose.e2e.yml and
       // deploy/staging/compose.yml, .github/workflows/ci.yml and deploy-staging.yml,
       // playwright.config.js with e2e/critical/*.spec.js.
       extraTech: ["Groq", "Ollama", "Docker Compose", "GitHub Actions", "Playwright"],
-      status: "Pilot preparation",
-      statusClass: "badge-development",
+      status: "Not launched",
+      statusClass: "badge-local",
       caseStudy: "opssemble.html",
       shareCard: "assets/social/opssemble.png", // scripts/social-cards.mjs
       repository: "",
       demo: "",
       meta: {
         role: "End-to-end developer",
-        context: "University project, grown into a product",
+        context: "University final project",
         focus: "Event roles · live updates · scoped access · optional AI",
-        evidence: "483 unit tests · recorded release checks"
+        evidence: "334 backend and 149 frontend tests · CI release gate"
       },
       system: {
         head: "Which parts of an event aren't ready, and why.",
-        intro: "Opssemble began as my university final project and grew into a product being hardened for a controlled pilot. Areas hold tasks, problems become tracked exceptions with severity, and readiness is computed from what is still open.",
+        intro: "Opssemble started as my university final project: an application for running live events. Areas hold tasks, problems on site become exceptions with a severity, and readiness is computed from what is still open.",
         layers: [
           ["Readiness dashboard", "React and MUI. Readiness, blockers and open exceptions per area, a mobile My Shift queue, and QR area workspaces for on-site staff."],
           ["Role on every write", "Fastify feature modules. Owner, coordinator, operator and viewer are checked server-side on every write; event-scoped Server-Sent Events push changes live."],
           ["Hashed tokens", "MySQL with migrations. QR, verification and reset tokens are stored only as SHA-256 hashes; evidence photos are re-encoded without metadata and served after authorization."],
-          ["Release gate", "CI builds one release artefact and runs the critical browser journeys against it in Chromium and WebKit before it can be promoted. 149 frontend and 334 backend unit tests pass. Not launched."]
+          ["Release gate", "CI builds one release artefact and runs the critical browser tests against it, in Chromium and WebKit, before it can be promoted."]
         ],
         architecture: [
           ["React + MUI", "Dashboard · My Shift · QR areas"],
-          ["Fastify API", "Event roles · live updates · AI guardrails"],
+          ["Fastify API", "Event roles · live updates · optional AI"],
           ["MySQL", "Migrations · hashed tokens · audit"]
         ],
         decision: {
-          title: "Authorize every write against the caller's event role",
+          title: "Compute readiness from what is still open",
           rows: [
-            ["Constraint", "Four roles act on the same event from different devices, some of them guests with a QR code."],
-            ["Decision", "Role checks live in the API beside input validation, for members and scoped guest sessions alike."],
-            ["Result", "The interface reflects permissions that the server already enforces."],
-            ["Trade-off", "Every new write endpoint requires an authorization rule and test."]
+            ["Constraint", "A coordinator needs to know whether an event can open, and a status someone sets by hand goes stale."],
+            ["Decision", "The server derives readiness from open tasks and exceptions, and lists the rules beside the verdict."],
+            ["Result", "A blocked event names the exception or task that blocks it, and the coordinator can see which rule applied."],
+            ["Trade-off", "The weights are fixed in code, so different rules need a code change."]
           ]
         },
-        evidence: "149 frontend unit tests and 334 backend tests pass (21 November 2026; ten MySQL integration tests run separately). A local validation of the packaged release on 4 October 2026 passed 24 critical browser journeys; it was not a live deployment.",
-        boundary: "Not launched publicly: it is being prepared for a controlled pilot, so no load, uptime or usage figures exist. The interface shown is Italian."
+        evidence: "334 backend and 149 frontend tests, and a release gate in CI that runs the critical browser tests against the exact artefact it will promote.",
+        boundary: "Offline mode is behind a feature flag, and the AI assistant runs only when it is configured."
       },
       primaryImage: "assets/opssemble/opssemble-dashboard.png",
       primaryImageAvif: "assets/opssemble/opssemble-dashboard.avif",
@@ -547,7 +547,7 @@ export const siteConfig = {
       primaryImageWidth: 1900,
       primaryImageHeight: 984,
       primaryImageAlt: "Opssemble event dashboard showing a 45 per cent readiness score, blocking tasks, open exceptions and a per-area readiness summary",
-      primaryImageCaption: "Screenshot from the running application: event readiness, blocking tasks and open exceptions. The interface is Italian.",
+      primaryImageCaption: "The event dashboard: readiness, blocking tasks and open exceptions. The interface is Italian.",
       readinessImage: "assets/opssemble/opssemble-readiness.png",
       readinessImageAvif: "assets/opssemble/opssemble-readiness.avif",
       readinessImageWebp: "assets/opssemble/opssemble-readiness.webp",
@@ -577,8 +577,8 @@ export const siteConfig = {
           },
           {
             id: "verdict", box: [300, 735, 575, 230], title: "The verdict and its score",
-            does: "The overall readiness, Blocked, with its reason in one sentence and a score.",
-            behind: "Status, reason and score come from the server. An open critical exception or a blocked task blocks readiness; the score drops for each of them and for open high-severity work, and only a Ready event can reach 100%.",
+            does: "The overall readiness, Blocked, with its reason in one sentence and a score (a placeholder value in this capture).",
+            behind: "In the application, status, reason and score come from the server. An open critical exception or a blocked task blocks readiness; the score drops for each of them and for open high-severity work, and only a Ready event can reach 100%.",
             matters: "The status says what has to happen next. A score on its own would not.",
             decision: "Readiness is computed on the server from tasks and exceptions, not set by hand.",
             terms: [["Readiness complessiva", "Overall readiness"], ["Bloccato", "Blocked"], ["Un'eccezione critica aperta sul Palco blocca la preparazione dell'evento", "An open critical exception on the Stage blocks the event's preparation"], ["punteggio", "score"]]
@@ -593,7 +593,7 @@ export const siteConfig = {
         ]
       },
       readinessImageAlt: "Opssemble readiness view: areas ready, in progress and blocked, completed tasks, active blockers, and the applied rules that make the event blocked",
-      readinessImageCaption: "The readiness view of a fixture event: one area blocked, two of six tasks done, and a 62% score marked “Bloccato” (blocked). Beside it, the rules that decided it, starting with “a critical open exception blocks the event”. Captured by the project's screenshot script; the interface is Italian.",
+      readinessImageCaption: "The readiness view of a fixture event: one area blocked, two of six tasks done, the verdict “Bloccato” (blocked) and, beside it, the rules behind it. Captured by the project's screenshot script, which serves fixed API responses, so the score shown is a placeholder. The interface is Italian.",
       qrImage: "assets/opssemble/opssemble-qr-area-mobile.png",
       qrImageAvif: "assets/opssemble/opssemble-qr-area-mobile.avif",
       qrImageWebp: "assets/opssemble/opssemble-qr-area-mobile.webp",
@@ -643,7 +643,7 @@ export const siteConfig = {
           ]
         },
         evidence: "Public repository under MIT. The REST API is described by an OpenAPI 3 document served with Swagger UI, and requests are validated with Zod. GitHub Actions runs lint and build checks, unit and API tests against a MySQL service container, and Playwright end-to-end tests.",
-        boundary: "No usage figures are claimed; the public repository is the evidence. The interface is Italian."
+        boundary: ""
       },
       primaryImage: "assets/esamarea/esamarea-shared-plan.png",
       primaryImageAvif: "assets/esamarea/esamarea-shared-plan.avif",
@@ -685,7 +685,7 @@ export const siteConfig = {
           ]
         },
         evidence: "Published on the Chrome Web Store; source public on GitHub under MIT. Manifest V3 with four permissions and a strict content security policy: a hand-written calculator parser replaces eval.",
-        boundary: "No ratings, install counts or usage figures are claimed."
+        boundary: ""
       },
       primaryImage: "assets/azlune/azlune-new-tab.png",
       primaryImageAvif: "assets/azlune/azlune-new-tab.avif",
@@ -703,7 +703,7 @@ export const siteConfig = {
       lead: "A personal planning app for appointments with reminders, today, an inbox, a weekly and monthly planner, habits, goals and projects. It works offline first and synchronizes once you sign in.",
       summary: "Offline-first planner for appointments, tasks and goals, with sync and reminders.",
       tech: "React · TypeScript · Node.js · MySQL · PWA",
-      // tests/e2e/*.spec.ts (Playwright; 16 specs run AxeBuilder), compose.yaml (MySQL, Mailpit),
+      // tests/e2e/*.spec.ts (Playwright, with AxeBuilder in part of the suite), compose.yaml (MySQL, Mailpit),
       // .github/workflows/ci.yml.
       extraTech: ["Playwright", "axe-core", "Docker Compose", "GitHub Actions"],
       status: "In development",
@@ -729,8 +729,8 @@ export const siteConfig = {
             "A separate worker schedules opt-in reminders for verified accounts"
           ]
         },
-        evidence: "Unit, end-to-end and installed-app suites with Vitest and Playwright. 16 of the 32 end-to-end specs also run automated axe checks against WCAG 2.2 A and AA rules: automated checks that catch many issues, not a full accessibility audit.",
-        boundary: "Not released: a stable version and production deployment are not approved yet, and push delivery to real phones is unverified."
+        evidence: "Unit, end-to-end and installed-app suites with Vitest and Playwright. Part of the end-to-end suite also runs automated axe checks against WCAG A and AA rules, which catch many problems but are not a manual accessibility audit.",
+        boundary: "Not released, and push notifications have not been tested on real phones."
       },
       primaryImage: "assets/orbit/orbit-today.png",
       primaryImageAvif: "assets/orbit/orbit-today.avif",
@@ -764,7 +764,7 @@ export const siteConfig = {
       },
       system: {
         head: "Somewhere to write that keeps nothing it does not need.",
-        intro: "Interface language and writing language are independent, and what you write is never automatically translated. Privacy is a property of the schema and the queries rather than a policy page.",
+        intro: "Interface language and writing language are independent, and what you write is never automatically translated. Its privacy rules live in the schema and the queries.",
         layers: [
           ["Three-script editor", "One editor for English, Hindi and Punjabi. Transliteration runs in the browser; PDFs are drawn to canvas so Indic text shapes correctly."],
           ["Optimistic concurrency", "Layered Express API. A version mismatch refuses the write, and a restore archives the current text first."],
@@ -785,8 +785,8 @@ export const siteConfig = {
             ["Trade-off", "The digest secret joins the security surface: rotating it invalidates every live session."]
           ]
         },
-        evidence: "1,127 automated tests pass: 729 client, 390 server and 8 script tests, with MySQL integration runs only against a separate test database, and Playwright end-to-end coverage of auth, mobile, exports, transliteration and voice notes.",
-        boundary: "Private repository, not publicly deployed. Built as a single-writer product; no user numbers are claimed."
+        evidence: "1,127 automated tests: 729 client, 390 server and 8 script tests, with MySQL integration runs only against a separate test database, and Playwright end-to-end coverage of auth, mobile, exports, transliteration and voice notes.",
+        boundary: "Private repository, not deployed publicly; built for a single writer."
       },
       // The writing surface shows the product, so it leads: in the quick look and at the top
       // of the case study. The sign-in screen illustrates the design section.
@@ -826,7 +826,7 @@ export const siteConfig = {
       meta: { role: "Sole developer", context: "Experiment · MIT" },
       system: {
         head: "A file, sent through the air.",
-        intro: "Data is split into numbered packets, each with a CRC32, modulated into two audible tones and played through a speaker. The receiver recovers timing from the microphone signal and writes the file only when every packet has arrived and the SHA-256 matches. The audio callbacks only pass fixed-size blocks to a worker thread through lock-free single-producer queues, and are written not to allocate, lock or log; blocks dropped under load are counted.",
+        intro: "Data is split into numbered packets, each with a CRC32, modulated into two audible tones and played through a speaker. The receiver recovers timing from the microphone signal and writes the file only when every packet has arrived and the SHA-256 matches.",
         architecture: [
           ["Framing", "Numbered packets · CRC32"],
           ["BFSK modem", "1200 / 2200 Hz · timing recovery"],
@@ -840,7 +840,7 @@ export const siteConfig = {
             "Two-way transfer with retransmission: tested in software only"
           ]
         },
-        evidence: "Public repository under MIT, with 130 Rust tests run by default. One-way phone-to-PC transfer was validated physically on ordinary hardware, in one room.",
+        evidence: "Public repository under MIT, with 130 Rust tests run by default. The audio callbacks only hand fixed-size blocks to a worker thread through lock-free single-producer queues, and do not allocate, lock or log; blocks dropped under load are counted. One-way phone-to-PC transfer was validated physically on ordinary hardware, in one room.",
         boundary: "Experimental, at about 100 bit/s. Two-way transfer between real devices is not validated, the 257-byte transfer needed a replay, and range and hardware variability are not measured."
       }
     },
@@ -863,16 +863,16 @@ export const siteConfig = {
         head: "Licence activation and concurrent use, client to server.",
         intro: "The client asks the server to validate its licence; the server checks the activation and evaluates the concurrent-use rule before it answers.",
         architecture: [
-          ["Client", "Requests validation"],
-          ["Server", "Checks activation"],
-          ["Rule", "Concurrent use evaluated"]
+          ["Client", "C#/.NET application"],
+          ["Server", "Licence activation"],
+          ["Rule", "Concurrent use"]
         ],
         trace: {
           title: "Licence validation protocol",
           steps: ["Client requests validation", "Server checks activation", "Concurrent-use rule evaluated", "Validation result returned"]
         },
         evidence: "A private component of the company's commercial C#/.NET software.",
-        boundary: "Source and interface are private to the company and not published."
+        boundary: ""
       }
     },
     sird: {
@@ -903,7 +903,7 @@ export const siteConfig = {
           steps: ["A background engine drives moving agents with collision handling", "Real-time S/I/R/D visualization in JavaFX", "CSV export of the run"]
         },
         evidence: "Public repository.",
-        boundary: "Academic desktop project. Not a validated epidemiological model; no accuracy figures are claimed."
+        boundary: "An academic desktop project, not a validated epidemiological model."
       }
     }
   },
@@ -961,7 +961,7 @@ export const siteConfig = {
       flowbank: { domain: "backend", position: [136, 115, -118], concepts: ["concurrency", "idempotency", "appendOnly", "integrity", "loadTesting", "observability"] },
       // "checks a process's identity again before it ends it", "for developers".
       procbeacon: { domain: "tools", position: [-205, -4, 90], concepts: ["processIdentity", "devTools"] },
-      // "request and triage through assignment ... SLA", "Services own authorization", "Lifecycle changes write immutable events", "optional AI suggestions that change nothing until a person accepts them".
+      // "request and triage through assignment ... SLA", "Services own authorization", "Lifecycle changes add events that the code only ever inserts", "optional AI assistance that cannot change a ticket on its own".
       maintops: { domain: "business", position: [-225, -76, -65], concepts: ["workflow", "authorization", "appendOnly", "aiAssist"] },
       // "follows live Punjabi recitation", "Operator, projector and viewers all follow this one selected line", "Search by meaning is retrieval, not a chatbot".
       gurmat: { domain: "personal", position: [35, 125, 157], concepts: ["live", "sync", "speech", "punjabi", "semanticSearch"] },
@@ -985,9 +985,9 @@ export const siteConfig = {
     // [project, project, what they share, how each does it]
     connections: [
       ["erp", "maintops", "Server-side authorization", "Both check roles on the server rather than in the browser: Business Platform's API validates input and checks roles; MaintOps runs authorization inside the same transaction as the change."],
-      // MaintOps: "optional AI suggestions that change nothing until a person accepts them", "A triage suggestion stays pending until a supervisor accepts it". Opssemble: "Optional assistance, no write authority". (Their shared React, Fastify and MySQL stay findable by technology.)
+      // MaintOps: "optional AI assistance that cannot change a ticket on its own", "A triage suggestion stays pending until a supervisor accepts it". Opssemble: "Optional assistance, no write authority". (Their shared React, Fastify and MySQL stay findable by technology.)
       ["maintops", "opssemble", "AI assistance without write authority", "Both add optional LLM assistance behind server-side limits, and neither lets it change records on its own: MaintOps screens input with Prompt Guard and holds a triage suggestion until a supervisor accepts it; Opssemble's assistant has no write authority, so every change goes through the normal endpoints."],
-      ["flowbank", "maintops", "Append-only records", "FlowBank's ledger rows can be inserted but never rewritten; MaintOps records every lifecycle change as an immutable event."],
+      ["flowbank", "maintops", "Append-only records", "Both keep history by adding rows rather than rewriting them: FlowBank's database role cannot update or delete ledger rows, while in MaintOps it is the application code that only ever inserts lifecycle events."],
       ["flowbank", "alfaaz", "Concurrency control", "FlowBank takes account locks in one fixed order so crossed transfers do not deadlock on them; Alfaaz uses optimistic concurrency and refuses a save whose version is out of date."],
       ["flowbank", "sird", "Java", "Both are written in Java: Java 21 with Spring Boot for a backend, Java 17 with JavaFX for a desktop simulation."],
       ["flowbank", "tonequill", "Data integrity checks", "Both verify data before trusting it: FlowBank's database rejects any transfer whose debits and credits differ; ToneQuill checks a CRC32 on every packet and writes a file only when its SHA-256 matches."],

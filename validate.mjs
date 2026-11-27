@@ -177,7 +177,9 @@ for (const project of [...featuredProjects, ...alsoProjects]) {
   if (!home.includes(`<dt>Source</dt><dd>${source}</dd>`)) fail(`homepage: ${project.key} does not state its source (${source})`);
   if (!project.caseStudy && !project.repository && !project.store && !/^(Private|Confidential)/.test(source)) fail(`${project.key}: offers neither a case study, a public link, nor a stated reason`);
   if (project.caseStudy && !pages.includes(project.caseStudy)) fail(`${project.key}: case study ${project.caseStudy} is not a registered page`);
-  if (!project.system?.evidence || !project.system?.boundary) fail(`${project.key}: a case file must state its evidence and what it does not claim`);
+  // Evidence always; a limit only where one is worth stating (an empty one shows no block).
+  if (!project.system?.evidence) fail(`${project.key}: a case file must state its evidence`);
+  if (typeof project.system?.boundary !== "string") fail(`${project.key}: a case file's limits must be text, empty when there is none`);
 }
 for (const project of featuredProjects) {
   if (!home.includes(`<a class="wb-item" href="#work-${project.key}" id="tab-${project.key}" data-wb-tab="${project.key}"`)) fail(`homepage: index link missing for ${project.key}`);
@@ -222,7 +224,9 @@ for (const [field, type] of [["contact-name", "text"], ["contact-email", "email"
     : new RegExp(`<input\\b[^>]*id=["']${field}["'][^>]*type=["']${type}["'][^>]*required`, "i");
   if (!controlPattern.test(home)) fail(`homepage: required contact field missing or misconfigured: ${field}`);
 }
-if ((home.match(/<input type="radio" id="enquiry-[a-z]+" name="enquiryType" value="[^"]+"/g) || []).length !== 4) fail("homepage: optional enquiry type options missing");
+// Engineering roles, technical questions and anything else: no client "project" enquiries.
+if ((home.match(/<input type="radio" id="enquiry-[a-z]+" name="enquiryType" value="[^"]+"/g) || []).length !== 3) fail("homepage: optional enquiry type options missing");
+if (/Project collaboration|id="enquiry-project"/.test(home)) fail("homepage: a freelance-style project enquiry option is back");
 if (!/<fieldset class="enquiry">\s*<legend\b/.test(home)) fail("homepage: enquiry type options need a fieldset and legend");
 for (const match of home.matchAll(/<input type="radio" id="([^"]+)"/g)) {
   if (!home.includes(`<label for="${match[1]}">`)) fail(`homepage: enquiry option ${match[1]} has no label`);
@@ -257,12 +261,14 @@ if ((opssemble.match(/data-case-variant="opssemble"/g) || []).length !== 1) fail
 if ((opssemble.match(/class="technical-artifact\b/g) || []).length !== 1) fail("opssemble.html: expected exactly one token-lifecycle artefact");
 for (const required of [
   "Server-side role boundary", "owner, coordinator, operator, viewer", "SHA-256", "HttpOnly",
-  "no critical blockers", "university final project", "AI assistance", "revocable",
-  "controlled pilot", "Server-Sent Events", "Not launched publicly"
+  "no high or critical exception open", "university final project", "AI assistance", "revocable",
+  "Server-Sent Events", "Not launched", "Not deployed publicly", "feature flag"
 ]) {
   if (!opssemble.includes(required)) fail(`opssemble.html: missing implemented-behaviour evidence: ${required}`);
 }
-// A product being prepared for a pilot, not a launched service: no production or scale theatre.
+// A university final project that has not been launched, and is no longer being prepared for a pilot.
+if (/pilot/i.test(opssemble) || /pilot/i.test(siteConfig.projects.opssemble.status)) fail("opssemble: the pilot status is outdated");
+// Not launched: no production or scale theatre.
 if (/production-ready|enterprise-grade|battle-tested|% ?uptime|99\.\d|\d+[,\d]* (active )?users|customers/i.test(opssemble)) fail("opssemble.html: unsupported production, scale or usage claim");
 
 // FlowBank One: a simulated bank. It must say so, and its load figures must carry their conditions.

@@ -222,7 +222,7 @@ export function footer(mode = "") {
   return `<footer class="site-footer${mode === "home" ? " is-end" : ""}">
       <div class="frame footer-base">
         <p>© <span data-year>2026</span> ${esc(profile.name)}</p>
-        <p class="footer-note">Hand-built static site. No frameworks, no tracking.</p>
+        <p class="footer-note">Static site. No frameworks, no tracking.</p>
         ${links}<a class="footer-top" href="#top">Back to top <span aria-hidden="true">↑</span></a>
       </div>
     </footer>`;
@@ -266,7 +266,7 @@ function dossier(project) {
   ].filter(([, value]) => value);
   const arch = `<div class="sf-block"><h4 class="sf-label">Architecture</h4><ol class="arch-chain">${system.architecture.map(([title, sub], i) => `<li><span class="arch-no">${nn(i + 1)}</span><strong>${esc(title)}</strong><span>${esc(sub)}</span></li>`).join("")}</ol></div>`;
   const record = system.decision
-    ? `<div class="sf-record"><p class="sf-record-head"><span>Decision 01</span><span>Engineering trade-off</span></p><h4 class="sf-record-title">${esc(system.decision.title)}</h4><dl>${system.decision.rows.map(([k, v]) => `<div><dt>${esc(k)}</dt><dd>${esc(v)}</dd></div>`).join("")}</dl></div>`
+    ? `<div class="sf-record"><p class="sf-record-head"><span>Key decision</span><span>Engineering trade-off</span></p><h4 class="sf-record-title">${esc(system.decision.title)}</h4><dl>${system.decision.rows.map(([k, v]) => `<div><dt>${esc(k)}</dt><dd>${esc(v)}</dd></div>`).join("")}</dl></div>`
     : `<div class="sf-record"><p class="sf-record-head"><span>Flow</span><span>How it works</span></p><h4 class="sf-record-title">${esc(system.trace.title)}</h4><ol class="sf-trace">${system.trace.steps.map((step, i) => `<li><span>${nn(i + 1)}</span>${esc(step)}</li>`).join("")}</ol></div>`;
   return `<div class="sf-dossier" data-dossier>
             <p class="sf-headline">${esc(system.head)}</p>
@@ -274,7 +274,7 @@ function dossier(project) {
             <dl class="sf-meta">${meta.map(([k, v]) => `<div><dt>${k}</dt><dd>${esc(v)}</dd></div>`).join("")}</dl>
             ${arch}
             ${record}
-            <div class="sf-proof"><div class="proof-evidence"><h4 class="sf-label">Evidence</h4><p>${esc(system.evidence)}</p></div><div class="proof-boundary"><h4 class="sf-label">Not claimed</h4><p>${esc(system.boundary)}</p></div></div>
+            <div class="sf-proof"><div class="proof-evidence"><h4 class="sf-label">Evidence</h4><p>${esc(system.evidence)}</p></div>${system.boundary ? `<div class="proof-boundary"><h4 class="sf-label">Limits</h4><p>${esc(system.boundary)}</p></div>` : ""}</div>
           </div>`;
 }
 

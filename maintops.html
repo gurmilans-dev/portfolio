@@ -5,12 +5,12 @@
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
     <meta name="theme-color" content="#0c0d0f" />
     <title>MaintOps case study - {{profile.name}}</title>
-    <meta name="description" content="A full-stack maintenance operations platform: role-based request workflow, versioned SLA policies, audited administration and bounded AI assistance." />
+    <meta name="description" content="A full-stack maintenance operations platform: role-based request workflow, versioned SLA policies, audited administration and optional AI assistance." />
     <meta name="robots" content="index, follow" />
     <link rel="canonical" href="{{profile.domain}}/maintops" />
     <meta property="og:type" content="article" /><meta property="og:url" content="{{profile.domain}}/maintops" /><meta property="og:title" content="MaintOps case study - {{profile.name}}" /><meta property="og:description" content="Maintenance requests from report to closure: role-based workflow, versioned SLA policies, and AI assistance that cannot change workflow state on its own." /><meta property="og:image" content="{{profile.domain}}/{{projects.maintops.shareCard}}" /><meta property="og:image:width" content="1200" /><meta property="og:image:height" content="630" /><meta property="og:image:alt" content="MaintOps supervisor dashboard on synthetic demo data" />
     <meta name="twitter:card" content="summary_large_image" /><meta name="twitter:title" content="MaintOps case study - {{profile.name}}" /><meta name="twitter:description" content="Maintenance requests from report to closure: role-based workflow, versioned SLA policies, and AI assistance that cannot change workflow state on its own." /><meta name="twitter:image" content="{{profile.domain}}/{{projects.maintops.shareCard}}" />
-    <script type="application/ld+json">{"@context":"https://schema.org","@type":"SoftwareApplication","name":"MaintOps","applicationCategory":"BusinessApplication","operatingSystem":"Web","description":"Single-organization maintenance operations platform: requests, triage, assignment, technician workflow, versioned SLA policies, notifications, reporting, and optional bounded AI assistance."}</script>
+    <script type="application/ld+json">{"@context":"https://schema.org","@type":"SoftwareApplication","name":"MaintOps","applicationCategory":"BusinessApplication","operatingSystem":"Web","description":"Single-organization maintenance operations platform: requests, triage, assignment, technician workflow, versioned SLA policies, notifications, reporting, and optional AI assistance."}</script>
     <link rel="preload" href="assets/fonts/instrument-sans-latin.woff2" as="font" type="font/woff2" crossorigin />
     <link rel="preload" href="assets/fonts/jetbrains-mono-latin.woff2" as="font" type="font/woff2" crossorigin />
     <link rel="icon" href="assets/favicon.svg" type="image/svg+xml" />
@@ -43,7 +43,7 @@
       </section>
 
       <div class="frame case-layout">
-        <aside class="case-aside"><details class="case-toc" open data-toc><summary>On this page</summary><nav aria-label="On this page"><a href="#product">Product</a><a href="#architecture">Architecture</a><a href="#lifecycle">Lifecycle &amp; SLA</a><a href="#security">Access &amp; security</a><a href="#ai">Bounded AI</a><a href="#boundaries">Boundaries</a></nav></details></aside>
+        <aside class="case-aside"><details class="case-toc" open data-toc><summary>On this page</summary><nav aria-label="On this page"><a href="#product">Product</a><a href="#architecture">Architecture</a><a href="#lifecycle">Lifecycle &amp; SLA</a><a href="#security">Access &amp; security</a><a href="#ai">AI assistance</a><a href="#boundaries">Limits</a></nav></details></aside>
         <article class="case-content">
 
           <section id="product" class="case-section" aria-labelledby="product-title">
@@ -59,7 +59,7 @@
             <h2 id="architecture-title">Three runtime layers, one authorization point.</h2>
             {{> case-cut maintops}}
             <p>Backend capabilities are sliced by business area, and each one separates the same way: routes and schemas hold the HTTP contract, controllers adapt request and response, services own authorization and business transactions, repositories own parameterized SQL and row locking, and presentation helpers shape safe responses. The frontend is organized by the same operational domains, so a feature is one folder on each side rather than a trail through shared layers.</p>
-            <p>Ticket lifecycle changes run inside database transactions and write immutable events. Assignments, comments, internal notes, SLA cycles, notifications and AI suggestions all reference the ticket instead of overwriting it, so history is append-only by construction rather than by convention. All database sessions are normalized to UTC and the client does the formatting.</p>
+            <p>Ticket lifecycle changes run inside database transactions and add events that the application only ever inserts: no code path updates or deletes them, although the database itself does not forbid it. Assignments, comments, internal notes, SLA cycles, notifications and AI suggestions are rows of their own that reference the ticket, so its history accumulates instead of being overwritten. All database sessions are normalized to UTC and the client does the formatting.</p>
             <div role="group" class="operational-scope" data-reveal aria-label="Background work"><p class="artifact-label">background workers</p><ul><li><strong>Durable state</strong><span>Worker state lives in database rows, not in memory</span></li><li><strong>Recovery</strong><span>Workers resume on restart rather than losing queued work</span></li><li><strong>Scope</strong><span>Pending-registration cleanup, SLA checks, queued email delivery</span></li><li><strong>Mail</strong><span>Console transport is a local simulation; SMTP is configured explicitly</span></li></ul></div>
           </section>
 
@@ -68,7 +68,7 @@
             <h2 id="lifecycle-title">Every ticket carries a cycle, and every cycle carries its targets.</h2>
             <p>A ticket moves through a fixed set of transitions, each one authorized and each one recorded. Running alongside it is an SLA cycle with two independent targets: how long until someone starts work, and how long until it is resolved.</p>
             <div role="group" class="case-flow" data-reveal aria-label="Ticket lifecycle stages and the SLA cycle state at each stage">
-              <p class="artifact-label">technical artefact · lifecycle against the SLA cycle</p>
+              <p class="artifact-label">lifecycle against the SLA cycle</p>
               <ol class="case-flow-track">
                 <li><span class="case-flow-no">01</span><strong>Request</strong><em>Cycle opens · both targets set from the matched policy</em></li>
                 <li><span class="case-flow-no">02</span><strong>Triage</strong><em>Category and priority set · priority selects the targets</em></li>
@@ -80,29 +80,29 @@
                 <li><span class="case-flow-no">08</span><strong>Close</strong><em>Ticket settles · every cycle stays on the record</em></li>
               </ol>
             </div>
-            <p>Two decisions in there are worth naming. <strong>A hold does not stop the clock.</strong> Placing work on hold is a real state on the ticket, but the SLA monitor still counts <code>on_hold</code> among the statuses it watches, so an aging held ticket stays visible instead of disappearing behind a paused timer. And <strong>a reopen does not resume the old cycle</strong>: it opens a new one with the next cycle number, so a ticket resolved once and reopened twice reads as three measured attempts rather than one long ambiguous span.</p>
+            <p>Two decisions in there are worth naming. <strong>A hold does not stop the clock.</strong> Placing work on hold is a real state on the ticket, but the SLA monitor still counts <code>on_hold</code> among the statuses it watches, so an ageing held ticket stays visible instead of disappearing behind a paused timer. And <strong>a reopen does not resume the old cycle</strong>: it opens a new one with the next cycle number, so a ticket resolved once and reopened twice reads as three measured attempts rather than one long ambiguous span.</p>
             <div role="group" class="operational-scope" data-reveal aria-label="SLA policy matching"><p class="artifact-label">how a policy is chosen</p><ul><li><strong>Match scope</strong><span>Category and priority, priority alone, or the organization default</span></li><li><strong>Targets</strong><span>Separate work-start and resolution minutes per cycle</span></li><li><strong>Snapshot</strong><span>The policy name is copied onto the cycle when it opens</span></li><li><strong>Monitoring</strong><span>A background worker evaluates open cycles and raises notifications</span></li></ul></div>
           </section>
 
           <section id="security" class="case-section" aria-labelledby="security-title">
             <p class="case-section-no">04 / Access &amp; security</p>
             <h2 id="security-title">The frontend improves navigation. It does not decide access.</h2>
-            <p>Role guards and hidden buttons in the SPA exist so people are not offered actions they cannot take. They are a convenience layer over a decision the server has already made, and the project documentation says so directly: frontend guards improve navigation and feedback, but they are not a security boundary.</p>
+            <p>Role guards and hidden buttons in the SPA exist so people are not offered actions they cannot take. They are a convenience over a decision the server has already made: they improve navigation and feedback, but they are not a security boundary.</p>
             <article class="decision-record" aria-labelledby="maintops-decision-title" data-reveal>
-              <p class="decision-id">decision 01</p>
+              <p class="decision-id">key decision</p>
               <h3 id="maintops-decision-title">Put authorization in the service layer, beside the transaction</h3>
-              <dl><div><dt>Constraint</dt><dd>Four privilege combinations act on the same ticket from different screens.</dd></div><div><dt>Decision</dt><dd>Services own authorization and run it inside the same transaction as the state change.</dd></div><div><dt>Result</dt><dd>An unauthorized write cannot half-apply, and the interface can only ever reflect what the server already enforces.</dd></div><div><dt>Trade-off</dt><dd>Every new transition needs its own authorization rule and its own test; none of it can be inferred from the route.</dd></div></dl>
+              <dl><div><dt>Constraint</dt><dd>Three operational roles act on the same ticket from different screens, and an administrator privilege can be held alongside a role.</dd></div><div><dt>Decision</dt><dd>Services own authorization and run it inside the same transaction as the state change.</dd></div><div><dt>Result</dt><dd>An unauthorized write cannot half-apply, and the interface can only ever reflect what the server already enforces.</dd></div><div><dt>Trade-off</dt><dd>Every new transition needs its own authorization rule and its own test; none of it can be inferred from the route.</dd></div></dl>
             </article>
             <dl class="constraint-ledger" data-reveal><div><dt>Sessions</dt><dd>JWT carried in a secure cookie. Deactivation, role change, and administrator grants invalidate live sessions through token versioning.</dd></div><div><dt>Registration</dt><dd>Email-verified, with attempt limits, a resend cooldown and an hourly cap. Unverified accounts wait in a separate table and are cleaned up by a worker.</dd></div><div><dt>Sign-in abuse</dt><dd>A dedicated rate-limiter plugin sits in front of login.</dd></div><div><dt>SLA policies</dt><dd>Versioned. Editing a policy already in use creates a new version instead of rewriting how past tickets were measured.</dd></div><div><dt>Attachments</dt><dd>Bytes live outside the web root; metadata and authorization context live in MySQL and downloads pass through an authorization-checked route.</dd></div><div><dt>Audit</dt><dd>Account, administration and SLA-policy changes each write to their own audit tables.</dd></div></dl>
             <p>The demo seed refuses to run when <code>NODE_ENV</code> is production or when the target database name does not contain <code>demo</code>, <code>test</code> or <code>release_check</code>, and it takes its password from the environment rather than printing one.</p>
           </section>
 
           <section id="ai" class="case-section" aria-labelledby="ai-title">
-            <p class="case-section-no">05 / Bounded AI</p>
+            <p class="case-section-no">05 / AI assistance</p>
             <h2 id="ai-title">Four narrow features, and none of them can change a ticket.</h2>
-            <p>MaintOps can draft a request, summarize a ticket for the person reading it, suggest triage values, and rank possible duplicates. It calls gpt-oss models hosted by Groq, screens input with Llama Prompt Guard 2, and stays off unless it is configured. It has no chatbot, no tool calling, no web access, no code execution, no attachment interpretation, and no ability to mutate workflow state. With AI disabled or the provider unreachable, the maintenance workflow is unchanged.</p>
+            <p>MaintOps can draft a request, summarize a ticket for the person reading it, suggest triage values, and rank possible duplicates. It calls gpt-oss models hosted by Groq, screens input with Llama Prompt Guard 2, and stays off unless it is configured. There is no chat, no tool calling and no web access, and nothing the model returns changes a ticket without a person. With AI disabled or the provider unreachable, the maintenance workflow is unchanged.</p>
             <div role="group" class="case-flow case-flow-guarded" data-reveal aria-label="Path of an AI request from untrusted input through screening, validation and human approval to workflow state">
-              <p class="artifact-label">technical artefact · where an AI request can fail closed</p>
+              <p class="artifact-label">where an AI request can fail closed</p>
               <ol class="case-flow-track">
                 <li><span class="case-flow-no">01</span><strong>Untrusted input</strong><em>Titles, descriptions and comments, still untrusted after authorization</em></li>
                 <li class="case-flow-gate"><span class="case-flow-no">02</span><strong>Input screening</strong><em>Bounded chunks scanned by Prompt Guard; suspicious or unavailable fails the request closed</em></li>
@@ -114,15 +114,15 @@
                 <li class="case-flow-mark"><span class="case-flow-no">08</span><strong>Workflow state</strong><em>Applied through the same authorized transition as a manual edit</em></li>
               </ol>
             </div>
-            <p>The screening step is the one I would defend hardest. Prompt Guard is used through its own binary-classifier contract: the returned probability is validated as a number between 0 and 1 and compared against a configured threshold, instead of asking it to emit JSON like the main model. Treating a classifier as a classifier removes an entire category of parsing failure, and if it is unavailable the AI request fails rather than proceeding unscreened.</p>
-            <div role="group" class="operational-scope" data-reveal aria-label="AI limits and logging"><p class="artifact-label">limits, from configuration</p><ul><li><strong>Per user</strong><span>Requests per minute and per day are both capped</span></li><li><strong>Globally</strong><span>Bounded concurrency, a request timeout, and a failure circuit breaker</span></li><li><strong>Context</strong><span>Older public events are dropped first; the request fails safely if essential context still will not fit</span></li><li><strong>Logging</strong><span>Interaction records store metadata only (never prompt, context or output) and are purged on a schedule</span></li></ul></div>
+            <p>Prompt Guard is used through its own binary-classifier contract: the returned probability is validated as a number between 0 and 1 and compared against a configured threshold, instead of asking it to emit JSON like the main model. Treating a classifier as a classifier removes an entire category of parsing failure, and if it is unavailable the AI request fails rather than proceeding unscreened.</p>
+            <div role="group" class="operational-scope" data-reveal aria-label="AI limits and logging"><p class="artifact-label">limits</p><ul><li><strong>Per user</strong><span>Requests per minute and per day are both capped</span></li><li><strong>Globally</strong><span>Bounded concurrency, a request timeout, and a failure circuit breaker</span></li><li><strong>Context</strong><span>Older public events are dropped first; the request fails safely if essential context still will not fit</span></li><li><strong>Logging</strong><span>Interaction records store metadata only (never prompt, context or output) and are purged on a schedule</span></li></ul></div>
           </section>
 
           <section id="boundaries" class="case-section" aria-labelledby="boundaries-title">
-            <p class="case-section-no">06 / Boundaries</p>
-            <h2 id="boundaries-title">Public source, no hosted instance, no usage figures.</h2>
-            <dl class="constraint-ledger" data-reveal><div><dt>Deployment</dt><dd>There is no hosted instance and no public demo. The README documents how to run it locally.</dd></div><div><dt>Usage</dt><dd>No user counts, uptime figures or availability numbers exist, because the system has not been operated in production.</dd></div><div><dt>Interface evidence</dt><dd>No screenshots are committed to the repository. The project's own demo notes warn that interface images leak names, addresses and machine details, so the capture shown on this site comes from the synthetic demo database.</dd></div><div><dt>Licence</dt><dd>Proprietary. The source is published for academic evaluation and portfolio review, not for reuse.</dd></div></dl>
-            <div class="outcome-summary" data-reveal><div><p class="artifact-label">what it demonstrates</p><p>A layered API with authorization in the service boundary, a versioned SLA model that survives its own policy edits, append-only operational history, background workers with durable state, and an AI integration designed around its failure modes.</p></div><div><p class="artifact-label">what it is tested with</p><p>Backend cases run on the native Node test runner against the real service and repository boundaries, 20 of them for the AI path: authentication, disabled mode, redaction, injection screening, invalid output, permissions, rate limits, retries and the circuit breaker. The frontend is covered with Vitest and Testing Library. Both suites are in the public repository.</p></div></div>
+            <p class="case-section-no">06 / Limits</p>
+            <h2 id="boundaries-title">Public source, no hosted instance.</h2>
+            <dl class="constraint-ledger" data-reveal><div><dt>Deployment</dt><dd>There is no hosted instance and no public demo. The README documents how to run it locally.</dd></div><div><dt>Licence</dt><dd>Proprietary. The source is published for academic evaluation and portfolio review, not for reuse.</dd></div></dl>
+            <div class="outcome-summary is-single" data-reveal><div><p class="artifact-label">what it is tested with</p><p>Backend cases run on the native Node test runner against the real service and repository boundaries, 20 of them for the AI path: authentication, disabled mode, redaction, injection screening, invalid output, permissions, rate limits, retries and the circuit breaker. The frontend is covered with Vitest and Testing Library. Both suites are in the public repository.</p></div></div>
           </section>
         </article>
       </div>
